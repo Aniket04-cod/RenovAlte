@@ -1,0 +1,50 @@
+# RenovAlte 
+
+## Backend
+
+#### Prerequisites
+
+- Python 3.10+
+- Pip
+
+#### Setup
+
+```bash
+# Navigate to backend project
+cd backend
+
+# Create a virtual environment
+python3 -m venv .venv
+# On Windows (CMD): python -m venv .venv
+
+# Activate the virtual environment
+source .venv/bin/activate
+# On Windows (CMD): .venv\Scripts\activate.bat
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Apply database migrations
+python manage.py migrate
+
+# Create an admin user (optional but recommended)
+python manage.py createsuperuser
+
+# Start the development server
+python manage.py runserver
+```
+
+#### Development URLs
+- App: `http://127.0.0.1:8000/`
+- Admin: `http://127.0.0.1:8000/admin/`
+
+### Migrations
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+# Frontend
+
+Please add setup instructions here...
