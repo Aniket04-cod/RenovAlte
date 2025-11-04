@@ -45,6 +45,24 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-# Frontend
+## Frontend
 
-Please add setup instructions here...
+#### Prerequisites
+
+- Node.js 16+
+- Npm
+
+#### Setup
+
+```bash
+# Navigate to frontend project
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+#### Development URLs
+- App: `http://127.0.0.1:3000/`
