@@ -1,10 +1,12 @@
-import React from 'react';
+import React from "react";
+import Text from "../../components/Text/Text";
+import Heading from "../../components/Heading/Heading";
 
 const Home: React.FC = () => {
   return (
     <div>
-      <h1 className='text-3xl font-bold underline'>Welcome to RenoAlt Homne</h1>
-      <p className='p-4'>This is the home page.</p>
+      <Heading level={1}>Welcome to RenoAlt Homne</Heading>
+      <Text>This is the home page.</Text>
     </div>
   );
 };

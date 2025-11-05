@@ -2,17 +2,17 @@ import Heading from "../../components/Heading/Heading";
 import React from "react";
 import Text from "../../components/Text/Text";
 
-const Planning: React.FC = () => {
+const Financing: React.FC = () => {
   return (
     <div>
       <Heading level={1}>
-        Planning the work
+        Financing
       </Heading>
       <Text className="text-gray-600">
-        Set up your renovation plan, timeline, and permits step by step.
+        Set up your Financing plan, timeline, and loans step by step.
       </Text>
     </div>
   );
 };
 
-export default Planning;
+export default Financing;
