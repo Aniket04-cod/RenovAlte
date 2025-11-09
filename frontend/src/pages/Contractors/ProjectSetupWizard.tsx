@@ -38,7 +38,7 @@ export function ProjectSetupWizard() {
       goals: selectedGoals,
     };
 
-    alert(buildingType + budget + startDate + selectedGoals);
+    // alert(buildingType + budget + startDate + selectedGoals);
     // Send formData to API or next step
   };
 
