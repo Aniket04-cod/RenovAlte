@@ -19,17 +19,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
     
     - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
+      working-directory: ./frontend  # Adjust to your frontend directory
+      run: npm install
     
     - name: Run frontend linter
       working-directory: ./frontend
       run: npm run lint
-      continue-on-error: true
+      continue-on-error: true  # Set to false if you want lint errors to fail the build
     
     - name: Run frontend tests
       working-directory: ./frontend
@@ -42,29 +40,33 @@ jobs:
     - name: Verify frontend build
       working-directory: ./frontend
       run: |
+        # Check if build folder exists
         if [ ! -d "build" ]; then
-          echo "Build folder not found!"
+          echo "❌ Build folder not found!"
           exit 1
         fi
         
+        # Check if index.html exists
         if [ ! -f "build/index.html" ]; then
-          echo "index.html not found in build!"
+          echo "❌ index.html not found in build!"
           exit 1
         fi
         
-        echo "Frontend build successful and contains required files!"
+        echo "✅ Frontend build successful and contains required files!"
         
+        # Optional: Serve the build and check if it loads
         npx serve -s build -l 3000 &
         SERVER_PID=$!
         sleep 3
         
         if curl -f http://localhost:3000/; then
-          echo "Frontend is servable and responding!"
+          echo "✅ Frontend is servable and responding!"
         else
-          echo "Warning: Frontend build exists but server didn't respond"
+          echo "⚠️ Warning: Frontend build exists but server didn't respond"
         fi
         
         kill $SERVER_PID || true
+
 
   test-backend:
     name: Test Python Backend

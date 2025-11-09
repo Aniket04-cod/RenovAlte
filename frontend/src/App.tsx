@@ -4,7 +4,7 @@ import Home from "./pages/Home/Home";
 import Planning from "./pages/Planning/Planning";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { TopBar } from "./components/Topbar/Topbar";
-import Contractors from "./pages/Contractors/Contractors";
+import Contractors from "./pages/Contractors";
 import Financing from "./pages/Financing/Financing";
 import LandingPage from "./pages/Landing/Landing";
 
