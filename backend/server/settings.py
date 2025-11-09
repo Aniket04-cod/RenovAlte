@@ -75,8 +75,43 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = [
+# CORS configuration
+# For development, we'll use CORS_ALLOW_ALL_ORIGINS = True
+# This is simpler and works reliably in development
+# In production, set this to False and use CORS_ALLOWED_ORIGINS with specific origins
+CORS_ALLOW_ALL_ORIGINS = True
+
+# CSRF trusted origins - required for CSRF protection when using CORS
+# Add the frontend origin here to allow CSRF-protected requests
+CSRF_TRUSTED_ORIGINS = [
 	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+]
+
+# Allow credentials if needed (required for session cookies)
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow common HTTP methods
+CORS_ALLOW_METHODS = [
+	"DELETE",
+	"GET",
+	"OPTIONS",
+	"PATCH",
+	"POST",
+	"PUT",
+]
+
+# Allow common headers
+CORS_ALLOW_HEADERS = [
+	"accept",
+	"accept-encoding",
+	"authorization",
+	"content-type",
+	"dnt",
+	"origin",
+	"user-agent",
+	"x-csrftoken",
+	"x-requested-with",
 ]
 
 REST_FRAMEWORK = {

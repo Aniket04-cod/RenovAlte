@@ -4,14 +4,24 @@ from .serializers import ProjectSerializer
 
 
 class ProjectListCreate(generics.ListCreateAPIView):
-	queryset = Project.objects.all().order_by("id")
 	serializer_class = ProjectSerializer
-	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+	permission_classes = [permissions.IsAuthenticated]
+
+	def get_queryset(self):
+		"""Return projects filtered by the authenticated user"""
+		return Project.objects.filter(user=self.request.user).order_by("id")
+
+	def perform_create(self, serializer):
+		"""Automatically assign the current user to the project"""
+		serializer.save(user=self.request.user)
 
 
 class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
-	queryset = Project.objects.all()
 	serializer_class = ProjectSerializer
-	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+	permission_classes = [permissions.IsAuthenticated]
+
+	def get_queryset(self):
+		"""Return projects filtered by the authenticated user"""
+		return Project.objects.filter(user=self.request.user)
 
 

@@ -16,10 +16,10 @@ const Heading: React.FC<HeadingProps> = ({
   const Tag = `h${level}` as keyof JSX.IntrinsicElements;
 
   const levelStyles: Record<HeadingLevel, string> = {
-    1: "text-2xl font-medium leading-relaxed",
-    2: "text-xl font-medium leading-relaxed",
-    3: "text-lg font-medium leading-relaxed",
-    4: "text-base font-medium leading-relaxed",
+    1: "text-lg sm:text-xl md:text-2xl font-medium leading-relaxed",
+    2: "text-base sm:text-lg md:text-xl font-medium leading-relaxed",
+    3: "text-sm sm:text-base md:text-lg font-medium leading-relaxed",
+    4: "text-sm md:text-base font-medium leading-relaxed",
   };
 
   return (
