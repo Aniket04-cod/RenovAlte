@@ -104,7 +104,25 @@ async function handleResponse<T>(response: Response): Promise<T> {
 		throw new Error(message);
 	}
 
-	return response.json();
+	if (response.status === 204 || response.status === 205) {
+		return undefined as T;
+	}
+
+	const contentLength = response.headers.get("content-length");
+	if (contentLength !== null && Number(contentLength) === 0) {
+		return undefined as T;
+	}
+
+	const text = await response.text();
+	if (!text) {
+		return undefined as T;
+	}
+
+	try {
+		return JSON.parse(text) as T;
+	} catch {
+		return text as unknown as T;
+	}
 }
 
 export const apiRequest = async <T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> => {
@@ -123,6 +141,8 @@ export const apiRequest = async <T>(endpoint: string, options: ApiRequestOptions
 		method,
 		credentials: credentials ?? "include",
 		headers: mergedHeaders,
+		// Prevent any intermediary/browser caching for API calls
+		cache: method === "GET" ? "no-store" : "no-cache",
 		...rest,
 	});
 

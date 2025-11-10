@@ -6,7 +6,7 @@ export interface Project {
 	user?: User;
 	name: string;
 	project_type: string;
-	location: string;
+	address: string;
 	city?: string;
 	postal_code?: string;
 	state?: string;

@@ -72,7 +72,7 @@ export function TopBar({ isSidebarOpen, onToggleSidebar }: TopBarProps) {
                   {selectedProject.name}
                 </span>
                 <span className="text-xs text-emerald-700 truncate">
-                  {getProjectTypeLabel(selectedProject.project_type)} • {selectedProject.location}
+                  {getProjectTypeLabel(selectedProject.project_type)} • {selectedProject.address}
                 </span>
               </div>
               <button

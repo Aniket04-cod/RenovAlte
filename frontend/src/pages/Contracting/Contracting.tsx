@@ -1,3 +1,5 @@
+// TODO: Refactor and extract components for all steps.
+
 import Heading from "../../components/Heading/Heading";
 import React, { useState, useEffect, useCallback } from "react";
 import Text from "../../components/Text/Text";
@@ -66,7 +68,7 @@ const Contracting: React.FC = () => {
 		if (!selectedProject) return "";
 
 		const projectTypeLabel = PROJECT_TYPES.find((pt) => pt.value === selectedProject.project_type)?.label || selectedProject.project_type;
-		const location = [selectedProject.city, selectedProject.state].filter(Boolean).join(", ") || selectedProject.location;
+		const address = [selectedProject.city, selectedProject.state].filter(Boolean).join(", ") || selectedProject.address;
 		const budget = selectedProject.budget ? `€${selectedProject.budget.toLocaleString()}` : "To be discussed";
 
 		return `Dear Contractor,
@@ -75,7 +77,7 @@ I hope this email finds you well. I am reaching out to invite you to submit a pr
 
 Project Details:
 - Project Type: ${projectTypeLabel}
-- Location: ${location}
+- Address: ${address}
 - Budget: ${budget}
 ${selectedProject.additional_information ? `- Additional Information: ${selectedProject.additional_information}` : ""}
 

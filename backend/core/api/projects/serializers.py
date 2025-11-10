@@ -13,7 +13,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 			"user",
 			"name",
 			"project_type",
-			"location",
+			"address",
 			"city",
 			"postal_code",
 			"state",

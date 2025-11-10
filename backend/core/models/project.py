@@ -25,7 +25,7 @@ class Project(models.Model):
 		choices=ProjectType.choices,
 		default=ProjectType.GENERAL,
 	)
-	location = models.CharField("Location", max_length=200)
+	address = models.CharField("Address", max_length=200, db_column="location")
 	city = models.CharField("City", max_length=100, blank=True)
 	postal_code = models.CharField("Postal Code", max_length=20, blank=True)
 	state = models.CharField("State", max_length=100, blank=True)
