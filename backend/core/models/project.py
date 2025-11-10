@@ -32,7 +32,8 @@ class Project(models.Model):
 	budget = models.DecimalField(
 		"Budget",
 		max_digits=12,
-		decimal_places=2
+		decimal_places=2,
+		default=0,
 	)
 	additional_information = models.TextField(
 		"Additional Information",

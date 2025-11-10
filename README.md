@@ -66,3 +66,13 @@ npm run dev
 ```
 #### Development URLs
 - App: `http://127.0.0.1:3000/`
+
+## Start Both Servers (Windows)
+
+If you are on Windows, you can start both the Django API and React app together with the helper script:
+
+```cmd
+run-dev.bat
+```
+
+The script runs backend migrations, launches `python manage.py runserver` in the background, and then starts the frontend dev server (`npm start`) in the current terminal. Press `Ctrl+C` to stop both servers.

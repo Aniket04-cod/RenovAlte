@@ -4,6 +4,9 @@ import Text from "../../components/Text/Text";
 import { ProjectSetupWizard } from "./ProjectSetupWizard";
 import { RenovationPhases } from "./RenovationPhases";
 import { AISuggestions } from "./AISuggestion";
+import { useProject } from "../../contexts/ProjectContext";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Planning: React.FC = () => {
   const { selectedProject } = useProject();
