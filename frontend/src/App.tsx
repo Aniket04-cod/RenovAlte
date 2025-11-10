@@ -7,7 +7,7 @@ import { TopBar } from "./components/Topbar/Topbar";
 import { Footer } from "./components/Footer/Footer";
 import Contracting from "./pages/Contracting/Contracting";
 import Financing from "./pages/Financing/Financing";
-import LandingPage from "./pages/Landing/Landing";
+import LoginPage from "./pages/Landing/Landing";
 import Register from "./pages/Register/Register";
 import { ProjectProvider, useProject } from "./contexts/ProjectContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -85,7 +85,7 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LandingPage />}
+          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
         />
         <Route
           path="/register"

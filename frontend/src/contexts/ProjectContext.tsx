@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Project } from "../services/api";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { Project } from "../services/projects";
+import { useAuth } from "./AuthContext";
 
 interface ProjectContextType {
 	selectedProject: Project | null;
@@ -9,33 +10,15 @@ interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-const STORAGE_KEY = "selectedProject";
-
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+	const { isAuthenticated } = useAuth();
 
-	// Load selected project from localStorage on mount
 	useEffect(() => {
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (stored) {
-			try {
-				const project = JSON.parse(stored);
-				setSelectedProject(project);
-			} catch (error) {
-				console.error("Failed to parse stored project:", error);
-				localStorage.removeItem(STORAGE_KEY);
-			}
+		if (!isAuthenticated) {
+			setSelectedProject(null);
 		}
-	}, []);
-
-	// Save selected project to localStorage whenever it changes
-	useEffect(() => {
-		if (selectedProject) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedProject));
-		} else {
-			localStorage.removeItem(STORAGE_KEY);
-		}
-	}, [selectedProject]);
+	}, [isAuthenticated]);
 
 	const selectProject = (project: Project | null) => {
 		setSelectedProject(project);

@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------------------------------------
+# Settings for the Django backend
+# NOTE: This is just temporary settings for development. For production, we will use a more secure settings file.
+# --------------------------------------------------------------------------------------------------------------
+
 from pathlib import Path
 
 

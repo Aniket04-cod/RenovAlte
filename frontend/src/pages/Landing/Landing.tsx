@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
 
-const LandingPage: React.FC = () => {
+const LoginPage: React.FC = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -104,4 +104,4 @@ const LandingPage: React.FC = () => {
 	);
 };
 
-export default LandingPage;
+export default LoginPage;

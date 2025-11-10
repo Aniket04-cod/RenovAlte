@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { projectApi, Project, PROJECT_TYPES } from "../../services/api";
+import { projectApi, Project, PROJECT_TYPES } from "../../services/projects";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
 import { Plus, Edit, Trash2, X, CheckCircle2, Sparkles } from "lucide-react";
