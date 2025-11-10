@@ -77,6 +77,9 @@ const Home: React.FC = () => {
 		if (!formData.state?.trim()) {
 			errors.state = "State is required";
 		}
+		if (formData.budget === null) {
+			errors.budget = "Budget is required";
+		}
 		if (formData.budget !== null && formData.budget < 0) {
 			errors.budget = "Budget must be a positive number";
 		}

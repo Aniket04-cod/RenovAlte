@@ -26,19 +26,16 @@ class Project(models.Model):
 		default=ProjectType.GENERAL,
 	)
 	address = models.CharField("Address", max_length=200)
-	city = models.CharField("City", max_length=100, blank=True)
-	postal_code = models.CharField("Postal Code", max_length=20, blank=True)
-	state = models.CharField("State", max_length=100, blank=True)
+	city = models.CharField("City", max_length=100)
+	postal_code = models.CharField("Postal Code", max_length=20)
+	state = models.CharField("State", max_length=100)
 	budget = models.DecimalField(
 		"Budget",
 		max_digits=12,
-		decimal_places=2,
-		null=True,
-		blank=True,
+		decimal_places=2
 	)
 	additional_information = models.TextField(
 		"Additional Information",
-		blank=True,
 		help_text="Additional information about the project",
 	)
 
