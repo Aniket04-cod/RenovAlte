@@ -5,7 +5,7 @@ import Heading from "../Heading/Heading";
 import BudgetField from "../BudgetField/BudgetField";
 import { Project, ProjectType } from "../../services/projects";
 
-interface ProjectModalProps {
+interface ProjectCreateUpdateModalProps {
 	isOpen: boolean;
 	selectedProject: Project | null;
 	formData: Omit<Project, "id">;
@@ -17,7 +17,7 @@ interface ProjectModalProps {
 	projectTypes: ProjectType[];
 }
 
-const ProjectModal: React.FC<ProjectModalProps> = ({
+const ProjectCreateUpdateModal: React.FC<ProjectCreateUpdateModalProps> = ({
 	isOpen,
 	selectedProject,
 	formData,
@@ -210,5 +210,5 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 	);
 };
 
-export default ProjectModal;
+export default ProjectCreateUpdateModal;
 

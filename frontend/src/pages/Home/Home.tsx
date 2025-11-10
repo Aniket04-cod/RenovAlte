@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { projectApi, Project, PROJECT_TYPES } from "../../services/projects";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
@@ -7,7 +6,8 @@ import { Plus, Sparkles } from "lucide-react";
 import { useProject } from "../../contexts/ProjectContext";
 import ProjectRow from "../../components/Project/ProjectRow";
 import ProjectCard from "../../components/Project/ProjectCard";
-import ProjectModal from "../../components/Project/ProjectModal";
+import ProjectCreateUpdateModal from "../../components/Project/ProjectCreateUpdateModal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 
 const Home: React.FC = () => {
 	const { selectedProject: contextSelectedProject, selectProject } = useProject();
@@ -290,7 +290,7 @@ const Home: React.FC = () => {
 				)}
 			</div>
 
-			<ProjectModal
+			<ProjectCreateUpdateModal
 				isOpen={isModalOpen}
 				selectedProject={selectedProject}
 				formData={formData}
@@ -302,40 +302,26 @@ const Home: React.FC = () => {
 				projectTypes={PROJECT_TYPES}
 			/>
 
-			{/* Delete Confirmation Modal */}
-			{isDeleteModalOpen && selectedProject && createPortal(
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-					<div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-						<div className="p-4 sm:p-6">
-							<Heading level={2} className="mb-4 text-lg sm:text-xl">
-								Delete Project
-							</Heading>
-							<Text className="mb-6 text-sm sm:text-base">
-								Are you sure you want to delete "{selectedProject.name}"? This action
-								cannot be undone.
-							</Text>
-							<div className="flex flex-col sm:flex-row justify-end gap-3">
-								<button
-									onClick={() => {
-										setIsDeleteModalOpen(false);
-										setSelectedProject(null);
-									}}
-									className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-								>
-									Cancel
-								</button>
-								<button
-									onClick={handleDeleteConfirm}
-									className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-								>
-									Delete
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>,
-				document.body
-			)}
+			<ConfirmModal
+				isOpen={isDeleteModalOpen && !!selectedProject}
+				title="Delete Project"
+				message={
+					selectedProject ? (
+						<>
+							Are you sure you want to delete "<span className="font-semibold">{selectedProject.name}</span>"? This action cannot be undone.
+						</>
+					) : (
+						"Are you sure you want to delete this project? This action cannot be undone."
+					)
+				}
+				confirmLabel="Delete"
+				cancelLabel="Cancel"
+				onCancel={() => {
+					setIsDeleteModalOpen(false);
+					setSelectedProject(null);
+				}}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</div>
 	);
 };
