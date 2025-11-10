@@ -1,9 +1,9 @@
 import Heading from "../../components/Heading/Heading";
 import React from "react";
 import Text from "../../components/Text/Text";
-import { useProject } from "../../contexts/ProjectContext";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ProjectSetupWizard } from "./ProjectSetupWizard";
+import { RenovationPhases } from "./RenovationPhases";
+import { AISuggestions } from "./AISuggestion";
 
 const Planning: React.FC = () => {
   const { selectedProject } = useProject();
@@ -30,16 +30,17 @@ const Planning: React.FC = () => {
   return (
     <div>
       <Heading level={1}>Planning the work</Heading>
-      <Text className="text-gray-600 mb-6">
-        Set up your renovation plan, timeline, and permits step by step for{" "}
-        <span className="font-medium">{selectedProject.name}</span>.
+      <Text className="text-gray-600">
+        Set up your renovation plan, timeline, and permits step by step.
       </Text>
-
-      {/* Planning content will go here */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <Text className="text-gray-500">
-          Planning tools and timeline will be available here for this project.
-        </Text>
+      <div className="grid grid-cols-3 gap-6 mt-8">
+        <div className="col-span-2 space-y-6">
+          <ProjectSetupWizard />
+          <RenovationPhases />
+        </div>
+        <div>
+          <AISuggestions />
+        </div>
       </div>
     </div>
   );

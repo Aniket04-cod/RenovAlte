@@ -99,7 +99,7 @@ const AppRoutes: React.FC = () => {
                 <AppContent />
               </ProjectProvider>
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/landing" replace />
             )
           }
         />
