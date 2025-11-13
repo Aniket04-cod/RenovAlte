@@ -75,7 +75,7 @@ export const CardContent = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => {
-  return <div className={cn("px-6 py-2", className)} {...props} />;
+  return <div className={cn("px-6 py-6", className)} {...props} />;
 };
 
 // Card Footer component
@@ -86,7 +86,7 @@ export const CardFooter = ({
   return (
     <div
       className={cn(
-        "flex items-center px-6 pb-6 pt-4 border-t border-gray-100",
+        "flex items-center px-6 pb-6 pt-4 mb-4 border-t border-gray-100",
         className
       )}
       {...props}
