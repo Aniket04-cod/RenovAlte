@@ -20,6 +20,13 @@ import {
   BUILDING_TYPES,
   WINDOWS_TYPE_OPTIONS,
   NEIGHBOR_IMPACTS_OPTIONS,
+  FINANCING_PREFERENCE_OPTIONS,
+  INCENTIVE_INTENT_OPTIONS,
+  HERITAGE_PROTECTION,
+  LIVING_DURING_RENOVATION_OPTIONS,
+  ENERGY_CERTIFICATE_RATING_OPTIONS,
+  KNOWN_MAJOR_ISSUES_OPTIONS,
+  SURVEYS_REQUIRED_OPTIONS,
 } from "../../utils/constants";
 import { ProjectPlanData } from "./Planning";
 
@@ -45,6 +52,15 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
   const [insulationType, setInsulationType] = useState("partial");
   const [windowsType, setWindowsType] = useState("single-pane");
   const [neighborImpact, setNeighborImpact] = useState("scaffolding");
+  const [incentiveIntent, setIncentiveIntent] = useState("yes");
+  const [heritageProtection, setHeritageProtection] = useState("no");
+  const [livingDuringRenovation, setLivingDuringRenovation] = useState("no");
+  const [knownMajorIssues, setKnownMajorIssues] = useState("");
+  const [surveysRequired, setSurveysRequired] = useState("");
+  const [energyCertificateRating, setEnergyCertificateRating] =
+    useState("a_plus");
+  const [financingPreference, setFinancingPreference] =
+    useState("personal-savings");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([
     "Energy Efficiency",
   ]);
@@ -69,6 +85,12 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
         windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
         neighborImpact,
+        financingPreference,
+        incentiveIntent,
+        livingDuringRenovation,
+        energyCertificateRating,
+        knownMajorIssues,
+        surveysRequired,
       };
       
       onGeneratePlan(planData);
@@ -111,7 +133,7 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         <CardDescription>
           Choose how you want to set up your renovation project
         </CardDescription>
-        
+
         {/* Mode Selection Tabs */}
         <div className="flex border border-gray-200 rounded-lg p-1 mt-4 bg-gray-50">
           <Button
@@ -138,7 +160,7 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {inputMode === "manual" ? (
           // Manual Input Form
@@ -229,13 +251,86 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="Neighbor impacts">Neighbor impacts</Label>
+                <Label htmlFor="financing preference">
+                  Financing Preference
+                </Label>
+                <Select
+                  value={financingPreference}
+                  options={FINANCING_PREFERENCE_OPTIONS}
+                  onChange={setFinancingPreference}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incentive-intent">Incentive Intent</Label>
+                <Select
+                  value={incentiveIntent}
+                  options={INCENTIVE_INTENT_OPTIONS}
+                  onChange={setIncentiveIntent}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="heritage-protection">
+                  Heritage Protection (Denkmalschutz)
+                </Label>
+                <Select
+                  value={heritageProtection}
+                  options={HERITAGE_PROTECTION}
+                  onChange={setHeritageProtection}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="living-during-renovation">
+                  Living During Renovation
+                </Label>
+                <Select
+                  value={livingDuringRenovation}
+                  options={LIVING_DURING_RENOVATION_OPTIONS}
+                  onChange={setLivingDuringRenovation}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="energy-certificate-rating">
+                  Energy Certificate Available
+                </Label>
+                <Select
+                  value={energyCertificateRating}
+                  options={ENERGY_CERTIFICATE_RATING_OPTIONS}
+                  onChange={setEnergyCertificateRating}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="known-major-issues">Known Major Issues</Label>
+                <Select
+                  value={knownMajorIssues}
+                  options={KNOWN_MAJOR_ISSUES_OPTIONS}
+                  onChange={setKnownMajorIssues}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="surveys-required">Surveys Require</Label>
+                <Select
+                  value={surveysRequired}
+                  options={SURVEYS_REQUIRED_OPTIONS}
+                  onChange={setSurveysRequired}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="Neighbor impacts">Neighbor Impacts</Label>
                 <Select
                   value={neighborImpact}
                   options={NEIGHBOR_IMPACTS_OPTIONS}
                   onChange={setNeighborImpact}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
               {selectedGoals.includes("Heating System") && (
                 <div className="space-y-2">
                   <Label htmlFor="heating-system">Heating System Type</Label>
@@ -248,7 +343,9 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
               )}
               {selectedGoals.includes("Insulation") && (
                 <div className="space-y-2">
-                  <Label htmlFor="insulation-type">Current Insulation Status</Label>
+                  <Label htmlFor="insulation-type">
+                    Current Insulation Status
+                  </Label>
                   <Select
                     value={insulationType}
                     options={INSULATION_OPTIONS}
@@ -272,7 +369,9 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
           // Prompt Input (UI only - not integrated with API yet)
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="ai-prompt">Describe your renovation project</Label>
+              <Label htmlFor="ai-prompt">
+                Describe your renovation project
+              </Label>
               <textarea
                 id="ai-prompt"
                 value={prompt}
@@ -283,16 +382,17 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Tip:</strong> Include details like building type, size, age, budget, location, 
-                and specific renovation goals for better results.
+                <strong>Tip:</strong> Include details like building type, size,
+                age, budget, location, and specific renovation goals for better
+                results.
               </p>
             </div>
           </div>
         )}
 
         {/* Generate Plan Button */}
-        <Button 
-          className="w-full" 
+        <Button
+          className="w-full"
           onClick={handleGeneratePlan}
           disabled={isGenerating || (inputMode === "prompt" && !prompt.trim())}
         >
@@ -304,7 +404,9 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
           ) : (
             <>
               <Sparkles className="w-4 h-4 mr-2" />
-              {inputMode === "manual" ? "Generate Plan" : "Generate Plan from Prompt"}
+              {inputMode === "manual"
+                ? "Generate Plan"
+                : "Generate Plan from Prompt"}
             </>
           )}
         </Button>
