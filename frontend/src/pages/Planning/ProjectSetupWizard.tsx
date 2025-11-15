@@ -21,13 +21,18 @@ import {
   WINDOWS_TYPE_OPTIONS,
   NEIGHBOR_IMPACTS_OPTIONS,
 } from "../../utils/constants";
+import { ProjectPlanData } from "./Planning";
 
 type InputMode = "manual" | "prompt";
 
-export function ProjectSetupWizard() {
+interface ProjectSetupWizardProps {
+  onGeneratePlan: (planData: ProjectPlanData) => void;
+  isGenerating: boolean;
+}
+
+export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetupWizardProps) {
   const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Manual input states
   const [buildingType, setBuildingType] = useState("single-family");
@@ -52,7 +57,7 @@ export function ProjectSetupWizard() {
 
   const handleGeneratePlan = () => {
     if (inputMode === "manual") {
-      const formData = {
+      const planData: ProjectPlanData = {
         buildingType,
         budget,
         startDate,
@@ -60,23 +65,33 @@ export function ProjectSetupWizard() {
         buildingAge,
         buildingSize,
         bundesland,
-        heatingSystem,
-        insulationType,
-        windowsType,
+        heatingSystem: selectedGoals.includes("Heating System") ? heatingSystem : undefined,
+        insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
+        windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
         neighborImpact,
       };
-      console.log("Manual form data:", formData);
-      // Send manual formData to API
+      
+      onGeneratePlan(planData);
     } else {
-      // Prompt mode
-      setIsGenerating(true);
-      console.log("AI Prompt:", prompt);
-      // Send prompt to AI API
-      // Simulate API call
-      setTimeout(() => {
-        setIsGenerating(false);
-        // Handle AI response here
-      }, 2000);
+      // AI Prompt mode - for now just log the prompt and use default manual data
+      console.log("AI Prompt (not integrated yet):", prompt);
+      
+      // For now, use the current manual data even in prompt mode
+      const planData: ProjectPlanData = {
+        buildingType,
+        budget,
+        startDate,
+        goals: selectedGoals,
+        buildingAge,
+        buildingSize,
+        bundesland,
+        heatingSystem: selectedGoals.includes("Heating System") ? heatingSystem : undefined,
+        insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
+        windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
+        neighborImpact,
+      };
+      
+      onGeneratePlan(planData);
     }
   };
 
@@ -254,7 +269,7 @@ export function ProjectSetupWizard() {
             </div>
           </>
         ) : (
-          // Prompt Input
+          // Prompt Input (UI only - not integrated with API yet)
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ai-prompt">Describe your renovation project</Label>
@@ -279,7 +294,7 @@ export function ProjectSetupWizard() {
         <Button 
           className="w-full" 
           onClick={handleGeneratePlan}
-          disabled={inputMode === "prompt" && !prompt.trim()}
+          disabled={isGenerating || (inputMode === "prompt" && !prompt.trim())}
         >
           {isGenerating ? (
             <>
