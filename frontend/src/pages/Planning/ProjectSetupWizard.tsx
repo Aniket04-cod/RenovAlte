@@ -111,6 +111,12 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
         windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
         neighborImpact,
+         financingPreference,
+        incentiveIntent,
+        livingDuringRenovation,
+        energyCertificateRating,
+        knownMajorIssues,
+        surveysRequired,
       };
       
       onGeneratePlan(planData);

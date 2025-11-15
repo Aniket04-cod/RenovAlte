@@ -26,6 +26,12 @@ export interface ProjectPlanData {
   insulationType?: string;
   windowsType?: string;
   neighborImpact: string;
+  financingPreference: string;
+  incentiveIntent: string;
+  livingDuringRenovation: string;
+  energyCertificateRating: string;
+  knownMajorIssues: string;
+  surveysRequired: string;
 }
 
 const Planning: React.FC = () => {
@@ -36,38 +42,46 @@ const Planning: React.FC = () => {
 
   // Function to handle plan generation
   const handleGeneratePlan = async (planData: ProjectPlanData) => {
-    setIsGeneratingPlan(true);
-    setProjectPlan(planData);
-    
-    try {
-      // Send data to backend API
-      const response = await fetch('/api/projects/generate-plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: selectedProject?.id,
-          ...planData
-        }),
-      });
+  setIsGeneratingPlan(true);
+  setProjectPlan(planData);
 
-      if (!response.ok) {
-        throw new Error('Failed to generate plan');
-      }
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        building_type: planData.buildingType,
+        budget: planData.budget,
+        location: planData.bundesland,
+        building_size: planData.buildingSize,
+        renovation_goals: planData.goals,
+        building_age: planData.buildingAge,
+        target_start_date: planData.startDate,
+        financing_preference: planData.financingPreference,
+        incentive_intent: planData.incentiveIntent,
+        living_during_renovation: planData.livingDuringRenovation,
+        heritage_protection: planData.neighborImpact,
+        energy_certificate_available: planData.energyCertificateRating,
+        heating_system_type: planData.heatingSystem,
+        window_type: planData.windowsType,
+        current_insulation_status: planData.insulationType,
+      }),
+    });
 
-      const result = await response.json();
-      console.log('Plan generated successfully:', result);
-      
-      // You can handle the response here - update state, show success message, etc.
-      
-    } catch (error) {
-      console.error('Error generating plan:', error);
-      // Handle error (show error message to user)
-    } finally {
-      setIsGeneratingPlan(false);
+    if (!response.ok) {
+      throw new Error("Failed to generate plan");
     }
-  };
+
+    const result = await response.json();
+    console.log("Plan generated successfully:", result);
+
+  } catch (error) {
+    console.error("Error generating plan:", error);
+  } finally {
+    setIsGeneratingPlan(false);
+  }
+};
+
 
   // Function to save draft
   const handleSaveDraft = async () => {
