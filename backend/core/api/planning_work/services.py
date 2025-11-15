@@ -11,12 +11,13 @@ class GeminiService:
     def __init__(self):
         """Initialize the Gemini service with API key"""
         api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8')
+        api_key = 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8'
         
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-2.5-pro')
     
     def generate_renovation_plan(
         self,
@@ -105,6 +106,7 @@ class GeminiService:
             }
             
         except Exception as e:
+            print('failed')
             return {
                 'success': False,
                 'plan': None,
@@ -586,31 +588,31 @@ Please provide ONLY the JSON output without any additional text or markdown form
                     "id": "geg",
                     "name": "GEG Energy Compliance",
                     "description": "Compliance with the German Building Energy Act (GEG) for energy-efficient renovations.",
-                    "checked": true
+                    "checked": True
                 },
                 {
                     "id": "baug",
                     "name": "Baugenehmigung",
                     "description": "Building permit required for structural changes and major renovations.",
-                    "checked": false
+                    "checked": False
                 },
                 {
                     "id": "architect",
                     "name": "Architect Approval",
                     "description": "Professional architect review and approval for design and structural plans.",
-                    "checked": false
+                    "checked": False
                 },
                 {
                     "id": "energy-cert",
                     "name": "Energy Certificate",
                     "description": "Updated energy performance certificate post-renovation.",
-                    "checked": false
+                    "checked": False
                 },
                 {
                     "id": "heritage",
                     "name": "Heritage Protection Check",
                     "description": "Required if the building is listed or in a protected area.",
-                    "checked": false
+                    "checked": False
                 }
             ],
             "next_steps": ["Contact support for assistance"]

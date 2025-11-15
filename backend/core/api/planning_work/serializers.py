@@ -6,35 +6,35 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
     Serializer for renovation plan generation request
     """
     BUILDING_TYPE_CHOICES = [
-        ('residential', 'Residential'),
-        ('commercial', 'Commercial'),
-        ('industrial', 'Industrial'),
+        ('single-family', 'Single Family Home'),
+        ('multi-family', 'Multi Family Home'),
         ('apartment', 'Apartment'),
+        ('commercial', 'Commercial'),
         ('villa', 'Villa'),
         ('office', 'Office'),
     ]
     
     RENOVATION_GOAL_CHOICES = [
-        ('energy_efficiency', 'Energy Efficiency'),
-        ('insulation', 'Insulation'),
-        ('windows_doors', 'Windows & Doors'),
-        ('heating_system', 'Heating System'),
-        ('solar_panels', 'Solar Panels'),
-        ('bathroom', 'Bathroom'),
-        ('kitchen', 'Kitchen'),
-        ('roof', 'Roof'),
+        ('Energy Efficiency', 'Energy Efficiency'),
+        ('Insulation', 'Insulation'),
+        ('Windows & Doors', 'Windows & Doors'),
+        ('Heating System', 'Heating System'),
+        ('Solar Panels', 'Solar Panels'),
+        ('Bathroom', 'Bathroom'),
+        ('Kitchen', 'Kitchen'),
+        ('Roof', 'Roof'),
     ]
     
     FINANCING_PREFERENCE_CHOICES = [
-        ('personal_savings', 'Personal Savings'),
-        ('bank_loan', 'Bank Loan'),
-        ('kfw_loan', 'KfW Loan'),
+        ('personal-savings', 'Personal Savings'),
+        ('bank-loan', 'Bank Loan'),
+        ('kfw-loan', 'KfW Loan'),
         ('mixed', 'Mixed Financing'),
     ]
     
     INCENTIVE_INTENT_CHOICES = [
-        ('yes_planning', 'Yes, planning to apply'),
-        ('yes_applied', 'Yes, already applied'),
+        ('yes', 'Yes, planning to apply'),
+        ('yes-applied', 'Yes, already applied'),
         ('no', 'No'),
         ('unsure', 'Unsure'),
     ]
@@ -52,9 +52,9 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
     ]
     
     SURVEYS_REQUIRE_CHOICES = [
-        ('energy_audit', 'Energy Audit'),
-        ('structural_assessment', 'Structural Assessment'),
-        ('asbestos_survey', 'Asbestos Survey'),
+        ('energy-audit', 'Energy Audit'),
+        ('structural-assessment', 'Structural Assessment'),
+        ('asbestos-survey', 'Asbestos Survey'),
         ('none', 'None'),
         ('unsure', 'Unsure'),
     ]
@@ -63,15 +63,15 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
         ('gas', 'Gas'),
         ('oil', 'Oil'),
         ('electric', 'Electric'),
-        ('heat_pump', 'Heat Pump'),
-        ('district_heating', 'District Heating'),
+        ('heat-pump', 'Heat Pump'),
+        ('district-heating', 'District Heating'),
         ('other', 'Other'),
     ]
     
     WINDOW_TYPE_CHOICES = [
-        ('single_pane', 'Single-pane'),
-        ('double_pane', 'Double-pane'),
-        ('triple_pane', 'Triple-pane'),
+        ('single-pane', 'Single-pane'),
+        ('double-pane', 'Double-pane'),
+        ('triple-pane', 'Triple-pane'),
         ('mixed', 'Mixed'),
     ]
     
@@ -90,10 +90,42 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
     
     MAJOR_ISSUES_CHOICES = [
         ('mold', 'Mold'),
-        ('water_damage', 'Water damage'),
-        ('structural_cracks', 'Structural cracks'),
-        ('roof_leaks', 'Roof leaks'),
+        ('water-damage', 'Water damage'),
+        ('structural-cracks', 'Structural cracks'),
+        ('roof-leaks', 'Roof leaks'),
         ('none', 'None'),
+    ]
+    
+    BUNDESLAND_CHOICES = [
+        ('baden-wurttemberg', 'Baden-Württemberg'),
+        ('bavaria', 'Bavaria'),
+        ('berlin', 'Berlin'),
+        ('brandenburg', 'Brandenburg'),
+        ('bremen', 'Bremen'),
+        ('hamburg', 'Hamburg'),
+        ('hesse', 'Hesse (Hessen)'),
+        ('lower-saxony', 'Lower Saxony'),
+        ('mecklenburg-vorpommern', 'Mecklenburg-Vorpommern'),
+        ('north-rhine-westphalia', 'North Rhine-Westphalia'),
+        ('rhineland-palatinate', 'Rhineland-Palatinate'),
+        ('saarland', 'Saarland'),
+        ('saxony', 'Saxony'),
+        ('saxony-anhalt', 'Saxony-Anhalt'),
+        ('schleswig-holstein', 'Schleswig-Holstein'),
+        ('thuringia', 'Thuringia'),
+    ]
+    
+    ENERGY_CERTIFICATE_CHOICES = [
+        ('a_plus', 'A+'),
+        ('a', 'A'),
+        ('b', 'B'),
+        ('c', 'C'),
+        ('d', 'D'),
+        ('e', 'E'),
+        ('f', 'F'),
+        ('g', 'G'),
+        ('h', 'H'),
+        ('not-available', 'Not Available'),
     ]
 
     # Required fields
@@ -111,9 +143,9 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
         help_text="Budget for renovation in EUR"
     )
     
-    location = serializers.CharField(
+    location = serializers.ChoiceField(
+        choices=BUNDESLAND_CHOICES,
         required=True,
-        max_length=100,
         help_text="Location (Bundesland) in Germany"
     )
     
@@ -164,11 +196,11 @@ class RenovationPlanRequestSerializer(serializers.Serializer):
     )
     
     # Optional fields
-    energy_certificate_available = serializers.CharField(
+    energy_certificate_available = serializers.ChoiceField(
+        choices=ENERGY_CERTIFICATE_CHOICES,
         required=False,
         allow_blank=True,
-        max_length=10,
-        help_text="Energy certificate grade (e.g., A+, B, C)"
+        help_text="Energy certificate grade"
     )
     
     surveys_require = serializers.ChoiceField(

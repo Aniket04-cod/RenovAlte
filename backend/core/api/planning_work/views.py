@@ -77,7 +77,9 @@ def generate_renovation_plan(request):
         else:
             try:
                 gemini_service = GeminiService()
+                print("Using GeminiService")
             except ValueError as e:
+                print(f"GeminiService initialization failed: {e}")
                 # Fallback to mock service if API key not configured
                 logger.warning(f"Gemini API key not configured: {e}. Using mock service.")
                 gemini_service = MockGeminiService()
@@ -104,9 +106,16 @@ def generate_renovation_plan(request):
             window_type=validated_data.get('window_type'),
             known_major_issues=validated_data.get('known_major_issues')
         )
-        print("Result from GeminiService:")
-        print(type(result['plan']))
-        print(result['plan'])
+        print("=" * 50)
+        print("DEBUG: Result from generate_renovation_plan")
+        print("=" * 50)
+        print(f"Type of result: {type(result)}")
+        print(f"Result keys: {result.keys() if isinstance(result, dict) else 'Not a dict'}")
+        print(f"Success: {result.get('success') if isinstance(result, dict) else 'N/A'}")
+        print(f"Plan is None: {result.get('plan') is None if isinstance(result, dict) else 'N/A'}")
+        print(f"Plan type: {type(result.get('plan')) if isinstance(result, dict) else 'N/A'}")
+        print(f"Full result: {result}")
+        print("=" * 50)
         # Serialize response
         response_serializer = RenovationPlanResponseSerializer(data=result)
         
