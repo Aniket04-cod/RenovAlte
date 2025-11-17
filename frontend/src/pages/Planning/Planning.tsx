@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight, Download, Save } from "lucide-react";
 import { TimelineGantt } from "./TimelineGantt";
 import { Button } from "../../components/Button/Button";
 import { PermitChecklist } from "./PermitChecklist";
-import { BudgetPreview } from "./BudgetPreview";
+/* import { BudgetPreview } from "./BudgetPreview"; */
 import { CollaborationArea } from "./CollaborationArea";
 
 // Define the project data interface
@@ -34,54 +34,68 @@ export interface ProjectPlanData {
   surveysRequired: string;
 }
 
-const Planning: React.FC = () => {
+// API Response interfaces
+interface ApiPlanResponse {
+  success: boolean;
+  plan: {
+    phases: any[];
+    gantt_chart: any[];
+    permits: any[];
+    stakeholders: any[];
+    // ... other fields
+  };
+  // ... other fields
+}
+
+export function Planning() {
   const { selectedProject } = useProject();
   const navigate = useNavigate();
   const [projectPlan, setProjectPlan] = useState<ProjectPlanData | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [apiPlanData, setApiPlanData] = useState<ApiPlanResponse | null>(null);
 
   // Function to handle plan generation
   const handleGeneratePlan = async (planData: ProjectPlanData) => {
-  setIsGeneratingPlan(true);
-  setProjectPlan(planData);
+    setIsGeneratingPlan(true);
+    setProjectPlan(planData);
 
-  try {
-    const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        building_type: planData.buildingType,
-        budget: planData.budget,
-        location: planData.bundesland,
-        building_size: planData.buildingSize,
-        renovation_goals: planData.goals,
-        building_age: planData.buildingAge,
-        target_start_date: planData.startDate,
-        financing_preference: planData.financingPreference,
-        incentive_intent: planData.incentiveIntent,
-        living_during_renovation: planData.livingDuringRenovation,
-        heritage_protection: planData.neighborImpact,
-        energy_certificate_available: planData.energyCertificateRating,
-        heating_system_type: planData.heatingSystem,
-        window_type: planData.windowsType,
-        current_insulation_status: planData.insulationType,
-      }),
-    });
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          building_type: planData.buildingType,
+          budget: planData.budget,
+          location: planData.bundesland,
+          building_size: planData.buildingSize,
+          renovation_goals: planData.goals,
+          building_age: planData.buildingAge,
+          target_start_date: planData.startDate,
+          financing_preference: planData.financingPreference,
+          incentive_intent: planData.incentiveIntent,
+          living_during_renovation: planData.livingDuringRenovation,
+          heritage_protection: planData.neighborImpact,
+          energy_certificate_available: planData.energyCertificateRating,
+          heating_system_type: planData.heatingSystem,
+          window_type: planData.windowsType,
+          current_insulation_status: planData.insulationType,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to generate plan");
+      if (!response.ok) {
+        throw new Error("Failed to generate plan");
+      }
+
+      const result: ApiPlanResponse = await response.json();
+      console.log("Plan generated successfully:", result);
+      setApiPlanData(result);
+
+    } catch (error) {
+      console.error("Error generating plan:", error);
+    } finally {
+      setIsGeneratingPlan(false);
     }
-
-    const result = await response.json();
-    console.log("Plan generated successfully:", result);
-
-  } catch (error) {
-    console.error("Error generating plan:", error);
-  } finally {
-    setIsGeneratingPlan(false);
-  }
-};
-
+  };
 
   // Function to save draft
   const handleSaveDraft = async () => {
@@ -184,16 +198,22 @@ const Planning: React.FC = () => {
             onGeneratePlan={handleGeneratePlan}
             isGenerating={isGeneratingPlan}
           />
-          <RenovationPhases />
-          <TimelineGantt />
+          
+          {/* Show components only when API data is available */}
+          {apiPlanData && (
+            <>
+              <RenovationPhases phases={apiPlanData.plan.phases} />
+              <TimelineGantt tasks={apiPlanData.plan.gantt_chart} />
 
-          <div className="grid grid-cols-2 gap-6">
-            <PermitChecklist />
-            <div className="space-y-6">
-              <BudgetPreview />
-              <CollaborationArea />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-6">
+                <PermitChecklist permits={apiPlanData.plan.permits} />
+                <div className="space-y-6">
+                 {/*  <BudgetPreview /> */}
+                  <CollaborationArea stakeholders={apiPlanData.plan.stakeholders} />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Footer Buttons */}
           <div className="flex items-center gap-3 pt-6 border-t">
@@ -230,6 +250,6 @@ const Planning: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Planning;

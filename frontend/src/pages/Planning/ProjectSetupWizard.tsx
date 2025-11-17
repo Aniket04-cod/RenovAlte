@@ -123,11 +123,11 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
     }
   };
 
-  const handlePromptSubmit = () => {
+/*   const handlePromptSubmit = () => {
     if (prompt.trim()) {
       handleGeneratePlan();
     }
-  };
+  }; */
 
   return (
     <Card>

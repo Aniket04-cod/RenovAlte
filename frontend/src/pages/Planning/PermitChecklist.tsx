@@ -3,40 +3,22 @@ import { Checkbox } from '../../components/Input/Checkbox';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../../components/Card/HoverCard';
 import { Info } from 'lucide-react';
 
-const permits = [
-  {
-    id: 'geg',
-    name: 'GEG Energy Compliance',
-    description: 'Compliance with the German Building Energy Act (GEG) for energy-efficient renovations.',
-    checked: true,
-  },
-  {
-    id: 'baug',
-    name: 'Baugenehmigung',
-    description: 'Building permit required for structural changes and major renovations.',
-    checked: false,
-  },
-  {
-    id: 'architect',
-    name: 'Architect Approval',
-    description: 'Professional architect review and approval for design and structural plans.',
-    checked: false,
-  },
-  {
-    id: 'energy-cert',
-    name: 'Energy Certificate',
-    description: 'Updated energy performance certificate post-renovation.',
-    checked: false,
-  },
-  {
-    id: 'heritage',
-    name: 'Heritage Protection Check',
-    description: 'Required if the building is listed or in a protected area.',
-    checked: false,
-  },
-];
+interface Permit {
+  id: string;
+  name: string;
+  description: string;
+  checked: boolean;
+}
 
-export function PermitChecklist() {
+interface PermitChecklistProps {
+  permits?: Permit[];
+}
+
+export function PermitChecklist({ permits = [] }: PermitChecklistProps) {
+  if (permits.length === 0) {
+    return null; // Don't render if no permits
+  }
+
   return (
     <Card>
       <CardHeader>

@@ -1,17 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/Card/Card";
 
-const tasks = [
-  { id: 1, name: 'Site Inspection', start: 5, duration: 10, color: 'bg-emerald-500' },
-  { id: 2, name: 'Energy Audit', start: 15, duration: 7, color: 'bg-blue-500' },
-  { id: 3, name: 'Permit Preparation', start: 22, duration: 14, color: 'bg-amber-500' },
-  { id: 4, name: 'Contractor Selection', start: 36, duration: 21, color: 'bg-purple-500' },
-  { id: 5, name: 'Implementation', start: 57, duration: 56, color: 'bg-rose-500' },
-  { id: 6, name: 'Final Inspection', start: 113, duration: 7, color: 'bg-gray-500' },
-];
+interface Task {
+  id: number;
+  name: string;
+  start: number;
+  duration: number;
+  color: string;
+}
+
+interface TimelineGanttProps {
+  tasks?: Task[];
+}
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
-export function TimelineGantt() {
+export function TimelineGantt({ tasks = [] }: TimelineGanttProps) {
+  if (tasks.length === 0) {
+    return null; // Don't render if no tasks
+  }
+
   return (
     <Card className="col-span-3">
       <CardHeader>
