@@ -4,35 +4,16 @@
  */
 
 import { FinancingOption, SelectOption, FormData } from '../types/financing.types';
-<<<<<<< HEAD
-=======
 // Import PROJECT_TYPES from projects service to ensure consistency
 import { PROJECT_TYPES } from '../services/projects';
->>>>>>> dev
 
 // ============================================================================
 // Form Options
 // ============================================================================
 
-<<<<<<< HEAD
-export const RENOVATION_TYPE_OPTIONS: SelectOption[] = [
-  { value: 'kitchen', label: 'Kitchen Renovation' },
-  { value: 'bathroom', label: 'Bathroom Renovation' },
-  { value: 'furniture', label: 'Furniture & Interior' },
-  { value: 'heating', label: 'Heating System' },
-  { value: 'insulation', label: 'Insulation' },
-  { value: 'windows', label: 'Windows & Doors' },
-  { value: 'solar', label: 'Solar Panels' },
-  { value: 'accessibility', label: 'Accessibility/Barrier-Free' },
-  { value: 'energy-efficiency', label: 'Energy Efficiency' },
-  { value: 'complete-renovation', label: 'Complete Renovation' },
-  { value: 'extension', label: 'Extension/Addition' }
-];
-=======
 // Use the EXACT same project types as the Project creation form
 // This ensures perfect 1:1 mapping when auto-filling from a selected project
 export const RENOVATION_TYPE_OPTIONS: SelectOption[] = PROJECT_TYPES;
->>>>>>> dev
 
 export const BUDGET_OPTIONS: SelectOption[] = [
   { value: 'under-10k', label: 'Under €10,000' },
@@ -371,11 +352,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     eligibility: ['Homeowners', 'First-time buyers', 'Landlords'],
     interestRate: '0.01% - 1.5%',
     maxAmount: '€150,000',
-<<<<<<< HEAD
-    renovationTypes: ['energy-efficiency', 'heating', 'insulation', 'windows', 'complete-renovation'],
-=======
     renovationTypes: ['electrical', 'hvac', 'plumbing', 'windows_doors', 'roofing', 'general'],
->>>>>>> dev
     incomeRequirement: 'all',
     link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Energieeffizient-sanieren/',
     advantages: ['Very low interest rates', 'Long repayment terms', 'Grant option available']
@@ -388,11 +365,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     description: 'Direct grant for energy-efficient renovations, no repayment required',
     eligibility: ['Homeowners', 'Landlords'],
     maxAmount: '€75,000',
-<<<<<<< HEAD
-    renovationTypes: ['energy-efficiency', 'heating', 'insulation', 'windows', 'solar'],
-=======
     renovationTypes: ['electrical', 'hvac', 'plumbing', 'windows_doors', 'roofing'],
->>>>>>> dev
     incomeRequirement: 'all',
     link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Energieeffizient-sanieren/',
     advantages: ['No repayment needed', 'Up to 50% subsidy', 'Combined with loan possible']
@@ -406,11 +379,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     eligibility: ['First-time buyers', 'Homeowners'],
     interestRate: '0.75% - 2.5%',
     maxAmount: '€120,000',
-<<<<<<< HEAD
-    renovationTypes: ['complete-renovation', 'energy-efficiency', 'new-construction'],
-=======
     renovationTypes: ['general', 'electrical', 'hvac', 'roofing', 'windows_doors'],
->>>>>>> dev
     incomeRequirement: 'all',
     link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/',
     advantages: ['Low interest rate', 'Long-term financing', 'Flexible repayment']
@@ -423,11 +392,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     description: 'Grant for replacing heating systems with renewable energy sources',
     eligibility: ['Homeowners', 'Landlords'],
     maxAmount: '€70,000',
-<<<<<<< HEAD
-    renovationTypes: ['heating', 'energy-efficiency', 'solar'],
-=======
     renovationTypes: ['hvac', 'plumbing', 'electrical'],
->>>>>>> dev
     incomeRequirement: 'all',
     link: 'https://www.bafa.de/',
     advantages: ['Up to 40% subsidy', 'Quick processing', 'Can be combined with KfW programs']
@@ -440,11 +405,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     description: 'Regional support programs for housing renovation (varies by state)',
     eligibility: ['Homeowners', 'Low-income households'],
     maxAmount: '€30,000',
-<<<<<<< HEAD
-    renovationTypes: ['bathroom', 'kitchen', 'accessibility', 'complete-renovation', 'furniture'],
-=======
     renovationTypes: ['bathroom', 'kitchen', 'basement', 'flooring', 'general'],
->>>>>>> dev
     incomeRequirement: 'medium-low',
     link: 'https://www.foerderdatenbank.de/',
     advantages: ['Local support', 'Flexible requirements', 'Can combine with federal programs']
@@ -457,11 +418,7 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     description: 'Grant for making homes accessible and barrier-free',
     eligibility: ['Homeowners', 'Tenants', 'Landlords'],
     maxAmount: '€6,250',
-<<<<<<< HEAD
-    renovationTypes: ['accessibility', 'bathroom', 'complete-renovation'],
-=======
     renovationTypes: ['bathroom', 'general', 'flooring'],
->>>>>>> dev
     incomeRequirement: 'all',
     link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Altersgerecht-Umbauen/',
     advantages: ['No repayment', 'For all ages', 'Easy application']
@@ -475,29 +432,12 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     eligibility: ['Homeowners with good credit'],
     interestRate: '3% - 6%',
     maxAmount: '€100,000',
-<<<<<<< HEAD
-    renovationTypes: ['kitchen', 'bathroom', 'furniture', 'complete-renovation', 'extension'],
-=======
     renovationTypes: ['kitchen', 'bathroom', 'flooring', 'basement', 'exterior', 'general'],
->>>>>>> dev
     incomeRequirement: 'medium-high',
     link: '#',
     advantages: ['Flexible use', 'Quick approval', 'Available from most banks']
   },
   {
-<<<<<<< HEAD
-    id: 'solar-subsidy',
-    name: 'Solar Panel Installation Subsidy',
-    type: 'subsidy',
-    provider: 'State Energy Programs',
-    description: 'Financial support for installing solar panels and storage systems',
-    eligibility: ['Homeowners', 'Landlords'],
-    maxAmount: '€50,000',
-    renovationTypes: ['solar', 'energy-efficiency'],
-    incomeRequirement: 'all',
-    link: 'https://www.solaranlagen-portal.com/foerderung',
-    advantages: ['Significant subsidy', 'Reduce energy costs', 'Environmental benefits']
-=======
     id: 'windows-doors-program',
     name: 'Windows & Doors Renovation Program',
     type: 'subsidy',
@@ -509,7 +449,6 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     incomeRequirement: 'all',
     link: 'https://www.kfw.de/',
     advantages: ['Significant subsidy', 'Reduce energy costs', 'Improve property value']
->>>>>>> dev
   }
 ];
 
