@@ -129,3 +129,18 @@ REST_FRAMEWORK = {
 }
 
 
+# Media files (uploaded offer letters)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Absolute site URL for building links in emails (set to your dev/prod URL)
+SITE_URL = "http://localhost:8000"
+
+# Default sender for outgoing emails (set to a valid sender in production)
+DEFAULT_FROM_EMAIL = "no-reply@example.com"
+
+# During development it's convenient to print outgoing emails to the console
+if DEBUG:
+	EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+

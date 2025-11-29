@@ -1,6 +1,15 @@
 from rest_framework import generics, permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.conf import settings
+
 from core.models import Contractor
+from core.models.project import Project
+from core.models.offer import Offer
 from .serializers import ContractorSerializer
 
 
@@ -60,4 +69,35 @@ class ContractorListView(generics.ListAPIView):
 
 		# Order by rating (descending), then by name
 		return queryset.order_by("-rating", "name")
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_upload_links(request):
+	"""Generate one-time upload links for selected contractors for a project.
+
+	Expected JSON body: { projectId: number, contractorIds: number[] }
+	Returns: { links: [{ contractorId, offerId, uploadUrl }, ...] }
+	"""
+	project_id = request.data.get("projectId")
+	contractor_ids = request.data.get("contractorIds", [])
+
+	if not project_id or not isinstance(contractor_ids, (list, tuple)) or len(contractor_ids) == 0:
+		return Response({"detail": "projectId and contractorIds are required"}, status=400)
+
+	project = get_object_or_404(Project, pk=project_id)
+
+	results = []
+	site = getattr(settings, "SITE_URL", "http://localhost:8000").rstrip("/")
+
+	for cid in contractor_ids:
+		contractor = get_object_or_404(Contractor, pk=cid)
+		offer, _created = Offer.objects.get_or_create(contractor=contractor, project=project, defaults={"user": request.user})
+		# Ensure offer has a token
+		token = offer.token or offer.generate_upload_token()
+		upload_path = reverse("core:upload_offer", args=[str(token)])
+		upload_url = site + upload_path
+		results.append({"contractorId": cid, "offerId": offer.id, "uploadUrl": upload_url})
+
+	return Response({"links": results})
 

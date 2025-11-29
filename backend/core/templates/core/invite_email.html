@@ -1,0 +1,11 @@
+<p>Hello {{ contractor.get_full_name|default:contractor }},</p>
+
+<p>
+  Please upload your offer letter for project
+  <strong>{{ offer.project }}</strong> using the secure link below (expires
+  after upload):
+</p>
+
+<p><a href="{{ upload_link }}">{{ upload_link }}</a></p>
+
+<p>If you have trouble, reply to this email.</p>
