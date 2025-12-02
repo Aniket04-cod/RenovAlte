@@ -3,6 +3,7 @@
 # NOTE: This is just temporary settings for development. For production, we will use a more secure settings file.
 # --------------------------------------------------------------------------------------------------------------
 
+import os
 from pathlib import Path
 
 
@@ -127,5 +128,10 @@ REST_FRAMEWORK = {
 		"rest_framework.permissions.IsAuthenticatedOrReadOnly",
 	],
 }
+
+# Google Gemini API Configuration
+# The API key can be set via environment variable GOOGLE_API_KEY or directly in settings
+# Environment variable takes precedence over settings value
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", 'AIzaSyDv86b80wUPJgzTSUBdHivmjCqyr41LTh8')
 
 

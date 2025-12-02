@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
 import { contractorApi, Contractor } from "../../services/contractors";
-import { PROJECT_TYPES, Project } from "../../services/projects";
-import { Star, MapPin, CheckCircle2, Loader2, X, Users, Sparkles, ChevronDown } from "lucide-react";
+import { Project } from "../../services/projects";
+import { Star, MapPin, CheckCircle2, Loader2, X, Users, ChevronDown } from "lucide-react";
 
 interface MatchingStepProps {
 	selectedProject: Project;
@@ -24,8 +24,6 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [visibleContractorsCount, setVisibleContractorsCount] = useState(3);
-	const [contractorDescriptions, setContractorDescriptions] = useState<Map<number, string>>(new Map());
-	const [generatingDescriptions, setGeneratingDescriptions] = useState<Set<number>>(new Set());
 	
 	// Use ref to store callback to avoid re-render loops
 	const onContractorsLoadedRef = useRef(onContractorsLoaded);
@@ -58,7 +56,6 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 						onContractorsLoadedRef.current(data);
 					}
 					setVisibleContractorsCount(3); // Reset pagination when loading new contractors
-					setContractorDescriptions(new Map()); // Clear descriptions
 				}
 			} catch (err) {
 				if (isMounted) {
@@ -77,104 +74,6 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 			isMounted = false;
 		};
 	}, [selectedProject?.id, selectedProject?.project_type, selectedProject?.city, selectedProject?.postal_code, selectedProject?.state]);
-
-	const generateWhyThisContractor = useCallback(async (contractor: Contractor): Promise<string> => {
-		if (!selectedProject) return "";
-
-		// Simulate AI generation with a smart template-based approach
-		// In production, this would call an actual AI API
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				const reasons: string[] = [];
-				const projectTypeLabel = PROJECT_TYPES.find((pt) => pt.value === selectedProject.project_type)?.label || selectedProject.project_type;
-
-				// Analyze contractor attributes and generate personalized reasons
-				const rating = contractor.rating !== null && contractor.rating !== undefined ? Number(contractor.rating) : null;
-				if (rating && rating >= 4.5) {
-					reasons.push(`Excellent rating of ${rating.toFixed(1)}/5.0 with ${contractor.reviews_count} reviews`);
-				} else if (rating && rating >= 4.0) {
-					reasons.push(`Strong rating of ${rating.toFixed(1)}/5.0`);
-				}
-
-				if (contractor.years_in_business && contractor.years_in_business >= 10) {
-					reasons.push(`${contractor.years_in_business} years of proven experience in the industry`);
-				} else if (contractor.years_in_business && contractor.years_in_business >= 5) {
-					reasons.push(`Established business with ${contractor.years_in_business} years of experience`);
-				}
-
-				if (contractor.specializations) {
-					const specializations = contractor.specializations.toLowerCase();
-					if (specializations.includes(selectedProject.project_type) || 
-					    specializations.includes(projectTypeLabel.toLowerCase())) {
-						reasons.push(`Specializes in ${projectTypeLabel} projects`);
-					} else if (contractor.specializations) {
-						reasons.push(`Offers specialized services: ${contractor.specializations.substring(0, 100)}${contractor.specializations.length > 100 ? '...' : ''}`);
-					}
-				}
-
-				if (contractor.kfw_eligible) {
-					reasons.push(`KfW eligible, which can help with financing options for your project`);
-				}
-
-				if (contractor.city && contractor.state && 
-				    selectedProject.city && selectedProject.state &&
-				    contractor.city.toLowerCase() === selectedProject.city.toLowerCase() &&
-				    contractor.state.toLowerCase() === selectedProject.state.toLowerCase()) {
-					reasons.push(`Local contractor based in ${contractor.city}, ensuring quick response times and local expertise`);
-				} else if (contractor.city && contractor.state) {
-					reasons.push(`Located in ${contractor.city}, ${contractor.state}, providing regional knowledge`);
-				}
-
-				if (contractor.certifications) {
-					reasons.push(`Certified professional with ${contractor.certifications.substring(0, 80)}${contractor.certifications.length > 80 ? '...' : ''}`);
-				}
-
-				if (contractor.business_size) {
-					const size = contractor.business_size.toLowerCase();
-					if (size.includes('large') || size.includes('established')) {
-						reasons.push(`Established ${contractor.business_size} business with resources to handle complex projects`);
-					} else if (size.includes('small') || size.includes('local')) {
-						reasons.push(`${contractor.business_size} business offering personalized attention and competitive pricing`);
-					}
-				}
-
-				// Generate final description
-				let description = `This contractor is well-suited for your ${projectTypeLabel} project`;
-				if (reasons.length > 0) {
-					description += ` because:\n\n`;
-					reasons.forEach((reason, index) => {
-						description += `${index + 1}. ${reason}\n`;
-					});
-				} else {
-					description += `. They offer professional services and have experience in the renovation industry.`;
-				}
-
-				resolve(description);
-			}, 800); // Simulate AI processing time
-		});
-	}, [selectedProject]);
-
-	const handleGenerateDescription = useCallback(async (contractor: Contractor) => {
-		if (!contractor.id || contractorDescriptions.has(contractor.id)) return;
-
-		setGeneratingDescriptions((prev) => new Set(prev).add(contractor.id!));
-		try {
-			const description = await generateWhyThisContractor(contractor);
-			setContractorDescriptions((prev) => {
-				const newMap = new Map(prev);
-				newMap.set(contractor.id!, description);
-				return newMap;
-			});
-		} catch (err) {
-			console.error("Failed to generate description:", err);
-		} finally {
-			setGeneratingDescriptions((prev) => {
-				const newSet = new Set(prev);
-				newSet.delete(contractor.id!);
-				return newSet;
-			});
-		}
-	}, [contractorDescriptions, generateWhyThisContractor]);
 
 	const handleLoadMore = () => {
 		setVisibleContractorsCount((prev) => Math.min(prev + 3, contractors.length));
@@ -314,9 +213,6 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 								{contractors.slice(0, visibleContractorsCount).map((contractor) => {
 									const isSelected = contractor.id !== undefined && selectedContractors.has(contractor.id);
-									const hasDescription = contractor.id !== undefined && contractorDescriptions.has(contractor.id);
-									const isGenerating = contractor.id !== undefined && generatingDescriptions.has(contractor.id);
-									const description = contractor.id !== undefined ? contractorDescriptions.get(contractor.id) : null;
 
 									return (
 										<div
@@ -378,41 +274,6 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 													</Text>
 												</div>
 											)}
-
-											{/* AI Generated "Why this contractor" Section */}
-											<div className="mb-2 sm:mb-3">
-												{!hasDescription && !isGenerating && (
-													<button
-														onClick={(e) => {
-															e.stopPropagation();
-															handleGenerateDescription(contractor);
-														}}
-														className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm text-emerald-600 hover:text-emerald-700 font-medium py-2 px-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
-													>
-														<Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-														<span>Why this contractor?</span>
-													</button>
-												)}
-												{isGenerating && (
-													<div className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-600 py-2 px-3 bg-gray-50 rounded-lg">
-														<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-emerald-600" />
-														<span>Generating insights...</span>
-													</div>
-												)}
-												{hasDescription && description && (
-													<div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-3">
-														<div className="flex items-start gap-2 mb-2">
-															<Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-															<Text className="text-xs font-semibold text-emerald-900 uppercase tracking-wide">
-																Why this contractor?
-															</Text>
-														</div>
-														<Text className="text-xs sm:text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-															{description}
-														</Text>
-													</div>
-												)}
-											</div>
 
 											<div className="flex items-center gap-2 flex-wrap">
 												{contractor.years_in_business && (
