@@ -17,8 +17,9 @@ class GeminiService:
             # Fallback for local dev if env var not set (Note: In production, always use env var)
             # This key should be revoked if exposed publicly
             print('static api')
-            api_key = 'AIzaSyAsz-WVpqz_8-NhRIyjrnOW7R9Y9f-NGKo'
-        
+            api_key = 'Place your key here'
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.5-pro')
 
