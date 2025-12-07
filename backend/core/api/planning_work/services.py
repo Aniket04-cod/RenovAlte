@@ -16,10 +16,11 @@ class GeminiService:
         if not api_key:
             # Fallback for local dev if env var not set (Note: In production, always use env var)
             # This key should be revoked if exposed publicly
-            api_key = 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8'
+            print('static api')
+            api_key = 'AIzaSyAsz-WVpqz_8-NhRIyjrnOW7R9Y9f-NGKo'
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-pro')
 
     def generate_next_question(self, current_answers: Dict[str, Any]) -> Dict[str, Any]:
         """
