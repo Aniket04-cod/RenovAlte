@@ -11,6 +11,13 @@ urlpatterns = [
         name='generate_plan'
     ),
     
+        # NEW: Dynamic Question Endpoint
+    path(
+        'next-question/',
+        views.generate_next_question,
+        name='generate_next_question'
+    ),
+
     # Helper endpoints for dropdowns/selects
     path(
         'building-types/',

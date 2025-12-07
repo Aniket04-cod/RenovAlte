@@ -13,6 +13,8 @@ interface TimelineGanttProps {
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+// Assuming 6 months timeline, approximately 180 days (6 * 30)
+const TOTAL_TIMELINE_DAYS = 180;
 
 export function TimelineGantt({ tasks = [] }: TimelineGanttProps) {
   if (tasks.length === 0) {
@@ -46,22 +48,33 @@ export function TimelineGantt({ tasks = [] }: TimelineGanttProps) {
 
             {/* Task bars */}
             <div className="space-y-3 relative">
-              {tasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-4 h-10">
-                  <div className="w-44 text-sm">{task.name}</div>
-                  <div className="flex-1 relative">
-                    <div
-                      className={`absolute h-8 ${task.color} rounded flex items-center px-3 text-white text-xs shadow-sm`}
-                      style={{
-                        left: `${(task.start / 120) * 100}%`,
-                        width: `${(task.duration / 120) * 100}%`,
-                      }}
-                    >
-                      {task.duration} days
+              {tasks.map((task) => {
+                // Calculate position and width based on TOTAL_TIMELINE_DAYS
+                const leftPercent = (task.start / TOTAL_TIMELINE_DAYS) * 100;
+                const widthPercent =
+                  (task.duration / TOTAL_TIMELINE_DAYS) * 100;
+
+                return (
+                  <div key={task.id} className="flex items-center gap-4 h-10">
+                    <div className="w-44 text-sm">{task.name}</div>
+                    <div className="flex-1 relative">
+                      <div
+                        className={`absolute h-8 ${task.color} rounded flex items-center px-3 text-white text-xs shadow-sm`}
+                        style={{
+                          left: `${Math.min(leftPercent, 100)}%`,
+                          width: `${Math.min(
+                            widthPercent,
+                            100 - leftPercent
+                          )}%`,
+                          maxWidth: `${100 - leftPercent}%`, // Ensure it doesn't overflow
+                        }}
+                      >
+                        {task.duration} days
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

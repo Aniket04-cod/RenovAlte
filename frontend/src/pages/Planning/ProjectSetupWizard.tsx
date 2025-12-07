@@ -10,7 +10,15 @@ import { Input } from "../../components/Input/Input";
 import { Label } from "../../components/Label/Ladel";
 import { Select } from "../../components/Select/Select";
 import { Badge } from "../../components/Bagde/Badge";
-import { Calendar, Sparkles, MessageSquare, Settings } from "lucide-react";
+import {
+  Calendar,
+  Sparkles,
+  MessageSquare,
+  Settings,
+  ArrowRight,
+  Check,
+  AlertCircle,
+} from "lucide-react";
 import { useState } from "react";
 import {
   RENOVATIONGOALS,
@@ -37,7 +45,27 @@ interface ProjectSetupWizardProps {
   isGenerating: boolean;
 }
 
-export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetupWizardProps) {
+/** DYNAMIC PART TYPES */
+interface DynamicAnswers {
+  [key: string]: any;
+}
+
+interface AIQuestion {
+  question_id: string;
+  question_text: string;
+  explanation?: string;
+  input_type: "text" | "select" | "number" | "date";
+  options?: { value: string; label: string }[];
+  is_complete?: boolean;
+}
+
+const MIN_QUESTIONS = 5;
+const SAFETY_MAX_LIMIT = 10;
+
+export function ProjectSetupWizard({
+  onGeneratePlan,
+  isGenerating,
+}: ProjectSetupWizardProps) {
   const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [prompt, setPrompt] = useState("");
 
@@ -71,9 +99,116 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
     );
   };
 
+  /** ============ DYNAMIC FLOW STATE (inside manual mode) ============ **/
+
+  type DynamicStep = "off" | "dynamic" | "ready";
+
+  const [dynamicStep, setDynamicStep] = useState<DynamicStep>("off");
+  const [dynamicAnswers, setDynamicAnswers] = useState<DynamicAnswers>({});
+  const [currentQuestion, setCurrentQuestion] = useState<AIQuestion | null>(
+    null
+  );
+  const [currentAnswer, setCurrentAnswer] = useState<string>("");
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
+  const [questionHistory, setQuestionHistory] = useState<AIQuestion[]>([]);
+  const [questionCount, setQuestionCount] = useState(0);
+  const [dynamicError, setDynamicError] = useState<string | null>(null);
+
+  const handleStartDynamicFlow = async () => {
+    // you can re-use selectedGoals from manual as "goals" here
+    if (selectedGoals.length === 0) {
+      alert("Please select at least one renovation goal.");
+      return;
+    }
+    setDynamicStep("dynamic");
+    setDynamicError(null);
+
+    const initialContext: DynamicAnswers = {
+      building_type: buildingType,
+      budget,
+      location: bundesland,
+      goals: selectedGoals,
+    };
+
+    setDynamicAnswers(initialContext);
+    setQuestionHistory([]);
+    setQuestionCount(0);
+    fetchNextQuestion(initialContext, 0);
+  };
+
+  const fetchNextQuestion = async (
+    currentContext: DynamicAnswers,
+    count: number
+  ) => {
+    if (count >= SAFETY_MAX_LIMIT) {
+      setDynamicStep("ready");
+      return;
+    }
+
+    setIsLoadingQuestion(true);
+    setDynamicError(null);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/renovation/next-question/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ current_answers: currentContext }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const questionData: AIQuestion = await response.json();
+
+      if (questionData.is_complete && count >= MIN_QUESTIONS) {
+        setDynamicStep("ready");
+        return;
+      }
+
+      setCurrentQuestion(questionData);
+      setQuestionCount(count + 1);
+      setCurrentAnswer("");
+    } catch (err) {
+      console.error("Error fetching next question:", err);
+      setDynamicError(
+        "Failed to connect to AI Consultant. Please ensure the backend is running."
+      );
+    } finally {
+      setIsLoadingQuestion(false);
+    }
+  };
+
+  const handleAnswerSubmit = () => {
+    if (!currentAnswer && currentQuestion?.input_type !== "select") return;
+
+    const updatedAnswers: DynamicAnswers = {
+      ...dynamicAnswers,
+      [currentQuestion!.question_text]: currentAnswer,
+    };
+
+    setDynamicAnswers(updatedAnswers);
+    setQuestionHistory((prev) => [...prev, currentQuestion!]);
+
+    fetchNextQuestion(updatedAnswers, questionCount);
+  };
+
+  const handleDynamicRetry = () => {
+    fetchNextQuestion(dynamicAnswers, questionCount);
+  };
+
+  const handleDynamicReadySkip = () => {
+    setDynamicStep("ready");
+  };
+
+  /** ================= ORIGINAL GENERATE PLAN ================= */
+
   const handleGeneratePlan = () => {
     if (inputMode === "manual") {
-      const planData: ProjectPlanData = {
+      const basePlan: ProjectPlanData = {
         buildingType,
         budget,
         startDate,
@@ -81,9 +216,15 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         buildingAge,
         buildingSize,
         bundesland,
-        heatingSystem: selectedGoals.includes("Heating System") ? heatingSystem : undefined,
-        insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
-        windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
+        heatingSystem: selectedGoals.includes("Heating System")
+          ? heatingSystem
+          : undefined,
+        insulationType: selectedGoals.includes("Insulation")
+          ? insulationType
+          : undefined,
+        windowsType: selectedGoals.includes("Windows & Doors")
+          ? windowsType
+          : undefined,
         neighborImpact,
         financingPreference,
         incentiveIntent,
@@ -92,12 +233,19 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         knownMajorIssues,
         surveysRequired,
       };
-      
-      onGeneratePlan(planData);
+
+      const finalPlan: ProjectPlanData & {
+        dynamic_answers?: DynamicAnswers;
+      } =
+        dynamicStep === "ready" || questionHistory.length > 0
+          ? { ...basePlan, dynamic_answers: dynamicAnswers }
+          : basePlan;
+
+      onGeneratePlan(finalPlan);
     } else {
       // AI Prompt mode - for now just log the prompt and use default manual data
       console.log("AI Prompt (not integrated yet):", prompt);
-      
+
       // For now, use the current manual data even in prompt mode
       const planData: ProjectPlanData = {
         buildingType,
@@ -107,18 +255,24 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
         buildingAge,
         buildingSize,
         bundesland,
-        heatingSystem: selectedGoals.includes("Heating System") ? heatingSystem : undefined,
-        insulationType: selectedGoals.includes("Insulation") ? insulationType : undefined,
-        windowsType: selectedGoals.includes("Windows & Doors") ? windowsType : undefined,
+        heatingSystem: selectedGoals.includes("Heating System")
+          ? heatingSystem
+          : undefined,
+        insulationType: selectedGoals.includes("Insulation")
+          ? insulationType
+          : undefined,
+        windowsType: selectedGoals.includes("Windows & Doors")
+          ? windowsType
+          : undefined,
         neighborImpact,
-         financingPreference,
+        financingPreference,
         incentiveIntent,
         livingDuringRenovation,
         energyCertificateRating,
         knownMajorIssues,
         surveysRequired,
       };
-      
+
       onGeneratePlan(planData);
     }
   };
@@ -128,9 +282,8 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
       handleGeneratePlan();
     }
   }; */
-
-  return (
-    <Card>
+    return (
+    <Card className="border-emerald-100 shadow-sm transition-all duration-300">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-emerald-600" />
@@ -370,9 +523,191 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
                 </div>
               )}
             </div>
+
+            {/* ====== DYNAMIC FLOW ENTRY BUTTON ====== */}
+            {dynamicStep === "off" && (
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Optional: Let the AI ask a few targeted questions to refine
+                  your plan.
+                </p>
+                <Button
+                  type="button"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  onClick={handleStartDynamicFlow}
+                >
+                  Start AI Assisted Questions
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* ====== DYNAMIC FLOW CONTENT (inside manual mode) ====== */}
+            {dynamicStep === "dynamic" && (
+              <div className="mt-6 space-y-4 border-t pt-4">
+                {/* progress bar */}
+                <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      questionCount >= MIN_QUESTIONS
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-blue-500"
+                    }`}
+                    style={{
+                      width: `${Math.min(
+                        (questionCount / SAFETY_MAX_LIMIT) * 100,
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-400 mb-2">
+                  <span>Started</span>
+                  {questionCount < MIN_QUESTIONS && (
+                    <span>Min Req: {MIN_QUESTIONS}</span>
+                  )}
+                  {questionCount >= MIN_QUESTIONS && (
+                    <span className="text-emerald-600 font-medium">
+                      Refining details...
+                    </span>
+                  )}
+                </div>
+
+                {questionHistory.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {questionHistory.map((q, idx) => (
+                      <span
+                        key={idx}
+                        className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
+                      >
+                        {q.question_text.substring(0, 18)}...
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Error */}
+                {dynamicError && (
+                  <div className="p-4 bg-red-50 text-red-700 rounded-lg flex flex-col items-center text-center">
+                    <AlertCircle className="w-8 h-8 mb-2" />
+                    <p className="font-medium mb-2">Connection Error</p>
+                    <p className="text-sm mb-4">{dynamicError}</p>
+                    <Button variant="primary" onClick={handleDynamicRetry}>
+                      Try Again
+                    </Button>
+                  </div>
+                )}
+
+                {/* Loading */}
+                {!dynamicError && isLoadingQuestion && (
+                  <div className="animate-pulse space-y-4 py-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                    <div className="h-10 bg-gray-200 rounded mt-2" />
+                  </div>
+                )}
+
+                {/* Question */}
+                {!dynamicError && !isLoadingQuestion && currentQuestion && (
+                  <div className="bg-white border border-emerald-100 rounded-xl p-4 shadow-sm">
+                    <div className="flex gap-3 mb-4">
+                      <div className="bg-emerald-100 p-2 rounded-full h-fit">
+                        <MessageSquare className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-base text-gray-900">
+                          {currentQuestion.question_text}
+                        </h3>
+                        {currentQuestion.explanation && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {currentQuestion.explanation}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      {currentQuestion.input_type === "select" &&
+                      currentQuestion.options ? (
+                        <div className="grid grid-cols-1 gap-2">
+                          {currentQuestion.options.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={() => setCurrentAnswer(opt.value)}
+                              className={`w-full text-left px-4 py-2 rounded-lg border transition-all ${
+                                currentAnswer === opt.value
+                                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-1"
+                                  : "border-gray-200 hover:border-emerald-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <Input
+                          type={
+                            currentQuestion.input_type === "number"
+                              ? "number"
+                              : "text"
+                          }
+                          value={currentAnswer}
+                          onChange={(e) => setCurrentAnswer(e.target.value)}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleAnswerSubmit()
+                          }
+                          placeholder="Type your answer here..."
+                          className="text-base py-3"
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 mt-4">
+                      <Button
+                        variant="primary"
+                        className="flex-1"
+                        onClick={handleAnswerSubmit}
+                        disabled={!currentAnswer}
+                      >
+                        Next
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+
+                    {questionCount >= MIN_QUESTIONS && (
+                      <div className="mt-3 text-center">
+                        <button
+                          type="button"
+                          onClick={handleDynamicReadySkip}
+                          className="text-xs text-gray-400 hover:text-emerald-600 underline"
+                        >
+                          Skip remaining AI questions and use current answers
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* READY STATE inside manual mode */}
+            {dynamicStep === "ready" && (
+              <div className="mt-6 border-t pt-4 text-center">
+                <div className="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Check className="w-5 h-5 text-emerald-600" />
+                </div>
+                <p className="text-sm text-gray-700 mb-1">
+                  AI analysis complete.
+                </p>
+                <p className="text-xs text-gray-500 mb-3">
+                  Collected {questionHistory.length} extra data points. These
+                  will be added to your plan.
+                </p>
+              </div>
+            )}
           </>
         ) : (
-          // Prompt Input (UI only - not integrated with API yet)
+          // Prompt Input
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ai-prompt">
@@ -398,7 +733,7 @@ export function ProjectSetupWizard({ onGeneratePlan, isGenerating }: ProjectSetu
 
         {/* Generate Plan Button */}
         <Button
-          className="w-full"
+          className="w-full mt-4"
           onClick={handleGeneratePlan}
           disabled={isGenerating || (inputMode === "prompt" && !prompt.trim())}
         >
