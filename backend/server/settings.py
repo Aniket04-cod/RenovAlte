@@ -3,10 +3,46 @@
 # NOTE: This is just temporary settings for development. For production, we will use a more secure settings file.
 # --------------------------------------------------------------------------------------------------------------
 
+import os
 from pathlib import Path
+
+# Optionally support loading a local .env file for development (do NOT commit .env)
+try:
+	from dotenv import load_dotenv
+	_DOTENV_AVAILABLE = True
+except Exception:
+	_DOTENV_AVAILABLE = False
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# If python-dotenv is installed, load environment variables from backend/.env
+if _DOTENV_AVAILABLE:
+	try:
+		load_dotenv(str(BASE_DIR / ".env"))
+	except Exception:
+		# Ignore errors loading .env; environment variables may be set elsewhere
+		pass
+else:
+	# If python-dotenv isn't installed, attempt a minimal .env parser so local
+	# backend/.env files still work without adding a dependency. This will
+	# populate os.environ for the running process only.
+	env_path = BASE_DIR / ".env"
+	try:
+		if env_path.exists():
+			with env_path.open() as fh:
+				for raw_line in fh:
+					line = raw_line.strip()
+					if not line or line.startswith("#"):
+						continue
+					if "=" in line:
+						k, v = line.split("=", 1)
+						k = k.strip()
+						v = v.strip().strip('"').strip("'")
+						# Only set if not already in environment
+						os.environ.setdefault(k, v)
+	except Exception:
+		pass
 
 SECRET_KEY = "dev-secret-key"
 
@@ -126,6 +162,14 @@ REST_FRAMEWORK = {
 	"DEFAULT_PERMISSION_CLASSES": [
 		"rest_framework.permissions.IsAuthenticatedOrReadOnly",
 	],
+	"EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
+	"FORMAT_SUFFIX_KWARG": "format",
 }
+
+# Google Gemini API Configuration
+# The API key must be set via environment variable GOOGLE_API_KEY.
+# Do NOT hardcode secrets in source control. For local development you can
+# create a backend/.env file (gitignored) with GOOGLE_API_KEY=your_key_here.
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 
