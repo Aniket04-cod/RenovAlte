@@ -129,7 +129,7 @@ class OptimizedGeminiService:
     
     def __init__(self):
         """Initialize with optimized settings"""
-        api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8')
+        api_key = os.getenv('GEMINI_API_KEY', 'PLACE_YOUR_API')
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         

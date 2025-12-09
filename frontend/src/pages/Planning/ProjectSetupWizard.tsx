@@ -68,6 +68,11 @@ export function ProjectSetupWizard({
 }: ProjectSetupWizardProps) {
   const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [prompt, setPrompt] = useState("");
+  
+  // Chatbot states for prompt mode
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [chatSessionId, setChatSessionId] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   // Manual input states
   const [buildingType, setBuildingType] = useState("single-family");
@@ -202,6 +207,54 @@ export function ProjectSetupWizard({
 
   const handleDynamicReadySkip = () => {
     setDynamicStep("ready");
+  };
+
+  /** ================= CHATBOT FOR PROMPT MODE ================= */
+  const handleSendChatMessage = async () => {
+    if (!prompt.trim()) return;
+
+    // Add user message to chat
+    const userMessage = { role: 'user' as const, content: prompt };
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsChatLoading(true);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/chatbot/message/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          session_id: chatSessionId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Store session_id
+      if (data.session_id) {
+        setChatSessionId(data.session_id);
+      }
+
+      // Add assistant response
+      const assistantMessage = { role: 'assistant' as const, content: data.response };
+      setChatMessages(prev => [...prev, assistantMessage]);
+      
+      // Clear input
+      setPrompt("");
+    } catch (error) {
+      console.error("Chat error:", error);
+      const errorMessage = { 
+        role: 'assistant' as const, 
+        content: "Sorry, I'm having trouble connecting. Please try again." 
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   /** ================= ORIGINAL GENERATE PLAN ================= */
@@ -707,25 +760,75 @@ export function ProjectSetupWizard({
             )}
           </>
         ) : (
-          // Prompt Input
+          // Prompt Input - Chatbot Mode
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ai-prompt">
-                Describe your renovation project
-              </Label>
-              <textarea
-                id="ai-prompt"
+            {/* Chat Messages */}
+            <div className="border border-gray-200 rounded-lg h-96 overflow-y-auto p-4 bg-gray-50 space-y-3">
+              {chatMessages.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-center">
+                  <div>
+                    <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">
+                      Ask me anything about your renovation project
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      I can help with planning, costs, regulations, and financing
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                        msg.role === 'user'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-white border border-gray-200 text-gray-800'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-gray-200 rounded-lg px-4 py-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <div className="flex gap-2">
+              <Input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., I have a 120m² single-family house built in 1995 in Hesse. I want to improve energy efficiency with new insulation and windows, with a budget of €75,000. I'm concerned about neighbor impacts due to scaffolding."
-                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChatMessage()}
+                placeholder="Ask about your renovation project..."
+                className="flex-1"
               />
+              <Button 
+                onClick={handleSendChatMessage} 
+                disabled={!prompt.trim() || isChatLoading}
+                variant="primary"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
             </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Tip:</strong> Include details like building type, size,
-                age, budget, location, and specific renovation goals for better
-                results.
+                <strong>Tip:</strong> Ask about costs, timelines, permits, KfW funding, 
+                or any renovation-related questions specific to Germany.
               </p>
             </div>
           </div>

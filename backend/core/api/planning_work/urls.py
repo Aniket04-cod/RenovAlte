@@ -37,4 +37,5 @@ urlpatterns = [
         views.api_health_check,
         name='health_check'
     ),
+    
 ]
