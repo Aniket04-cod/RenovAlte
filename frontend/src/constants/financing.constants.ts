@@ -3,7 +3,7 @@
  * Centralized configuration and static data
  */
 
-import { FinancingOption, SelectOption, FormData } from '../types/financing.types';
+import { SelectOption, FormData } from '../types/financing.types';
 // Import PROJECT_TYPES from projects service to ensure consistency
 import { PROJECT_TYPES } from '../services/projects';
 
@@ -15,503 +15,1213 @@ import { PROJECT_TYPES } from '../services/projects';
 // This ensures perfect 1:1 mapping when auto-filling from a selected project
 export const RENOVATION_TYPE_OPTIONS: SelectOption[] = PROJECT_TYPES;
 
-export const BUDGET_OPTIONS: SelectOption[] = [
-  { value: 'under-10k', label: 'Under €10,000' },
-  { value: '10k-30k', label: '€10,000 - €30,000' },
-  { value: '30k-50k', label: '€30,000 - €50,000' },
-  { value: '50k-100k', label: '€50,000 - €100,000' },
-  { value: 'over-100k', label: 'Over €100,000' }
-];
-
-export const PROPERTY_TYPE_OPTIONS: SelectOption[] = [
-  { value: 'house', label: 'Single-family House' },
-  { value: 'apartment', label: 'Apartment/Condo' },
-  { value: 'multi-family', label: 'Multi-family House' }
-];
-
-export const INCOME_OPTIONS: SelectOption[] = [
-  { value: 'low', label: 'Under €2,000/month' },
-  { value: 'medium-low', label: '€2,000 - €3,500/month' },
-  { value: 'medium', label: '€3,500 - €5,000/month' },
-  { value: 'medium-high', label: '€5,000 - €7,500/month' },
-  { value: 'high', label: 'Over €7,500/month' }
-];
-
-export const PROPERTY_CONDITION_OPTIONS: SelectOption[] = [
-  { value: 'excellent', label: 'Excellent' },
-  { value: 'good', label: 'Good' },
-  { value: 'average', label: 'Average' },
-  { value: 'poor', label: 'Poor' }
-];
-
-export const TIMELINE_OPTIONS: SelectOption[] = [
-  { value: 'immediate', label: 'Start immediately' },
-  { value: '1-3 months', label: '1-3 months' },
-  { value: '3-6 months', label: '3-6 months' },
-  { value: '6-12 months', label: '6-12 months' }
-];
-
-export const CREDIT_SCORE_OPTIONS: SelectOption[] = [
-  { value: 'excellent', label: 'Excellent (97-100%) - Best rates' },
-  { value: 'good', label: 'Very Good (95-96%) - Approved' },
-  { value: 'fair', label: 'Good (90-94%) - May be approved' },
-  { value: 'poor', label: 'Fair/Poor (<90%) - Difficult' },
-  { value: 'unknown', label: "I don't know my SCHUFA score" }
-];
+// All other form option constants have been removed as they are no longer needed
+// The form now only uses renovationType
 
 // ============================================================================
-// Step 2: Property Details Options
+// Conditional Questions by Renovation Type
 // ============================================================================
 
-export const PROPERTY_AGE_OPTIONS: SelectOption[] = [
-  { value: 'under-5', label: 'Under 5 years (Not eligible for most programs)' },
-  { value: '5-10', label: '5-10 years old' },
-  { value: '10-20', label: '10-20 years old' },
-  { value: '20-30', label: '20-30 years old' },
-  { value: 'pre-1977', label: 'Built before 1977 (Requires Demand Certificate)' },
-  { value: 'dont-know', label: "I don't know" }
-];
+export interface QuestionOption {
+  value: string;
+  label: string;
+  description?: string; // Description shown below the option
+  qualityLevel?: 'budget' | 'standard' | 'premium' | 'luxury'; // Quality tier for materials
+  qualityDescription?: string; // Detailed quality explanation
+}
 
-export const PROPERTY_SIZE_OPTIONS: SelectOption[] = [
-  { value: 'under-50', label: 'Under 50 sqm' },
-  { value: '50-80', label: '50-80 sqm' },
-  { value: '80-120', label: '80-120 sqm' },
-  { value: '120-150', label: '120-150 sqm' },
-  { value: '150-200', label: '150-200 sqm' },
-  { value: 'over-200', label: 'Over 200 sqm' }
-];
-
-export const PROPERTY_CONDITION_EXTENDED_OPTIONS: SelectOption[] = [
-  { value: 'excellent', label: 'Excellent - Recently renovated' },
-  { value: 'good', label: 'Good - Well maintained' },
-  { value: 'average', label: 'Average - Normal wear and tear' },
-  { value: 'poor', label: 'Poor - Needs renovation' },
-  { value: 'very-poor', label: 'Very Poor - Major renovation needed' }
-];
-
-export const GERMAN_STATES_OPTIONS: SelectOption[] = [
-  { value: 'bw', label: 'Baden-Württemberg' },
-  { value: 'by', label: 'Bavaria (Bayern)' },
-  { value: 'be', label: 'Berlin' },
-  { value: 'bb', label: 'Brandenburg' },
-  { value: 'hb', label: 'Bremen' },
-  { value: 'hh', label: 'Hamburg' },
-  { value: 'he', label: 'Hesse (Hessen)' },
-  { value: 'mv', label: 'Mecklenburg-Vorpommern' },
-  { value: 'ni', label: 'Lower Saxony (Niedersachsen)' },
-  { value: 'nw', label: 'North Rhine-Westphalia (NRW)' },
-  { value: 'rp', label: 'Rhineland-Palatinate (Rheinland-Pfalz)' },
-  { value: 'sl', label: 'Saarland' },
-  { value: 'sn', label: 'Saxony (Sachsen)' },
-  { value: 'st', label: 'Saxony-Anhalt (Sachsen-Anhalt)' },
-  { value: 'sh', label: 'Schleswig-Holstein' },
-  { value: 'th', label: 'Thuringia (Thüringen)' }
-];
-
-export const PROPERTY_USE_OPTIONS: SelectOption[] = [
-  { value: 'owner-occupied', label: 'Owner-occupied (I live here) - 5% bonus' },
-  { value: 'rental', label: 'Rental property (Rented out)' },
-  { value: 'mixed', label: 'Mixed use (Partially rented)' }
-];
-
-export const RESIDENTIAL_UNITS_OPTIONS: SelectOption[] = [
-  { value: '1', label: '1 unit (Single-family home/apartment)' },
-  { value: '2', label: '2 units (Duplex)' },
-  { value: '3-4', label: '3-4 units' },
-  { value: '5-10', label: '5-10 units' },
-  { value: 'over-10', label: 'Over 10 units' }
-];
-
-export const ENERGY_RATING_OPTIONS: SelectOption[] = [
-  { value: 'a-plus', label: 'A+ (Best)' },
-  { value: 'a', label: 'A (Excellent)' },
-  { value: 'b', label: 'B (Very Good)' },
-  { value: 'c', label: 'C (Good)' },
-  { value: 'd', label: 'D (Average)' },
-  { value: 'e', label: 'E (Below Average)' },
-  { value: 'f', label: 'F (Poor)' },
-  { value: 'g', label: 'G (Very Poor)' },
-  { value: 'h', label: 'H (Worst)' },
-  { value: 'unknown', label: "I don't know" }
-];
-
-export const YES_NO_UNKNOWN_OPTIONS: SelectOption[] = [
-  { value: 'yes', label: 'Yes' },
-  { value: 'no', label: 'No' },
-  { value: 'unknown', label: "I don't know" }
-];
+export interface Question {
+  id: string;
+  label: string;
+  type: 'select' | 'multiselect' | 'radio' | 'checkbox' | 'number' | 'text';
+  options?: QuestionOption[];
+  required?: boolean;
+  placeholder?: string;
+  unit?: string; // For number fields (e.g., "m²", "€")
+  min?: number; // For number fields
+  max?: number; // For number fields
+  description?: string; // Overall field description/help text
+  sectionTitle?: string; // For grouping questions into sections
+  allowOther?: boolean; // Allow custom "Other" option
+  otherPlaceholder?: string; // Placeholder for "Other" text input
+}
 
 // ============================================================================
-// Step 3: Financial Information Options
+// STEP 1: Area Selection
 // ============================================================================
-
-export const ANNUAL_INCOME_OPTIONS: SelectOption[] = [
-  { value: 'under-30k', label: 'Under €30,000' },
-  { value: '30k-50k', label: '€30,000 - €50,000' },
-  { value: '50k-70k', label: '€50,000 - €70,000' },
-  { value: '70k-90k', label: '€70,000 - €90,000 ⭐ KfW 358 threshold' },
-  { value: 'over-90k', label: 'Over €90,000' }
-];
-
-export const AVAILABLE_SAVINGS_OPTIONS: SelectOption[] = [
-  { value: 'under-5k', label: 'Under €5,000' },
-  { value: '5k-15k', label: '€5,000 - €15,000' },
-  { value: '15k-30k', label: '€15,000 - €30,000' },
-  { value: '30k-50k', label: '€30,000 - €50,000' },
-  { value: 'over-50k', label: 'Over €50,000' }
-];
-
-export const EXISTING_DEBTS_OPTIONS: SelectOption[] = [
-  { value: 'none', label: 'No existing debts' },
-  { value: 'under-50k', label: 'Under €50,000' },
-  { value: '50k-150k', label: '€50,000 - €150,000' },
-  { value: '150k-300k', label: '€150,000 - €300,000' },
-  { value: 'over-300k', label: 'Over €300,000' }
-];
-
-export const MONTHLY_DEBT_OPTIONS: SelectOption[] = [
-  { value: 'none', label: 'None' },
-  { value: 'under-500', label: 'Under €500/month' },
-  { value: '500-1000', label: '€500 - €1,000/month' },
-  { value: '1000-2000', label: '€1,000 - €2,000/month' },
-  { value: 'over-2000', label: 'Over €2,000/month' }
-];
-
-export const EMPLOYMENT_STATUS_OPTIONS: SelectOption[] = [
-  { value: 'permanent', label: 'Permanently employed' },
-  { value: 'self-employed', label: 'Self-employed (Need 3 years tax returns)' },
-  { value: 'temporary', label: 'Temporary contract' },
-  { value: 'retired', label: 'Retired/Pension' },
-  { value: 'unemployed', label: 'Unemployed' },
-  { value: 'other', label: 'Other' }
-];
-
-export const CO_APPLICANT_OPTIONS: SelectOption[] = [
-  { value: 'yes-with-income', label: 'Yes, with additional income' },
-  { value: 'yes-no-income', label: 'Yes, but no additional income' },
-  { value: 'no', label: 'No co-applicant' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' }
-];
-
-// ============================================================================
-// Step 4: Energy & Technical Options
-// ============================================================================
-
-export const HEATING_SYSTEM_OPTIONS: SelectOption[] = [
-  { value: 'gas-boiler', label: 'Gas boiler' },
-  { value: 'oil-boiler', label: 'Oil boiler (High replacement subsidy)' },
-  { value: 'electric', label: 'Electric heating' },
-  { value: 'district-heating', label: 'District heating (Fernwärme)' },
-  { value: 'heat-pump', label: 'Heat pump (Already efficient)' },
-  { value: 'biomass', label: 'Biomass/Pellet' },
-  { value: 'solar-thermal', label: 'Solar thermal' },
-  { value: 'unknown', label: "I don't know" }
-];
-
-export const HEATING_AGE_OPTIONS: SelectOption[] = [
-  { value: '0-10', label: '0-10 years' },
-  { value: '10-20', label: '10-20 years' },
-  { value: 'over-20', label: 'Over 20 years (May be mandatory to replace)' },
-  { value: 'unknown', label: "I don't know" }
-];
-
-export const PLANNED_MEASURES_OPTIONS: SelectOption[] = [
-  { value: 'insulation', label: 'Insulation (walls/roof/floor)' },
-  { value: 'windows-doors', label: 'Windows and doors' },
-  { value: 'heating-system', label: 'Heating system replacement' },
-  { value: 'solar-panels', label: 'Solar panels (PV)' },
-  { value: 'ventilation', label: 'Ventilation system' },
-  { value: 'multiple-measures', label: 'Multiple measures (Best subsidy)' },
-  { value: 'complete-renovation', label: 'Complete energy renovation' }
-];
-
-export const TARGET_EFFICIENCY_OPTIONS: SelectOption[] = [
-  { value: 'eh-40', label: 'Efficiency House 40 (Best - €75,000 grant)' },
-  { value: 'eh-55', label: 'Efficiency House 55 (€56,250 grant)' },
-  { value: 'eh-70', label: 'Efficiency House 70 (€45,000 grant)' },
-  { value: 'eh-85', label: 'Efficiency House 85 (€37,500 grant)' },
-  { value: 'eh-100', label: 'Efficiency House 100' },
-  { value: 'individual-measures', label: 'Individual measures only (15% BAFA)' },
-  { value: 'unknown', label: "I don't know yet" }
-];
-
-export const ENERGY_CONSULTANT_OPTIONS: SelectOption[] = [
-  { value: 'yes', label: 'Yes, already hired' },
-  { value: 'no-will-hire', label: 'No, but will hire (Required for KfW/BAFA)' },
-  { value: 'no-need-recommendation', label: 'No, need recommendation' },
-  { value: 'unknown', label: "I don't know if I need one" }
-];
-
-// ============================================================================
-// Step 5: Timeline & Planning Options
-// ============================================================================
-
-export const PROJECT_START_OPTIONS: SelectOption[] = [
-  { value: 'ready', label: 'Not started, ready to apply ✅' },
-  { value: 'need-quotes', label: 'Not started, need contractor quotes' },
-  { value: 'already-started', label: 'Already started (last 3 months) ⚠️' },
-  { value: 'already-completed', label: 'Already completed ❌ Not eligible' },
-  { value: 'planning-ahead', label: 'Planning 6+ months ahead' }
-];
-
-export const RENOVATION_DURATION_OPTIONS: SelectOption[] = [
-  { value: 'under-3-months', label: 'Under 3 months' },
-  { value: '3-6-months', label: '3-6 months' },
-  { value: '6-12-months', label: '6-12 months' },
-  { value: '1-2-years', label: '1-2 years' },
-  { value: 'over-2-years', label: 'Over 2 years' },
-  { value: 'not-sure', label: 'Not sure yet' }
-];
-
-export const CONTRACTOR_QUOTES_OPTIONS: SelectOption[] = [
-  { value: 'yes-multiple', label: 'Yes, have multiple quotes (Best)' },
-  { value: 'yes-one', label: 'Yes, have one quote' },
-  { value: 'in-progress', label: 'Getting quotes now' },
-  { value: 'not-yet', label: 'Not yet' },
-  { value: 'unknown', label: "I don't know I need them" }
-];
-
-export const URGENCY_OPTIONS: SelectOption[] = [
-  { value: 'emergency', label: 'Emergency/Urgent' },
-  { value: 'this-year', label: 'This year' },
-  { value: 'next-6-12-months', label: 'Next 6-12 months' },
-  { value: 'planning', label: 'Planning phase' },
-  { value: 'no-rush', label: 'No rush' }
-];
-
-// ============================================================================
-// Step 6: Personal & Documentation Options
-// ============================================================================
-
-export const AGE_OPTIONS: SelectOption[] = [
-  { value: 'under-30', label: 'Under 30' },
-  { value: '30-45', label: '30-45' },
-  { value: '45-60', label: '45-60' },
-  { value: '60-70', label: '60-70 (Accessibility grants available)' },
-  { value: 'over-70', label: 'Over 70 (Accessibility grants available)' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' }
-];
-
-export const HOUSEHOLD_SIZE_OPTIONS: SelectOption[] = [
-  { value: '1', label: '1 person' },
-  { value: '2', label: '2 people' },
-  { value: '3-4', label: '3-4 people' },
-  { value: '5+', label: '5 or more people' }
-];
-
-export const RESIDENCE_STATUS_OPTIONS: SelectOption[] = [
-  { value: 'german-citizen', label: 'German citizen' },
-  { value: 'eu-citizen', label: 'EU citizen' },
-  { value: 'permanent-resident', label: 'Permanent residence permit' },
-  { value: 'blue-card', label: 'EU Blue Card (Higher interest rates)' },
-  { value: 'temporary', label: 'Temporary permit' },
-  { value: 'other', label: 'Other' }
-];
-
-export const TAX_RESIDENT_OPTIONS: SelectOption[] = [
-  { value: 'yes-filed', label: 'Yes, filed last 2 years (2022 & 2023)' },
-  { value: 'yes-not-filed', label: 'Yes, but not filed yet' },
-  { value: 'no', label: 'No' },
-  { value: 'not-sure', label: 'Not sure' }
-];
-
-export const DOCUMENT_READY_OPTIONS: SelectOption[] = [
-  { value: 'yes', label: 'Yes, have everything ready' },
-  { value: 'partial', label: 'Partially ready' },
-  { value: 'no', label: 'No, need to gather documents' },
-  { value: 'self-employed', label: 'Self-employed (have tax returns)' },
-  { value: 'unknown', label: "I don't know what's needed" }
-];
-
-export const PROPERTY_DOCS_OPTIONS: SelectOption[] = [
-  { value: 'yes-all', label: 'Yes, have all documents (Grundbuchauszug, etc.)' },
-  { value: 'yes-partial', label: 'Yes, have some documents' },
-  { value: 'no', label: 'No, need to request' },
-  { value: 'unknown', label: "I don't know what's needed" }
-];
-
-export const READY_TO_APPLY_OPTIONS: SelectOption[] = [
-  { value: 'ready-now', label: 'Ready to apply now ✅' },
-  { value: '1-2-weeks', label: 'Need 1-2 weeks to prepare' },
-  { value: '1-3-months', label: 'Need 1-3 months to prepare' },
-  { value: 'researching', label: 'Still researching options' },
-  { value: 'not-sure', label: 'Not sure' }
-];
-
-// ============================================================================
-// Financing Options Database
-// ============================================================================
-
-export const FINANCING_OPTIONS: FinancingOption[] = [
+export const BATHROOM_AREA_SELECTION: Question[] = [
   {
-    id: 'kfw-261',
-    name: 'KfW 261 - Residential Building Credit',
-    type: 'loan',
-    provider: 'KfW Bank',
-    description: 'Low-interest loan for energy-efficient renovation and construction',
-    eligibility: ['Homeowners', 'First-time buyers', 'Landlords'],
-    interestRate: '0.01% - 1.5%',
-    maxAmount: '€150,000',
-    renovationTypes: ['electrical', 'hvac', 'plumbing', 'windows_doors', 'roofing', 'general'],
-    incomeRequirement: 'all',
-    link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Energieeffizient-sanieren/',
-    advantages: ['Very low interest rates', 'Long repayment terms', 'Grant option available']
-  },
-  {
-    id: 'kfw-262',
-    name: 'KfW 262 - Renovation Grant',
-    type: 'grant',
-    provider: 'KfW Bank',
-    description: 'Direct grant for energy-efficient renovations, no repayment required',
-    eligibility: ['Homeowners', 'Landlords'],
-    maxAmount: '€75,000',
-    renovationTypes: ['electrical', 'hvac', 'plumbing', 'windows_doors', 'roofing'],
-    incomeRequirement: 'all',
-    link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Energieeffizient-sanieren/',
-    advantages: ['No repayment needed', 'Up to 50% subsidy', 'Combined with loan possible']
-  },
-  {
-    id: 'kfw-270',
-    name: 'KfW 270 - Energy Efficient Construction',
-    type: 'loan',
-    provider: 'KfW Bank',
-    description: 'Loan for purchasing and constructing energy-efficient homes',
-    eligibility: ['First-time buyers', 'Homeowners'],
-    interestRate: '0.75% - 2.5%',
-    maxAmount: '€120,000',
-    renovationTypes: ['general', 'electrical', 'hvac', 'roofing', 'windows_doors'],
-    incomeRequirement: 'all',
-    link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/',
-    advantages: ['Low interest rate', 'Long-term financing', 'Flexible repayment']
-  },
-  {
-    id: 'bafa-heating',
-    name: 'BAFA Heating Subsidy',
-    type: 'grant',
-    provider: 'BAFA (Federal Office)',
-    description: 'Grant for replacing heating systems with renewable energy sources',
-    eligibility: ['Homeowners', 'Landlords'],
-    maxAmount: '€70,000',
-    renovationTypes: ['hvac', 'plumbing', 'electrical'],
-    incomeRequirement: 'all',
-    link: 'https://www.bafa.de/',
-    advantages: ['Up to 40% subsidy', 'Quick processing', 'Can be combined with KfW programs']
-  },
-  {
-    id: 'regional-subsidy',
-    name: 'Regional Renovation Subsidy',
-    type: 'subsidy',
-    provider: 'State/Municipal Government',
-    description: 'Regional support programs for housing renovation (varies by state)',
-    eligibility: ['Homeowners', 'Low-income households'],
-    maxAmount: '€30,000',
-    renovationTypes: ['bathroom', 'kitchen', 'basement', 'flooring', 'general'],
-    incomeRequirement: 'medium-low',
-    link: 'https://www.foerderdatenbank.de/',
-    advantages: ['Local support', 'Flexible requirements', 'Can combine with federal programs']
-  },
-  {
-    id: 'altersgerecht-umbauen',
-    name: 'KfW 455-B - Age-Appropriate Conversion',
-    type: 'grant',
-    provider: 'KfW Bank',
-    description: 'Grant for making homes accessible and barrier-free',
-    eligibility: ['Homeowners', 'Tenants', 'Landlords'],
-    maxAmount: '€6,250',
-    renovationTypes: ['bathroom', 'general', 'flooring'],
-    incomeRequirement: 'all',
-    link: 'https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/Altersgerecht-Umbauen/',
-    advantages: ['No repayment', 'For all ages', 'Easy application']
-  },
-  {
-    id: 'standard-home-loan',
-    name: 'Standard Home Renovation Loan',
-    type: 'loan',
-    provider: 'Commercial Banks',
-    description: 'Traditional bank loan for general home renovations',
-    eligibility: ['Homeowners with good credit'],
-    interestRate: '3% - 6%',
-    maxAmount: '€100,000',
-    renovationTypes: ['kitchen', 'bathroom', 'flooring', 'basement', 'exterior', 'general'],
-    incomeRequirement: 'medium-high',
-    link: '#',
-    advantages: ['Flexible use', 'Quick approval', 'Available from most banks']
-  },
-  {
-    id: 'windows-doors-program',
-    name: 'Windows & Doors Renovation Program',
-    type: 'subsidy',
-    provider: 'Regional Energy Programs',
-    description: 'Financial support for energy-efficient windows and doors installation',
-    eligibility: ['Homeowners', 'Landlords'],
-    maxAmount: '€40,000',
-    renovationTypes: ['windows_doors', 'exterior'],
-    incomeRequirement: 'all',
-    link: 'https://www.kfw.de/',
-    advantages: ['Significant subsidy', 'Reduce energy costs', 'Improve property value']
+    id: 'bathroomRenovationAreas',
+    label: 'Which areas do you want to renovate?',
+    type: 'multiselect',
+    required: true,
+    description: 'Select all the areas you want to include in your bathroom renovation project.',
+    options: [
+      { value: 'shower_area', label: 'Shower Area', description: 'Shower installation, tiles, fixtures, and drainage' },
+      { value: 'bathtub', label: 'Bathtub', description: 'Bathtub installation, surrounding tiles, and fixtures' },
+      { value: 'toilet_area', label: 'Toilet Area', description: 'Toilet/WC installation and surrounding area' },
+      { value: 'washbasin_area', label: 'Washbasin Area', description: 'Sink, vanity, mirror, and storage' },
+      { value: 'tiles_surfaces', label: 'Tiles & Surfaces', description: 'Wall and floor tiling' },
+      { value: 'electrical_lighting', label: 'Electrical & Lighting', description: 'Wiring, outlets, and lighting' },
+      { value: 'plumbing', label: 'Plumbing', description: 'Pipe work and water supply' },
+      { value: 'water_pressure', label: 'Water Pressure', description: 'Pressure improvements' },
+      { value: 'heating', label: 'Heating', description: 'Bathroom heating systems' },
+      { value: 'ventilation', label: 'Ventilation', description: 'Ventilation and air quality' },
+      { value: 'accessories', label: 'Accessories', description: 'Towel holders, shelves, etc.' },
+      { value: 'waterproofing', label: 'Waterproofing', description: 'Moisture protection' }
+    ]
   }
 ];
 
 // ============================================================================
-// AI Configuration
+// STEP 2: Detailed Questions
 // ============================================================================
 
-export const AI_CONFIG = {
-  GEMINI_MODEL: 'gemini-2.0-flash',
-  API_BASE_URL: 'https://generativelanguage.googleapis.com/v1beta/models',
-  GENERATION_CONFIG: {
-    temperature: 0.7,
-    maxOutputTokens: 800,
-    topP: 0.95,
-    topK: 40
+// SECTION 1: Renovation Goal (Always shown)
+export const RENOVATION_GOAL_QUESTIONS: Question[] = [
+  {
+    id: 'renovationGoal',
+    label: 'Renovation Goal',
+    type: 'multiselect',
+    required: true,
+    sectionTitle: 'Renovation Goal',
+    description: 'What type of renovation are you planning?',
+    allowOther: true,
+    otherPlaceholder: 'Describe your specific renovation goal...',
+    options: [
+      { value: 'cosmetic_upgrade', label: 'Cosmetic upgrade', description: 'Paint, fixtures, minor updates' },
+      { value: 'full_demolition', label: 'Full demolition + rebuild', description: 'Complete bathroom reconstruction' },
+      { value: 'fixtures_only', label: 'Only fixtures replacement', description: 'Replace toilet, sink, shower, etc.' },
+      { value: 'tiles_only', label: 'Only tiles replacement', description: 'New floor and wall tiles' },
+      { value: 'structural_changes', label: 'Structural changes', description: 'Wall removal, layout changes' },
+      { value: 'increase_space', label: 'Increase space', description: 'Expand bathroom area' }
+    ]
+  }
+];
+
+// SECTION 3: Common Fields (Always shown)
+export const COMMON_FIELDS_QUESTIONS: Question[] = [
+  {
+    id: 'bathroomType',
+    label: 'Bathroom Type',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Common Fields',
+    description: 'What type of bathroom is this?',
+    options: [
+      { value: 'master', label: 'Master bathroom', description: 'Primary bedroom bathroom' },
+      { value: 'guest', label: 'Guest bathroom', description: 'For visitors' },
+      { value: 'kids', label: 'Kids bathroom', description: 'Children\'s bathroom' },
+      { value: 'shared', label: 'Shared bathroom', description: 'Used by multiple people' },
+      { value: 'outdoor', label: 'Outdoor bathroom', description: 'Exterior bathroom' }
+    ]
   },
-  TIMEOUT_MS: 30000, // 30 seconds
-  MAX_RETRIES: 2
+  {
+    id: 'designStyle',
+    label: 'Preferred Design Style',
+    type: 'radio',
+    required: true,
+    description: 'Choose your preferred design aesthetic',
+    options: [
+      { value: 'modern', label: 'Modern', description: 'Clean lines, contemporary' },
+      { value: 'minimalist', label: 'Minimalist', description: 'Simple, uncluttered' },
+      { value: 'luxury', label: 'Luxury', description: 'High-end, premium' },
+      { value: 'industrial', label: 'Industrial', description: 'Raw, urban style' },
+      { value: 'traditional', label: 'Traditional', description: 'Classic, timeless' },
+      { value: 'vintage', label: 'Vintage', description: 'Retro, antique' }
+    ]
+  },
+  {
+    id: 'colorSchemeMain',
+    label: 'Main Colors',
+    type: 'text',
+    required: false,
+    placeholder: 'e.g., White, Gray, Beige',
+    description: 'Enter your preferred main colors'
+  },
+  {
+    id: 'colorSchemeAccent',
+    label: 'Accent Colors',
+    type: 'text',
+    required: false,
+    placeholder: 'e.g., Blue, Gold, Black',
+    description: 'Enter your preferred accent colors'
+  },
+  {
+    id: 'metalFinish',
+    label: 'Metal Finish',
+    type: 'radio',
+    required: true,
+    description: 'Choose metal finish for fixtures',
+    options: [
+      { value: 'chrome', label: 'Chrome', description: 'Shiny silver finish' },
+      { value: 'black', label: 'Black', description: 'Matte or glossy black' },
+      { value: 'gold', label: 'Gold', description: 'Brass or gold finish' },
+      { value: 'nickel', label: 'Nickel', description: 'Brushed nickel' },
+      { value: 'bronze', label: 'Bronze', description: 'Oil-rubbed bronze' }
+    ]
+  }
+];
+
+// SECTION 4: Shower Area (Conditional - if shower_area selected)
+export const SHOWER_AREA_QUESTIONS: Question[] = [
+  {
+    id: 'showerType',
+    label: 'Shower Type',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Shower Area',
+    description: 'What type of shower do you want?',
+    options: [
+      { value: 'walk_in', label: 'Walk-in shower', description: 'Open, barrier-free shower with modern design' },
+      { value: 'enclosure', label: 'Shower enclosure', description: 'Glass-enclosed shower for space efficiency' },
+      { value: 'bath_shower', label: 'Bath + shower combo', description: 'Combined tub and shower for flexibility' },
+      { value: 'wet_room', label: 'Wet room', description: 'Fully waterproofed room with open shower area' }
+    ]
+  },
+  {
+    id: 'showerFixtureQuality',
+    label: 'Shower Fixture Quality Preference',
+    type: 'radio',
+    required: true,
+    description: 'Select the quality level for shower fixtures (faucets, shower heads, controls)',
+    options: [
+      {
+        value: 'budget',
+        label: 'Budget-Friendly',
+        description: 'Basic functionality with standard features',
+        qualityLevel: 'budget',
+        qualityDescription: 'Reliable standard brands, essential features, good for basic renovations'
+      },
+      {
+        value: 'standard',
+        label: 'Standard Quality',
+        description: 'Good quality German brands with reliable performance',
+        qualityLevel: 'standard',
+        qualityDescription: 'German brands like Grohe, good durability, wide range of designs, excellent value'
+      },
+      {
+        value: 'premium',
+        label: 'Premium Quality',
+        description: 'High-end German brands with superior quality',
+        qualityLevel: 'premium',
+        qualityDescription: 'Hansgrohe, Dornbracht - exceptional durability, innovative features, elegant design'
+      }
+    ]
+  },
+  {
+    id: 'showerEnclosureGlass',
+    label: 'Glass Type (for Shower Enclosure)',
+    type: 'radio',
+    required: false,
+    description: 'Type of glass for shower enclosure',
+    options: [
+      { value: 'clear', label: 'Clear', description: 'Transparent glass' },
+      { value: 'frosted', label: 'Frosted', description: 'Privacy glass' },
+      { value: 'tinted', label: 'Tinted', description: 'Colored glass' }
+    ]
+  },
+  {
+    id: 'showerEnclosureThickness',
+    label: 'Glass Thickness (mm)',
+    type: 'number',
+    required: false,
+    placeholder: 'e.g., 8',
+    min: 6,
+    max: 12,
+    description: 'Thickness of shower glass (6-12mm)'
+  },
+  {
+    id: 'showerEnclosureFrame',
+    label: 'Frame Type',
+    type: 'radio',
+    required: false,
+    description: 'Shower enclosure frame style',
+    options: [
+      { value: 'framed', label: 'Framed', description: 'With metal frame' },
+      { value: 'frameless', label: 'Frameless', description: 'Minimalist, no frame' }
+    ]
+  },
+  {
+    id: 'showerFixtures',
+    label: 'Shower Fixtures',
+    type: 'multiselect',
+    required: true,
+    description: 'Select shower head types',
+    options: [
+      { value: 'rain', label: 'Rain shower', description: 'Overhead rainfall shower' },
+      { value: 'handheld', label: 'Handheld', description: 'Detachable shower head' },
+      { value: 'both', label: 'Both', description: 'Rain + Handheld' },
+      { value: 'thermostatic', label: 'Thermostatic control', description: 'Temperature control' },
+      { value: 'smart', label: 'Smart control', description: 'Digital/app control' }
+    ]
+  },
+  {
+    id: 'drainType',
+    label: 'Drain Type',
+    type: 'radio',
+    required: true,
+    description: 'Shower drain placement',
+    options: [
+      { value: 'linear', label: 'Linear', description: 'Long, narrow drain' },
+      { value: 'center', label: 'Center', description: 'Central round drain' },
+      { value: 'corner', label: 'Corner', description: 'Corner placement' }
+    ]
+  }
+];
+
+// SECTION 5: Bathtub (Conditional - if bathtub selected)
+export const BATHTUB_QUESTIONS: Question[] = [
+  {
+    id: 'bathtubWanted',
+    label: 'Do you want a bathtub?',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Bathtub',
+    description: 'Include a bathtub in your renovation?',
+    options: [
+      { value: 'yes', label: 'Yes', description: 'Include bathtub' },
+      { value: 'no', label: 'No', description: 'No bathtub needed' }
+    ]
+  },
+  {
+    id: 'bathtubType',
+    label: 'Bathtub Type',
+    type: 'radio',
+    required: false,
+    description: 'What style of bathtub?',
+    options: [
+      { value: 'freestanding', label: 'Freestanding', description: 'Standalone tub for luxurious look' },
+      { value: 'built_in', label: 'Built-in', description: 'Alcove or drop-in, space-efficient' },
+      { value: 'jacuzzi', label: 'Jacuzzi/Whirlpool', description: 'With massage jets for spa experience' },
+      { value: 'soaking', label: 'Deep soaking', description: 'Extra deep tub for relaxation' }
+    ]
+  },
+  {
+    id: 'bathtubMaterialQuality',
+    label: 'Bathtub Material & Quality',
+    type: 'radio',
+    required: false,
+    description: 'Choose bathtub material based on quality and durability',
+    options: [
+      {
+        value: 'acrylic_budget',
+        label: 'Acrylic - Budget',
+        description: 'Lightweight, affordable, easy to install',
+        qualityLevel: 'budget',
+        qualityDescription: 'Standard acrylic bathtubs - good insulation, affordable, suitable for most renovations'
+      },
+      {
+        value: 'acrylic_premium',
+        label: 'Acrylic - Premium',
+        description: 'High-grade acrylic with reinforced construction',
+        qualityLevel: 'standard',
+        qualityDescription: 'Thicker acrylic, better durability, enhanced comfort, German brands like Bette/Kaldewei acrylic lines'
+      },
+      {
+        value: 'steel_enamel',
+        label: 'Steel Enamel - Standard',
+        description: 'Glazed steel, durable and easy to clean',
+        qualityLevel: 'standard',
+        qualityDescription: 'German specialty - Bette & Kaldewei titanium steel with enamel coating, excellent heat retention, 30-year warranty'
+      },
+      {
+        value: 'cast_iron',
+        label: 'Cast Iron - Premium',
+        description: 'Heavy-duty, excellent heat retention, timeless',
+        qualityLevel: 'premium',
+        qualityDescription: 'Classic luxury material, exceptional durability, superior heat retention, lasts generations'
+      },
+      {
+        value: 'stone_resin',
+        label: 'Stone Resin - Luxury',
+        description: 'Modern composite material, elegant matte finish',
+        qualityLevel: 'luxury',
+        qualityDescription: 'High-end material with stone-like appearance, warm to touch, contemporary luxury bathrooms'
+      }
+    ]
+  },
+  {
+    id: 'bathtubSize',
+    label: 'Bathtub Size',
+    type: 'radio',
+    required: false,
+    description: 'Select bathtub dimensions',
+    options: [
+      { value: 'compact', label: 'Compact (140-150cm)', description: 'For smaller bathrooms' },
+      { value: 'standard', label: 'Standard (160-170cm)', description: 'Most common size for average bathrooms' },
+      { value: 'large', label: 'Large (180-190cm)', description: 'Spacious, for master bathrooms' },
+      { value: 'extra_large', label: 'Extra Large (200cm+)', description: 'Luxury size for large bathrooms' }
+    ]
+  }
+];
+
+// SECTION 6: Toilet Area (Conditional - if toilet_area selected)
+export const TOILET_AREA_QUESTIONS: Question[] = [
+  {
+    id: 'toiletType',
+    label: 'Toilet Type',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Toilet Area',
+    description: 'What type of toilet?',
+    options: [
+      { value: 'floor_mounted', label: 'Floor-mounted', description: 'Traditional floor toilet, easier installation' },
+      { value: 'wall_mounted', label: 'Wall-mounted (wall-hung)', description: 'Modern, space-saving, easier to clean floor' },
+      { value: 'smart', label: 'Smart toilet', description: 'With bidet, heated seat, advanced features' }
+    ]
+  },
+  {
+    id: 'toiletQuality',
+    label: 'Toilet Quality & Brand',
+    type: 'radio',
+    required: true,
+    description: 'Select toilet quality level based on German market brands',
+    options: [
+      {
+        value: 'budget',
+        label: 'Budget-Friendly',
+        description: 'Standard brands with basic features',
+        qualityLevel: 'budget',
+        qualityDescription: 'Reliable functionality, standard ceramic, affordable options for basic renovations'
+      },
+      {
+        value: 'standard',
+        label: 'Standard Quality - German Brands',
+        description: 'Well-known German ceramic brands',
+        qualityLevel: 'standard',
+        qualityDescription: 'Villeroy & Boch, Duravit standard lines - excellent ceramics, good design, reliable performance'
+      },
+      {
+        value: 'premium',
+        label: 'Premium Quality - Designer Lines',
+        description: 'High-end German designer toilets',
+        qualityLevel: 'premium',
+        qualityDescription: 'Duravit designer series, advanced rim technology, superior hygiene, elegant modern design'
+      },
+      {
+        value: 'luxury_smart',
+        label: 'Luxury - Smart Toilets',
+        description: 'Advanced smart toilets with integrated bidet',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Heated seat, automatic lid, integrated bidet, air dryer, deodorizer, premium comfort and hygiene'
+      }
+    ]
+  },
+  {
+    id: 'flushSystem',
+    label: 'Flush System',
+    type: 'radio',
+    required: true,
+    description: 'Flush mechanism preferences',
+    options: [
+      { value: 'concealed_dual', label: 'Concealed tank with dual flush', description: 'Hidden cistern, eco-friendly two-button flush (standard)' },
+      { value: 'concealed_sensor', label: 'Concealed tank with sensor', description: 'Hidden cistern, touchless automatic flush (premium)' },
+      { value: 'exposed', label: 'Exposed tank', description: 'Visible cistern, easier maintenance (budget)' }
+    ]
+  }
+];
+
+// SECTION 7: Washbasin Area (Conditional - if washbasin_area selected)
+export const WASHBASIN_AREA_QUESTIONS: Question[] = [
+  {
+    id: 'basinCount',
+    label: 'Basin Count',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Washbasin Area',
+    description: 'Number of sinks',
+    options: [
+      { value: 'single', label: 'Single basin', description: 'One sink, suitable for most bathrooms' },
+      { value: 'double', label: 'Double basin', description: 'Two sinks, ideal for master bathrooms' }
+    ]
+  },
+  {
+    id: 'basinType',
+    label: 'Basin Type & Installation',
+    type: 'radio',
+    required: true,
+    description: 'Sink installation style',
+    options: [
+      { value: 'countertop', label: 'Countertop vessel', description: 'Bowl sits on counter, modern design statement' },
+      { value: 'undermount', label: 'Undermount', description: 'Integrated under counter, clean minimalist look' },
+      { value: 'wall_mounted', label: 'Wall-mounted', description: 'Floating sink, space-saving for small bathrooms' },
+      { value: 'integrated', label: 'Integrated sink-countertop', description: 'Seamless one-piece design, easy to clean' }
+    ]
+  },
+  {
+    id: 'basinQuality',
+    label: 'Basin Quality & Brand',
+    type: 'radio',
+    required: true,
+    description: 'Select washbasin quality level',
+    options: [
+      {
+        value: 'budget',
+        label: 'Budget-Friendly',
+        description: 'Standard ceramic basins',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic ceramic or porcelain, functional design, affordable for standard renovations'
+      },
+      {
+        value: 'standard',
+        label: 'Standard Quality - German Brands',
+        description: 'Well-known German ceramic manufacturers',
+        qualityLevel: 'standard',
+        qualityDescription: 'Villeroy & Boch, Duravit - high-quality ceramics, variety of designs, excellent durability'
+      },
+      {
+        value: 'premium',
+        label: 'Premium Quality - Designer Basins',
+        description: 'High-end designer washbasins',
+        qualityLevel: 'premium',
+        qualityDescription: 'Duravit designer series, premium finishes, unique shapes, architectural quality'
+      }
+    ]
+  },
+  {
+    id: 'faucetQuality',
+    label: 'Faucet (Tap) Quality & Brand',
+    type: 'radio',
+    required: true,
+    description: 'Select faucet quality level for washbasin',
+    options: [
+      {
+        value: 'budget',
+        label: 'Budget-Friendly',
+        description: 'Standard faucets with basic features',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic chrome finish, standard functionality, affordable for basic renovations'
+      },
+      {
+        value: 'standard_grohe',
+        label: 'Standard Quality - Grohe',
+        description: 'German brand with reliable performance',
+        qualityLevel: 'standard',
+        qualityDescription: 'Grohe - good quality, wide range of designs, reliable, excellent value for money'
+      },
+      {
+        value: 'premium_hansgrohe',
+        label: 'Premium Quality - Hansgrohe',
+        description: 'High-end German faucets with superior quality',
+        qualityLevel: 'premium',
+        qualityDescription: 'Hansgrohe - exceptional durability, smooth operation, water-saving technology, elegant design'
+      },
+      {
+        value: 'luxury_dornbracht',
+        label: 'Luxury - Dornbracht',
+        description: 'Ultra-luxury architectural faucets',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Dornbracht - ultra-premium, architecturally designed, precision engineering, statement piece for luxury bathrooms'
+      }
+    ]
+  },
+  {
+    id: 'countertopMaterialQuality',
+    label: 'Countertop Material & Quality',
+    type: 'radio',
+    required: true,
+    description: 'Choose vanity countertop material based on quality and durability',
+    options: [
+      {
+        value: 'laminate',
+        label: 'Laminate - Budget',
+        description: 'Affordable, variety of colors and patterns',
+        qualityLevel: 'budget',
+        qualityDescription: 'Budget-friendly, water-resistant with proper sealing, good for cost-conscious renovations'
+      },
+      {
+        value: 'solid_surface',
+        label: 'Solid Surface (Corian) - Standard',
+        description: 'Non-porous, seamless, easy to repair',
+        qualityLevel: 'standard',
+        qualityDescription: 'Durable synthetic material, seamless appearance, repairable, good mid-range option'
+      },
+      {
+        value: 'quartz',
+        label: 'Quartz - Premium',
+        description: 'Engineered stone, non-porous, highly durable',
+        qualityLevel: 'premium',
+        qualityDescription: 'Top choice for bathrooms - extremely durable, non-porous (no bacteria/mildew), low maintenance, premium appearance'
+      },
+      {
+        value: 'granite',
+        label: 'Granite - Premium',
+        description: 'Natural stone, heat and scratch resistant',
+        qualityLevel: 'premium',
+        qualityDescription: 'Natural stone beauty, very durable, heat resistant, requires periodic sealing'
+      },
+      {
+        value: 'marble',
+        label: 'Marble - Luxury',
+        description: 'Natural marble, elegant and timeless',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Luxurious natural stone, unique veining, softer than granite, requires maintenance and sealing, premium aesthetic'
+      }
+    ]
+  }
+];
+
+// SECTION 8: Tiles & Surfaces (Conditional - if tiles_surfaces selected)
+export const TILES_SURFACES_QUESTIONS: Question[] = [
+  {
+    id: 'floorTileQuality',
+    label: 'Floor Tile Material & Quality',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Tiles & Surfaces',
+    description: 'Choose floor tile material based on quality and durability',
+    options: [
+      {
+        value: 'ceramic_budget',
+        label: 'Ceramic - Budget',
+        description: 'Affordable, variety of colors and patterns',
+        qualityLevel: 'budget',
+        qualityDescription: 'Standard ceramic tiles - versatile, good for dry areas, cost-effective for basic renovations'
+      },
+      {
+        value: 'ceramic_standard',
+        label: 'Ceramic - Standard Quality',
+        description: 'Higher grade ceramic with better durability',
+        qualityLevel: 'standard',
+        qualityDescription: 'Enhanced ceramic - better water resistance, more durable, suitable for bathroom floors'
+      },
+      {
+        value: 'porcelain_standard',
+        label: 'Porcelain - Standard',
+        description: 'Dense, water-resistant, durable',
+        qualityLevel: 'standard',
+        qualityDescription: 'Porcelain tiles (45% market share in Germany) - frost resistant, low water absorption, ideal for bathrooms'
+      },
+      {
+        value: 'porcelain_premium',
+        label: 'Porcelain - Premium',
+        description: 'Large format, through-body color, superior finish',
+        qualityLevel: 'premium',
+        qualityDescription: 'High-end porcelain - through-body color (no visible chips), large formats, premium finishes like natural stone effects'
+      },
+      {
+        value: 'natural_stone',
+        label: 'Natural Stone - Luxury',
+        description: 'Marble, slate, or travertine',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Authentic natural stone - unique appearance, luxurious feel, requires sealing and maintenance'
+      }
+    ]
+  },
+  {
+    id: 'floorTileSize',
+    label: 'Floor Tile Size',
+    type: 'radio',
+    required: true,
+    description: 'Floor tile dimensions (larger tiles = fewer grout lines, modern look)',
+    options: [
+      { value: '300x300', label: '300x300 mm', description: 'Small format - traditional, more grout lines' },
+      { value: '600x600', label: '600x600 mm', description: 'Large format - modern, fewer grout lines' },
+      { value: '800x800', label: '800x800 mm', description: 'Extra large - contemporary, minimal grout' },
+      { value: 'custom', label: 'Custom size', description: 'Specify custom dimensions' }
+    ]
+  },
+  {
+    id: 'wallTilesQuality',
+    label: 'Wall Tile Material & Quality',
+    type: 'radio',
+    required: true,
+    description: 'Choose wall tile material based on quality and style',
+    options: [
+      {
+        value: 'ceramic_budget',
+        label: 'Ceramic - Budget',
+        description: 'Standard ceramic wall tiles',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic ceramic wall tiles - affordable, variety of colors, suitable for standard bathrooms'
+      },
+      {
+        value: 'ceramic_premium',
+        label: 'Ceramic - Premium',
+        description: 'High-quality ceramic with special finishes',
+        qualityLevel: 'standard',
+        qualityDescription: 'Premium ceramic - textured or glossy finishes, better quality, consistent color'
+      },
+      {
+        value: 'porcelain',
+        label: 'Porcelain',
+        description: 'Dense porcelain wall tiles',
+        qualityLevel: 'standard',
+        qualityDescription: 'Porcelain for walls - superior moisture resistance, excellent for wet areas like showers'
+      },
+      {
+        value: 'glass_mosaic',
+        label: 'Glass Mosaic - Premium',
+        description: 'Glass tiles for accent areas',
+        qualityLevel: 'premium',
+        qualityDescription: 'Glass mosaic tiles - elegant, reflective, perfect for accent walls or shower niches'
+      },
+      {
+        value: 'marble_luxury',
+        label: 'Marble/Natural Stone - Luxury',
+        description: 'Natural stone wall tiles',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Natural marble or stone - luxurious appearance, unique veining, requires sealing'
+      }
+    ]
+  },
+  {
+    id: 'wallTilesHeight',
+    label: 'Wall Tiles Coverage',
+    type: 'radio',
+    required: true,
+    description: 'How high should wall tiles go?',
+    options: [
+      { value: 'full', label: 'Full height (floor to ceiling)', description: 'Complete coverage, best moisture protection, modern look' },
+      { value: 'half', label: 'Half height (up to ~1.2m)', description: 'Partial wall coverage, paint above, traditional style' },
+      { value: 'shower_only', label: 'Shower area only', description: 'Tile only wet areas, paint elsewhere' }
+    ]
+  },
+  {
+    id: 'accentWall',
+    label: 'Accent/Feature Wall',
+    type: 'radio',
+    required: false,
+    description: 'Special feature wall with decorative tiles?',
+    options: [
+      { value: 'yes', label: 'Yes - Include accent wall', description: 'Add feature wall with special tiles or pattern' },
+      { value: 'no', label: 'No - Uniform tiles', description: 'Same tiles throughout' }
+    ]
+  },
+  {
+    id: 'groutQuality',
+    label: 'Grout Type & Quality',
+    type: 'radio',
+    required: false,
+    description: 'Type of grout (affects durability and maintenance)',
+    options: [
+      {
+        value: 'cement_budget',
+        label: 'Cement-based grout - Budget',
+        description: 'Standard grout, requires sealing',
+        qualityLevel: 'budget',
+        qualityDescription: 'Traditional cement grout - affordable, requires periodic sealing to prevent staining'
+      },
+      {
+        value: 'cement_premium',
+        label: 'Premium cement grout with additives',
+        description: 'Enhanced cement grout, better stain resistance',
+        qualityLevel: 'standard',
+        qualityDescription: 'Premium cement grout with polymers - better flexibility, stain resistance, less maintenance'
+      },
+      {
+        value: 'epoxy',
+        label: 'Epoxy grout - Premium',
+        description: 'Waterproof, stain-proof, highly durable',
+        qualityLevel: 'premium',
+        qualityDescription: 'Epoxy grout - completely waterproof, no sealing needed, best for wet areas, superior stain resistance'
+      }
+    ]
+  },
+  {
+    id: 'groutColor',
+    label: 'Grout Color',
+    type: 'radio',
+    required: false,
+    description: 'Preferred grout color',
+    options: [
+      { value: 'white', label: 'White', description: 'Clean, classic look' },
+      { value: 'gray', label: 'Gray', description: 'Modern, hides dirt better' },
+      { value: 'matching', label: 'Matching tile color', description: 'Seamless appearance' },
+      { value: 'contrasting', label: 'Contrasting color', description: 'Highlight tile pattern' }
+    ]
+  }
+];
+
+// SECTION 9: Electrical & Lighting (Conditional - if electrical_lighting selected)
+export const ELECTRICAL_LIGHTING_QUESTIONS: Question[] = [
+  {
+    id: 'ceilingLights',
+    label: 'Ceiling Lights',
+    type: 'multiselect',
+    required: true,
+    sectionTitle: 'Electrical & Lighting',
+    description: 'Select ceiling lighting options (can select multiple)',
+    options: [
+      { value: 'recessed', label: 'Recessed downlights', description: 'Built-in ceiling spotlights, modern clean look' },
+      { value: 'led_panel', label: 'LED panel lights', description: 'Flat LED panels, even illumination, energy-efficient' },
+      { value: 'chandelier', label: 'Chandelier/Pendant', description: 'Decorative hanging light for luxury bathrooms' },
+      { value: 'spotlights', label: 'Adjustable spotlights', description: 'Directional spots for accent lighting' }
+    ]
+  },
+  {
+    id: 'lightingQuality',
+    label: 'Lighting Fixture Quality',
+    type: 'radio',
+    required: true,
+    description: 'Select quality level for bathroom lighting fixtures',
+    options: [
+      {
+        value: 'budget',
+        label: 'Budget-Friendly',
+        description: 'Standard LED lights with basic features',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic LED fixtures - functional, energy-efficient, IP44 rated for bathroom use'
+      },
+      {
+        value: 'standard',
+        label: 'Standard Quality',
+        description: 'Good quality German brands with better efficiency',
+        qualityLevel: 'standard',
+        qualityDescription: 'Branded LED fixtures - better light quality (CRI 80+), dimmable options, IP65 rated, longer warranty'
+      },
+      {
+        value: 'premium',
+        label: 'Premium Quality',
+        description: 'High-end designer lighting with smart features',
+        qualityLevel: 'premium',
+        qualityDescription: 'Designer LED lights - excellent light quality (CRI 90+), smart control, premium finishes, architectural quality'
+      }
+    ]
+  },
+  {
+    id: 'mirrorLights',
+    label: 'Mirror Lights',
+    type: 'multiselect',
+    required: false,
+    description: 'Mirror lighting options (can select multiple)',
+    options: [
+      { value: 'led_backlit', label: 'LED backlit mirror', description: 'Integrated LED lighting behind/around mirror, modern look' },
+      { value: 'sconce', label: 'Wall sconce lights', description: 'Wall-mounted lights beside mirror, traditional elegance' },
+      { value: 'illuminated_mirror', label: 'Fully illuminated mirror', description: 'Mirror with integrated LED surround lighting' }
+    ]
+  },
+  {
+    id: 'mirrorQuality',
+    label: 'Mirror Quality',
+    type: 'radio',
+    required: false,
+    description: 'Select mirror quality level',
+    options: [
+      {
+        value: 'budget',
+        label: 'Standard Mirror',
+        description: 'Basic bathroom mirror',
+        qualityLevel: 'budget',
+        qualityDescription: 'Standard mirror - basic glass, fog-resistant coating optional'
+      },
+      {
+        value: 'standard',
+        label: 'LED-Backlit Mirror',
+        description: 'Mirror with integrated LED lighting',
+        qualityLevel: 'standard',
+        qualityDescription: 'LED mirror - built-in lighting, anti-fog heating, modern aesthetic'
+      },
+      {
+        value: 'premium',
+        label: 'Smart Mirror',
+        description: 'Digital mirror with touchscreen and smart features',
+        qualityLevel: 'premium',
+        qualityDescription: 'Smart mirror - touchscreen display, lighting control, Bluetooth speakers, defogging, luxury feature'
+      }
+    ]
+  },
+  {
+    id: 'smartFeatures',
+    label: 'Smart Technology Features',
+    type: 'multiselect',
+    required: false,
+    description: 'Smart home integration (optional)',
+    options: [
+      { value: 'smart_lights', label: 'Smart lighting control', description: 'App-controlled lights with dimming and color temperature' },
+      { value: 'voice_control', label: 'Voice control integration', description: 'Alexa, Google Assistant for hands-free control' },
+      { value: 'motion_sensors', label: 'Motion sensor lighting', description: 'Automatic lights when entering bathroom' },
+      { value: 'ambient_scenes', label: 'Lighting scenes/presets', description: 'Pre-programmed lighting moods (bright, relaxing, etc.)' }
+    ]
+  }
+];
+
+// SECTION 10: Plumbing (Conditional - if plumbing selected)
+export const PLUMBING_QUESTIONS: Question[] = [
+  {
+    id: 'plumbingIssues',
+    label: 'Any known plumbing issues?',
+    type: 'multiselect',
+    required: true,
+    sectionTitle: 'Plumbing',
+    description: 'Existing plumbing problems',
+    options: [
+      { value: 'leakage', label: 'Leakage', description: 'Water leaks' },
+      { value: 'blocked', label: 'Blocked pipes', description: 'Drainage issues' },
+      { value: 'old_rusted', label: 'Old or rusted pipes', description: 'Aging pipes' },
+      { value: 'no_issues', label: 'No issues', description: 'Everything working' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need inspection' }
+    ]
+  },
+  {
+    id: 'replacePipes',
+    label: 'Replace existing plumbing pipes?',
+    type: 'radio',
+    required: true,
+    description: 'Plan to replace old pipes?',
+    options: [
+      { value: 'yes', label: 'Yes', description: 'Full pipe replacement' },
+      { value: 'no', label: 'No', description: 'Keep existing' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need advice' }
+    ]
+  },
+  {
+    id: 'hotWaterSystem',
+    label: 'Hot water system available?',
+    type: 'radio',
+    required: true,
+    description: 'Is hot water available?',
+    options: [
+      { value: 'yes', label: 'Yes', description: 'Hot water available' },
+      { value: 'no', label: 'No', description: 'Need to install' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need to check' }
+    ]
+  },
+  {
+    id: 'pipeMaterial',
+    label: 'Pipe Material',
+    type: 'radio',
+    required: false,
+    description: 'Preferred pipe material',
+    options: [
+      { value: 'pex', label: 'PEX', description: 'Flexible plastic' },
+      { value: 'cpvc', label: 'CPVC', description: 'Rigid plastic' },
+      { value: 'copper', label: 'Copper', description: 'Metal pipes' }
+    ]
+  }
+];
+
+// SECTION 10B: Water Pressure (Conditional - if water_pressure selected)
+export const WATER_PRESSURE_QUESTIONS: Question[] = [
+  {
+    id: 'currentWaterPressure',
+    label: 'Current water pressure',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Water Pressure',
+    description: 'How is your current water pressure?',
+    options: [
+      { value: 'good', label: 'Good', description: 'Strong pressure' },
+      { value: 'average', label: 'Average', description: 'Acceptable pressure' },
+      { value: 'low', label: 'Low', description: 'Weak pressure' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need to check' }
+    ]
+  },
+  {
+    id: 'lowPressureLocation',
+    label: 'Where is pressure low?',
+    type: 'multiselect',
+    required: false,
+    description: 'Which fixtures have low pressure?',
+    options: [
+      { value: 'shower', label: 'Shower', description: 'Weak shower' },
+      { value: 'basin', label: 'Basin tap', description: 'Weak tap flow' },
+      { value: 'toilet', label: 'Toilet flush', description: 'Weak flush' },
+      { value: 'whole_bathroom', label: 'Whole bathroom', description: 'All fixtures' },
+      { value: 'na', label: 'Not applicable', description: 'Pressure is fine' }
+    ]
+  },
+  {
+    id: 'waterSupplyType',
+    label: 'Water supply type',
+    type: 'radio',
+    required: true,
+    description: 'How is water supplied?',
+    options: [
+      { value: 'overhead', label: 'Overhead tank', description: 'Gravity-fed' },
+      { value: 'underground_pump', label: 'Underground tank with pump', description: 'Pumped supply' },
+      { value: 'municipal', label: 'Direct municipal supply', description: 'City water' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need to check' }
+    ]
+  },
+  {
+    id: 'wantStrongerPressure',
+    label: 'Want stronger shower pressure?',
+    type: 'radio',
+    required: true,
+    description: 'Improve shower pressure?',
+    options: [
+      { value: 'yes', label: 'Yes', description: 'Increase pressure' },
+      { value: 'no', label: 'No', description: 'Keep as is' },
+      { value: 'normal_fine', label: 'Normal pressure is fine', description: 'Current is OK' }
+    ]
+  },
+  {
+    id: 'boosterPumpOk',
+    label: 'OK with booster pump if needed?',
+    type: 'radio',
+    required: true,
+    description: 'Install pump if required?',
+    options: [
+      { value: 'yes', label: 'Yes', description: 'OK to install pump' },
+      { value: 'no', label: 'No', description: 'No pump wanted' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need advice' }
+    ]
+  }
+];
+
+// SECTION 11: Heating (Conditional - if heating selected)
+export const HEATING_QUESTIONS: Question[] = [
+  {
+    id: 'heatingType',
+    label: 'Bathroom Heating System',
+    type: 'multiselect',
+    required: true,
+    sectionTitle: 'Heating & Comfort',
+    description: 'Select heating systems for your bathroom',
+    allowOther: true,
+    otherPlaceholder: 'Describe heating system...',
+    options: [
+      {
+        value: 'radiator',
+        label: 'Wall radiator (Heizkörper)',
+        description: 'Traditional panel radiator for bathroom heating',
+        qualityLevel: 'standard',
+        qualityDescription: 'Traditional wall-mounted radiator - reliable heating, good for retrofit installations'
+      },
+      {
+        value: 'towel_radiator',
+        label: 'Heated towel radiator (Handtuchheizkörper)',
+        description: 'Dual function: room heating + towel warming',
+        qualityLevel: 'standard',
+        qualityDescription: 'Popular German choice - heats room while keeping towels warm and dry, space-efficient'
+      },
+      {
+        value: 'underfloor_electric',
+        label: 'Electric underfloor heating',
+        description: 'Floor heating mats, easy installation',
+        qualityLevel: 'standard',
+        qualityDescription: 'Electric heating mats under tiles - comfortable floor warmth, easier retrofit than water system'
+      },
+      {
+        value: 'underfloor_water',
+        label: 'Water underfloor heating',
+        description: 'Hydronic system, most energy-efficient',
+        qualityLevel: 'premium',
+        qualityDescription: 'Water-based underfloor heating - most efficient, even heat distribution, ideal for new construction or major renovations'
+      },
+      {
+        value: 'infrared_heater',
+        label: 'Infrared panel heater',
+        description: 'Modern, efficient, wall/ceiling mounted',
+        qualityLevel: 'standard',
+        qualityDescription: 'Modern infrared panels - efficient spot heating, quick warmth, contemporary design, wall or ceiling mount'
+      }
+    ]
+  },
+  {
+    id: 'heatedTowelRailQuality',
+    label: 'Heated Towel Rail Quality & Brand (if selected)',
+    type: 'radio',
+    required: false,
+    description: 'Choose heated towel rail quality level',
+    allowOther: true,
+    otherPlaceholder: 'Enter specific brand preference...',
+    options: [
+      {
+        value: 'budget_standard',
+        label: 'Budget - Standard brands',
+        description: 'Functional, basic models',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic heated towel rails - reliable functionality, standard designs, good for cost-conscious renovations'
+      },
+      {
+        value: 'kermi',
+        label: 'Standard - Kermi (German)',
+        description: 'German quality, energy-efficient',
+        qualityLevel: 'standard',
+        qualityDescription: 'Kermi - established German brand, efficient heating, reliable quality, good value'
+      },
+      {
+        value: 'zehnder',
+        label: 'Premium - Zehnder (Swiss-German)',
+        description: 'High-quality design radiators',
+        qualityLevel: 'premium',
+        qualityDescription: 'Zehnder - Swiss-German premium brand, excellent design options, superior build quality'
+      },
+      {
+        value: 'vasco',
+        label: 'Luxury - Vasco',
+        description: 'Designer radiators, modern aesthetics',
+        qualityLevel: 'luxury',
+        qualityDescription: 'Vasco - luxury designer radiators, statement pieces, contemporary designs, premium finishes'
+      }
+    ]
+  }
+];
+
+// SECTION 12: Ventilation (Conditional - if ventilation selected)
+export const VENTILATION_QUESTIONS: Question[] = [
+  {
+    id: 'ventilationType',
+    label: 'Ventilation System',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Ventilation & Air Quality',
+    description: 'What type of ventilation do you need? (Must comply with DIN 18017 German standards)',
+    allowOther: true,
+    otherPlaceholder: 'Describe ventilation...',
+    options: [
+      {
+        value: 'window_only',
+        label: 'Window ventilation only',
+        description: 'Natural ventilation through window',
+        qualityLevel: 'budget',
+        qualityDescription: 'Natural ventilation - no mechanical system, relies on opening windows, only suitable if bathroom has external window'
+      },
+      {
+        value: 'basic_exhaust',
+        label: 'Basic exhaust fan',
+        description: 'Simple wall or ceiling-mounted fan',
+        qualityLevel: 'budget',
+        qualityDescription: 'Basic mechanical ventilation - simple fan, manually controlled, removes moisture and odors'
+      },
+      {
+        value: 'humidity_sensor',
+        label: 'Humidity sensor fan',
+        description: 'Automatically turns on when humidity rises',
+        qualityLevel: 'standard',
+        qualityDescription: 'Smart humidity-controlled fan - automatically activates when moisture detected, energy-efficient, prevents mold'
+      },
+      {
+        value: 'timer_fan',
+        label: 'Timer-controlled fan',
+        description: 'Runs for set time after bathroom use',
+        qualityLevel: 'standard',
+        qualityDescription: 'Timer-based fan - continues running after light switch off, ensures complete moisture removal'
+      },
+      {
+        value: 'heat_recovery',
+        label: 'Heat recovery ventilation (HRV)',
+        description: 'Energy-efficient, recovers warmth from exhaust air',
+        qualityLevel: 'premium',
+        qualityDescription: 'Premium HRV system - recovers heat from outgoing air, energy-efficient, ideal for passive houses and modern builds'
+      }
+    ]
+  },
+  {
+    id: 'ventilationCapacity',
+    label: 'Fan Capacity (if mechanical ventilation selected)',
+    type: 'radio',
+    required: false,
+    description: 'Choose ventilation capacity based on bathroom size (measured in cubic meters per hour)',
+    allowOther: true,
+    otherPlaceholder: 'Custom capacity...',
+    options: [
+      {
+        value: 'small',
+        label: 'Small bathroom (up to 4m²) - 80m³/h',
+        description: 'For compact bathrooms and powder rooms',
+        qualityLevel: 'standard',
+        qualityDescription: 'Suitable for small bathrooms - adequate air exchange for spaces up to 4 square meters'
+      },
+      {
+        value: 'medium',
+        label: 'Medium bathroom (4-8m²) - 120m³/h',
+        description: 'For standard family bathrooms',
+        qualityLevel: 'standard',
+        qualityDescription: 'Most common choice - suitable for typical family bathrooms with shower or bath'
+      },
+      {
+        value: 'large',
+        label: 'Large bathroom (8m²+) - 180m³/h or more',
+        description: 'For larger bathrooms or wet rooms',
+        qualityLevel: 'standard',
+        qualityDescription: 'Higher capacity - needed for large master bathrooms, wet rooms, or bathrooms with multiple fixtures'
+      }
+    ]
+  }
+];
+
+// SECTION 13: Accessories (Conditional - if accessories selected)
+export const ACCESSORIES_QUESTIONS: Question[] = [
+  {
+    id: 'accessoriesWanted',
+    label: 'Which accessories do you want?',
+    type: 'multiselect',
+    required: true,
+    sectionTitle: 'Accessories',
+    description: 'Select bathroom accessories',
+    options: [
+      { value: 'towel_bars', label: 'Towel bars', description: 'Standard towel racks' },
+      { value: 'heated_towel', label: 'Heated towel rail', description: 'Warming towel rack' },
+      { value: 'toilet_paper', label: 'Toilet paper holder', description: 'TP holder' },
+      { value: 'shelves', label: 'Shelves', description: 'Storage shelves' },
+      { value: 'grab_bars', label: 'Grab bars', description: 'Safety rails' }
+    ]
+  }
+];
+
+// SECTION 14: Waterproofing (Conditional - if waterproofing selected)
+export const WATERPROOFING_QUESTIONS: Question[] = [
+  {
+    id: 'waterproofingRequired',
+    label: 'Waterproofing required?',
+    type: 'radio',
+    required: true,
+    sectionTitle: 'Waterproofing',
+    description: 'Need waterproofing work?',
+    options: [
+      { value: 'full', label: 'Yes, full waterproofing', description: 'Entire bathroom' },
+      { value: 'shower_only', label: 'Only shower area', description: 'Just shower' },
+      { value: 'floor_only', label: 'Only floor', description: 'Floor waterproofing' },
+      { value: 'expert_advice', label: 'Not sure, need expert advice', description: 'Get recommendation' },
+      { value: 'no', label: 'No', description: 'Not needed' }
+    ]
+  },
+  {
+    id: 'waterproofingIssues',
+    label: 'Existing waterproofing issues?',
+    type: 'multiselect',
+    required: false,
+    description: 'Current moisture problems',
+    options: [
+      { value: 'leakage_downstairs', label: 'Water leakage to downstairs', description: 'Leaking to below' },
+      { value: 'damp_walls', label: 'Damp / wet walls', description: 'Moisture in walls' },
+      { value: 'cracked_tiles', label: 'Cracked tiles', description: 'Tile damage' },
+      { value: 'mold', label: 'Mold / fungus on walls or floor', description: 'Mold growth' },
+      { value: 'bad_smell', label: 'Bad smell from wet areas', description: 'Odor issues' },
+      { value: 'no_issues', label: 'No issues', description: 'All good' },
+      { value: 'not_sure', label: 'Not sure', description: 'Need inspection' }
+    ]
+  },
+  {
+    id: 'waterproofingPreference',
+    label: 'Waterproofing preference',
+    type: 'radio',
+    required: false,
+    description: 'Quality level wanted',
+    options: [
+      { value: 'standard', label: 'Standard waterproofing', description: 'Basic protection' },
+      { value: 'high_grade', label: 'High-grade waterproofing', description: 'Premium quality' },
+      { value: 'suggest', label: 'Not sure — suggest best option', description: 'Get recommendation' }
+    ]
+  }
+];
+
+// Combine all questions for easy access
+export const BATHROOM_QUESTIONS: Question[] = [
+  ...BATHROOM_AREA_SELECTION
+];
+
+// Map renovation types to their specific questions
+export const RENOVATION_QUESTIONS: Record<string, Question[]> = {
+  bathroom: BATHROOM_QUESTIONS,
+  // Add more renovation types here later
 };
+
+// Removed: FINANCING_OPTIONS - Not needed anymore
+
+// Removed: AI_CONFIG - All AI calls now go through backend
 
 // ============================================================================
 // Default Values
 // ============================================================================
 
 export const DEFAULT_FORM_DATA: FormData = {
-  renovationType: '',
-  estimatedBudget: '',
-  propertyType: '',
-  monthlyIncome: '',
-  ownership: '',
-  energyEfficiency: ''
+  renovationType: ''
 };
 
-// ============================================================================
-// Budget Mapping (for calculations)
-// ============================================================================
 
-export const BUDGET_RANGES: Record<string, { min: number; max: number; default: number }> = {
-  'under-10k': { min: 1000, max: 10000, default: 8000 },
-  '10k-30k': { min: 10000, max: 30000, default: 20000 },
-  '30k-50k': { min: 30000, max: 50000, default: 40000 },
-  '50k-100k': { min: 50000, max: 100000, default: 75000 },
-  'over-100k': { min: 100000, max: 300000, default: 150000 }
-};
-
-// ============================================================================
-// UI Constants
-// ============================================================================
-
-export const FINANCING_TYPE_COLORS = {
-  grant: 'bg-green-100 text-green-800 border-green-300',
-  subsidy: 'bg-blue-100 text-blue-800 border-blue-300',
-  loan: 'bg-purple-100 text-purple-800 border-purple-300'
-};
-
-export const FINANCING_TYPE_LABELS = {
-  grant: 'Grant (No Repayment)',
-  subsidy: 'Subsidy',
-  loan: 'Loan'
-};
-
-export const MATCH_SCORE_COLORS = {
-  high: 'text-green-600', // 80-100
-  medium: 'text-blue-600', // 60-79
-  low: 'text-amber-600' // 0-59
-};
+// Removed: UI Constants for financing types - Not needed anymore

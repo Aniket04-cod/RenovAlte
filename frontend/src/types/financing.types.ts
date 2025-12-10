@@ -8,55 +8,130 @@
 // ============================================================================
 
 export interface FormData {
-  // Step 1: Basic Project Info (Required)
+  // Basic Project Info
   renovationType: string;
-  estimatedBudget: string;
-  propertyType: string;
-  monthlyIncome: string;
-  ownership: string;
-  energyEfficiency: string;
 
-  // Step 2: Property Details (Required for accurate analysis)
-  propertySize?: string; // sqm
-  propertyAge?: string; // Year built or age range
-  propertyCondition?: 'excellent' | 'good' | 'average' | 'poor' | 'very-poor';
-  location?: string; // Bundesland/State
-  propertyUse?: 'owner-occupied' | 'rental' | 'mixed';
-  residentialUnits?: string; // Number of units
-  currentEnergyRating?: string; // A+ to H or unknown
-  hasEnergyCertificate?: 'yes' | 'no' | 'unknown';
+  // STEP 0: Quality Preference (NEW)
+  qualityPreference?: string;
 
-  // Step 3: Financial Information (Critical for eligibility)
-  annualIncome?: string; // Critical for KfW 358/359
-  availableSavings?: string; // Down payment capability
-  existingDebts?: string; // Affects borrowing capacity
-  monthlyDebtPayments?: string; // Debt obligations
-  creditScore?: 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'; // SCHUFA
-  employmentStatus?: 'permanent' | 'self-employed' | 'temporary' | 'retired' | 'unemployed' | 'other';
-  hasCoApplicant?: 'yes-with-income' | 'yes-no-income' | 'no' | 'prefer-not-say';
+  // STEP 1: Area Selection
+  bathroomRenovationAreas?: string[]; // Array of selected renovation areas
 
-  // Step 4: Energy & Technical Details (For BAFA/KfW programs)
-  currentHeatingSystem?: string; // Type of heating
-  heatingSystemAge?: '0-10' | '10-20' | 'over-20' | 'unknown';
-  plannedEnergyMeasures?: string; // What improvements
-  targetEfficiencyLevel?: string; // EH 40, 55, 70, etc.
-  hasEnergyConsultant?: 'yes' | 'no-will-hire' | 'no-need-recommendation' | 'unknown';
+  // SECTION 1: Renovation Goal (Always shown) - Enhanced
+  renovationGoal?: string[];
+  renovationGoal_other?: string; // "Other" field for renovation goal
+  bathroomSize?: number; // NEW: Bathroom size in m²
 
-  // Step 5: Timeline & Planning (Application requirements)
-  projectStartTimeline?: 'ready' | 'need-quotes' | 'already-started' | 'already-completed' | 'planning-ahead';
-  renovationDuration?: 'under-3-months' | '3-6-months' | '6-12-months' | '1-2-years' | 'over-2-years' | 'not-sure';
-  hasContractorQuotes?: 'yes-multiple' | 'yes-one' | 'in-progress' | 'not-yet' | 'unknown';
-  urgencyLevel?: 'emergency' | 'this-year' | 'next-6-12-months' | 'planning' | 'no-rush';
+  // SECTION 2: Common Fields (Always shown) - Enhanced
+  bathroomType?: string;
+  bathroomType_other?: string; // "Other" field
+  designStyle?: string;
+  designStyle_other?: string; // "Other" field
+  colorSchemeMain?: string;
+  colorSchemeAccent?: string;
+  metalFinish?: string;
+  metalFinish_other?: string; // "Other" field
 
-  // Step 6: Personal & Documentation (Eligibility verification)
-  age?: string; // Primary applicant age range
-  householdSize?: '1' | '2' | '3-4' | '5+';
-  residenceStatus?: 'german-citizen' | 'eu-citizen' | 'permanent-resident' | 'blue-card' | 'temporary' | 'other';
-  germanTaxResident?: 'yes-filed' | 'yes-not-filed' | 'no' | 'not-sure';
-  hasSchufaReport?: 'yes' | 'no-will-order' | 'unknown';
-  hasPropertyDocuments?: 'yes-all' | 'yes-partial' | 'no' | 'unknown';
-  hasIncomeDocuments?: 'yes' | 'partial' | 'no' | 'self-employed';
-  readyToApply?: 'ready-now' | '1-2-weeks' | '1-3-months' | 'researching' | 'not-sure';
+  // SECTION 3: Shower Area (Conditional) - Enhanced
+  showerType?: string;
+  showerType_other?: string; // "Other" field
+  showerFixtureQuality?: string; // NEW: Quality level for shower fixtures
+  showerBrand?: string; // German market brand (legacy)
+  showerBrand_other?: string; // "Other" field
+  showerEnclosureGlass?: string;
+  showerEnclosureThickness?: number;
+  showerEnclosureFrame?: string;
+  showerFixtures?: string[];
+  drainType?: string;
+
+  // SECTION 4: Bathtub (Conditional) - Enhanced
+  bathtubWanted?: string;
+  bathtubType?: string;
+  bathtubType_other?: string; // "Other" field
+  bathtubMaterialQuality?: string; // NEW: Quality level for bathtub material
+  bathtubMaterial?: string; // Legacy field
+  bathtubMaterial_other?: string; // "Other" field
+  bathtubBrand?: string; // German market brand (legacy)
+  bathtubBrand_other?: string; // "Other" field
+  bathtubSize?: string;
+
+  // SECTION 5: Toilet Area (Conditional) - Enhanced
+  toiletType?: string;
+  toiletType_other?: string; // "Other" field
+  toiletQuality?: string; // NEW: Quality level for toilet
+  toiletBrand?: string; // German market brand (legacy)
+  toiletBrand_other?: string; // "Other" field
+  flushSystem?: string;
+  flushSystem_other?: string; // "Other" field (changed from array to string)
+
+  // SECTION 6: Washbasin Area (Conditional) - Enhanced
+  basinCount?: string;
+  basinType?: string;
+  basinType_other?: string; // "Other" field
+  basinQuality?: string; // NEW: Quality level for basin
+  basinBrand?: string; // German market brand (legacy)
+  basinBrand_other?: string; // "Other" field
+  faucetQuality?: string; // NEW: Quality level for faucet
+  countertopMaterialQuality?: string; // NEW: Quality level for countertop
+  countertopMaterial?: string; // Legacy field
+  countertopMaterial_other?: string; // "Other" field
+  faucetBrand?: string; // German market brand (legacy)
+  faucetBrand_other?: string; // "Other" field
+
+  // SECTION 7: Tiles & Surfaces (Conditional)
+  floorTileQuality?: string; // NEW: Quality level for floor tiles
+  floorTileType?: string; // Legacy field
+  floorTileSize?: string;
+  wallTilesQuality?: string; // NEW: Quality level for wall tiles
+  wallTilesHeight?: string;
+  wallTilesMaterial?: string; // Legacy field
+  accentWall?: string;
+  groutQuality?: string; // NEW: Quality level for grout
+  groutType?: string; // Legacy field
+  groutColor?: string;
+
+  // SECTION 8: Electrical & Lighting (Conditional)
+  ceilingLights?: string[];
+  lightingQuality?: string; // NEW: Quality level for lighting fixtures
+  mirrorLights?: string[];
+  mirrorQuality?: string; // NEW: Quality level for mirror
+  smartFeatures?: string[];
+
+  // SECTION 9: Plumbing (Conditional)
+  plumbingIssues?: string[];
+  replacePipes?: string;
+  hotWaterSystem?: string;
+  pipeMaterial?: string;
+
+  // SECTION 10: Water Pressure (Conditional)
+  currentWaterPressure?: string;
+  lowPressureLocation?: string[];
+  waterSupplyType?: string;
+  wantStrongerPressure?: string;
+  boosterPumpOk?: string;
+
+  // SECTION 11: Heating (NEW - Conditional)
+  heatingType?: string[];
+  heatingType_other?: string; // "Other" field
+  heatedTowelRailQuality?: string; // NEW: Quality level for heated towel rail
+  heatedTowelRailBrand?: string; // Legacy field
+  heatedTowelRailBrand_other?: string; // "Other" field
+
+  // SECTION 12: Ventilation (NEW - Conditional)
+  ventilationType?: string;
+  ventilationType_other?: string; // "Other" field
+  ventilationCapacity?: string;
+  ventilationCapacity_other?: string; // "Other" field
+
+  // SECTION 13: Accessories (Conditional)
+  accessoriesWanted?: string[];
+
+  // SECTION 14: Waterproofing (Conditional)
+  waterproofingRequired?: string;
+  waterproofingIssues?: string[];
+  waterproofingPreference?: string;
+
+  // Future renovation types will add their fields here
 }
 
 // ============================================================================
@@ -95,6 +170,12 @@ export interface CostEstimate {
   breakdown: CostBreakdownItem[];
   contingency: number;
   explanation: string;
+}
+
+// Extended cost estimate with internal fields from backend
+export interface CostEstimateResponse extends CostEstimate {
+  _originalPrompt?: string;  // Internal field: original prompt sent to Gemini
+  _formData?: any;            // Internal field: original form data
 }
 
 // ============================================================================
@@ -170,9 +251,9 @@ export interface FinancingRecommendationsProps {
 
 export interface DocumentChecklistProps {
   renovationType: string;
-  ownership: string;
-  energyEfficiency: string;
-  estimatedBudget: string;
+  ownership?: string; // Optional for backward compatibility
+  energyEfficiency?: string; // Optional for backward compatibility
+  estimatedBudget?: string; // Optional for backward compatibility
 }
 
 export interface FinancingAssistantProps {

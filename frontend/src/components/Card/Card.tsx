@@ -36,13 +36,16 @@ export const CardHeader = ({
 // Card Title component
 export const CardTitle = ({
   className,
+  children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+}: React.HTMLAttributes<HTMLHeadingElement>) => {
   return (
     <h4
       className={cn("text-xl font-bold leading-none", className)}
       {...props}
-    />
+    >
+      {children}
+    </h4>
   );
 };
 

@@ -4,9 +4,26 @@
 # --------------------------------------------------------------------------------------------------------------
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
+print(f"\n{'='*80}")
+print("LOADING ENVIRONMENT VARIABLES")
+print(f"{'='*80}")
+print(f"BASE_DIR: {BASE_DIR}")
+print(f".env file path: {BASE_DIR / '.env'}")
+print(f".env file exists: {(BASE_DIR / '.env').exists()}")
+gemini_key = os.environ.get('GEMINI_API_KEY')
+if gemini_key:
+	print(f"SUCCESS: GEMINI_API_KEY loaded: {gemini_key[:20]}...{gemini_key[-4:]}")
+else:
+	print("ERROR: GEMINI_API_KEY NOT FOUND!")
+print(f"{'='*80}\n")
 
 SECRET_KEY = "dev-secret-key"
 

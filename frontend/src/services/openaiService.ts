@@ -126,7 +126,7 @@ Provide helpful, accurate information based on this knowledge. Be friendly and e
 class GeminiService {
   private apiKey: string;
   private baseUrl: string = 'https://generativelanguage.googleapis.com/v1beta/models';
-  private model: string = 'gemini-2.0-flash'; // Using Gemini 2.0 Flash (latest stable, free tier)
+  private model: string = 'gemini-2.5-flash-lite'; // Using Gemini 2.5 Flash Lite (lightweight, free tier)
 
   constructor() {
     // API key should be stored in environment variables
@@ -138,27 +138,14 @@ class GeminiService {
   }
 
   async sendMessage(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Gemini API key is not configured. Please add REACT_APP_GEMINI_API_KEY to your .env file');
-    }
-
     try {
-      // Build conversation context for Gemini
-      let fullPrompt = FINANCING_KNOWLEDGE_BASE + '\n\n';
+      // Call backend API instead of Gemini directly
+      // This allows backend logging and centralized API management
+      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const apiUrl = `${backendUrl}/api/financing/ai-chat/`;
 
-      // Add conversation history
-      conversationHistory.forEach(msg => {
-        if (msg.role === 'user') {
-          fullPrompt += `User: ${msg.content}\n`;
-        } else if (msg.role === 'assistant') {
-          fullPrompt += `Assistant: ${msg.content}\n`;
-        }
-      });
-
-      // Add current user message
-      fullPrompt += `User: ${userMessage}\nAssistant:`;
-
-      const apiUrl = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
+      console.log('[AI Chat] Calling backend API:', apiUrl);
+      console.log('[AI Chat] User message:', userMessage);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -166,29 +153,22 @@ class GeminiService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: fullPrompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800,
-            topP: 0.95,
-            topK: 40
-          }
+          message: userMessage,
+          conversation_history: conversationHistory
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+        throw new Error(`Backend API error: ${response.status} - ${errorData.error || errorData.message || 'Unknown error'}`);
       }
 
-      const data: GeminiResponse = await response.json();
-      return data.candidates[0].content.parts[0].text;
+      const data = await response.json();
+      console.log('[AI Chat] Response received from backend');
+
+      return data.response;
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
+      console.error('Error calling backend AI chat API:', error);
       throw error;
     }
   }
@@ -236,7 +216,9 @@ Keep it SHORT and SIMPLE - just document names with German terms in parentheses.
   }
 
   isConfigured(): boolean {
-    return this.apiKey.length > 0;
+    // Always return true since we're using backend API now
+    // Backend will handle API key validation
+    return true;
   }
 }
 

@@ -42,27 +42,27 @@ jobs:
       run: |
         # Check if build folder exists
         if [ ! -d "build" ]; then
-          echo "❌ Build folder not found!"
+          echo "ERROR: Build folder not found!"
           exit 1
         fi
-        
+
         # Check if index.html exists
         if [ ! -f "build/index.html" ]; then
-          echo "❌ index.html not found in build!"
+          echo "ERROR: index.html not found in build!"
           exit 1
         fi
-        
-        echo "✅ Frontend build successful and contains required files!"
+
+        echo "SUCCESS: Frontend build successful and contains required files!"
         
         # Optional: Serve the build and check if it loads
         npx serve -s build -l 3000 &
         SERVER_PID=$!
         sleep 3
-        
+
         if curl -f http://localhost:3000/; then
-          echo "✅ Frontend is servable and responding!"
+          echo "SUCCESS: Frontend is servable and responding!"
         else
-          echo "⚠️ Warning: Frontend build exists but server didn't respond"
+          echo "WARNING: Frontend build exists but server didn't respond"
         fi
         
         kill $SERVER_PID || true
@@ -111,11 +111,11 @@ jobs:
         echo "Waiting for Django server to start..."
         sleep 5
         if curl -f http://localhost:8000/; then
-          echo "✅ Django server is running!"
+          echo "SUCCESS: Django server is running!"
           kill $SERVER_PID
           exit 0
         else
-          echo "❌ Django server failed to respond"
+          echo "ERROR: Django server failed to respond"
           kill $SERVER_PID || true
           exit 1
         fi

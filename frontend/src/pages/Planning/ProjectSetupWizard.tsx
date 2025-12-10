@@ -10,7 +10,7 @@ import { Input } from "../../components/Input/Input";
 import { Label } from "../../components/Label/Ladel";
 import { Select } from "../../components/Select/Select";
 import { Badge } from "../../components/Bagde/Badge";
-import { Calendar, Goal, Sparkles } from "lucide-react";
+import { Calendar, Sparkles } from "lucide-react";
 import { useState } from "react";
 import {RENOVATIONGOALS} from '../../utils/constants'
 
@@ -31,15 +31,13 @@ export function ProjectSetupWizard() {
   };
 
   const handleGeneratePlan = () => {
-    const formData = {
+    // TODO: Send form data to API or next step
+    console.log('Generate plan with:', {
       buildingType,
       budget,
       startDate,
       goals: selectedGoals,
-    };
-
-    // alert(buildingType + budget + startDate + selectedGoals);
-    // Send formData to API or next step
+    });
   };
 
   return (

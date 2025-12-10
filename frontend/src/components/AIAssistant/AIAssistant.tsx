@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageSquare, Sparkles, X, Send } from "lucide-react";
+import { Sparkles, X, Send } from "lucide-react";
 import Text from "../Text/Text";
 
 // NOTE: This is just a concept UI for the AI assistant. It is not functional yet.

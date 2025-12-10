@@ -33,7 +33,7 @@ export function Footer() {
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm hover:text-emerald-400 transition-colors">
+                    <a href="/" onClick={(e) => e.preventDefault()} className="text-sm hover:text-emerald-400 transition-colors">
                       {link}
                     </a>
                   </li>
@@ -48,9 +48,9 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
           <p>© 2025 RenovAlteGermany. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-emerald-400 transition-colors">Twitter</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">LinkedIn</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">Facebook</a>
+            <a href="/" onClick={(e) => e.preventDefault()} className="hover:text-emerald-400 transition-colors">Twitter</a>
+            <a href="/" onClick={(e) => e.preventDefault()} className="hover:text-emerald-400 transition-colors">LinkedIn</a>
+            <a href="/" onClick={(e) => e.preventDefault()} className="hover:text-emerald-400 transition-colors">Facebook</a>
           </div>
         </div>
       </div>

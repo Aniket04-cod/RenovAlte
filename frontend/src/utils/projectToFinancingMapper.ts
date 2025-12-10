@@ -17,60 +17,6 @@ const mapProjectType = (projectType: string): string => {
 };
 
 /**
- * Maps budget number to budget range string
- */
-const mapBudgetToRange = (budget: number | null): string => {
-  if (!budget || budget === 0) return '';
-
-  if (budget < 10000) return 'under-10k';
-  if (budget < 30000) return '10k-30k';
-  if (budget < 50000) return '30k-50k';
-  if (budget < 100000) return '50k-100k';
-  return 'over-100k';
-};
-
-/**
- * Maps state abbreviation or name to Financing module format
- */
-const mapState = (state: string | undefined): string => {
-  if (!state) return '';
-
-  // If already in correct format (lowercase abbreviation), return it
-  const lowercaseState = state.toLowerCase().trim();
-
-  // Map common state names to abbreviations
-  const stateMapping: Record<string, string> = {
-    'baden-württemberg': 'bw',
-    'bavaria': 'by',
-    'bayern': 'by',
-    'berlin': 'be',
-    'brandenburg': 'bb',
-    'bremen': 'hb',
-    'hamburg': 'hh',
-    'hesse': 'he',
-    'hessen': 'he',
-    'mecklenburg-vorpommern': 'mv',
-    'lower saxony': 'ni',
-    'niedersachsen': 'ni',
-    'north rhine-westphalia': 'nw',
-    'nrw': 'nw',
-    'nordrhein-westfalen': 'nw',
-    'rhineland-palatinate': 'rp',
-    'rheinland-pfalz': 'rp',
-    'saarland': 'sl',
-    'saxony': 'sn',
-    'sachsen': 'sn',
-    'saxony-anhalt': 'st',
-    'sachsen-anhalt': 'st',
-    'schleswig-holstein': 'sh',
-    'thuringia': 'th',
-    'thüringen': 'th'
-  };
-
-  return stateMapping[lowercaseState] || lowercaseState;
-};
-
-/**
  * Main function to map Project to Financing FormData
  * Pre-fills fields that match between Project and Financing questionnaire
  *
@@ -84,40 +30,6 @@ export const mapProjectToFinancingForm = (project: Project): FormData => {
   // Map project fields to financing form fields
   if (project.project_type) {
     formData.renovationType = mapProjectType(project.project_type);
-  }
-
-  if (project.budget) {
-    formData.estimatedBudget = mapBudgetToRange(project.budget);
-  }
-
-  // Map location data
-  if (project.city) {
-    // City is not a direct field in FormData, but we can note it for context
-    // It could be used in additional_information or parsed later
-  }
-
-  if (project.state) {
-    formData.location = mapState(project.state);
-  }
-
-  // Default ownership to 'yes' since they created a project
-  // (assumption: if creating a project, they likely own it)
-  formData.ownership = 'yes';
-
-  // Determine if energy efficiency based on project type
-  // Types that are typically energy-related
-  const energyRelatedTypes = ['electrical', 'hvac', 'plumbing', 'windows_doors', 'roofing'];
-  if (project.project_type && energyRelatedTypes.includes(project.project_type)) {
-    formData.energyEfficiency = 'yes';
-  }
-
-  // Default property type to 'house' (can be improved with more project data)
-  formData.propertyType = 'house';
-
-  // Parse additional information for more details if available
-  if (project.additional_information) {
-    // You could add logic here to parse additional_information
-    // and extract more details if users commonly put them there
   }
 
   return formData;
@@ -139,15 +51,9 @@ export const hasMinimumProjectData = (project: Project | null): boolean => {
  * @returns Friendly message to show to user
  */
 export const getAutoFillMessage = (project: Project): string => {
-  const filledFields: string[] = [];
-
-  if (project.project_type) filledFields.push('renovation type');
-  if (project.budget) filledFields.push('budget');
-  if (project.state) filledFields.push('location');
-
-  if (filledFields.length === 0) {
-    return 'Continue filling out the form for personalized recommendations.';
+  if (project.project_type) {
+    return `We've pre-filled the renovation type from your project "${project.name}".`;
   }
 
-  return `We've pre-filled ${filledFields.join(', ')} from your project "${project.name}". Please review and complete the remaining fields.`;
+  return 'Continue filling out the form for personalized recommendations.';
 };
