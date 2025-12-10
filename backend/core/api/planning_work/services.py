@@ -1,23 +1,181 @@
 import os
 import json
-from datetime import datetime, timedelta
-from typing import Optional
-import google.generativeai as genai
+import time
+import hashlib
+from datetime import datetime
+from typing import Optional, Dict, Any, List
+import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
+try:
+    import google.generativeai as genai  # optional, handled below
+    _HAS_GENAI = True
+except Exception:
+    genai = None
+    _HAS_GENAI = False
+
+# RAG imports
+try:
+    from .rag.retriever import get_rag_retriever
+    _HAS_RAG = True
+except Exception as e:
+    logging.warning(f"RAG modules not available: {str(e)}")
+    _HAS_RAG = False
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiService:
-    """Service for interacting with Google's Gemini AI"""
-    
-    def __init__(self):
-        """Initialize the Gemini service with API key"""
-        api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8')
-        api_key = 'AIzaSyAFL5moLbRfXvTPA0vPPcLFdx_oh0geiI8'
+    """Service for interacting with Google's Gemini AI (fast by default with caching and timeout)"""
+
+    def __init__(self, use_rag: bool = True):
+        # Configuration from env
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        # Use latest public model names; override via env if needed
+        self.fast_model = os.getenv("AI_FAST_MODEL", "gemini-1.5-flash-002")
+        self.pro_model = os.getenv("AI_PRO_MODEL", "gemini-1.5-pro-002")
+        self.default_quality = os.getenv("AI_QUALITY_DEFAULT", "auto").lower()  # fast | pro | auto
+        self.timeout_ms = int(os.getenv("AI_TIMEOUT_MS", "12000"))
         
-        if not api_key:
+        # RAG configuration
+        self.use_rag = use_rag and _HAS_RAG
+        self.rag_retriever = None
+        if self.use_rag:
+            try:
+                logger.info("Initializing RAG retriever for GeminiService")
+                self.rag_retriever = get_rag_retriever()
+                logger.info("RAG retriever initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize RAG retriever: {str(e)}")
+                self.use_rag = False
+
+        # File cache directory
+        self.cache_dir = os.path.join(os.path.dirname(__file__), "../../../.cache")
+        self.cache_dir = os.path.abspath(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
+
+        self._fast = None
+        self._pro = None
+
+        # Minimal lightweight knowledge base (code-only RAG)
+        # Keep concise to avoid token bloat; expand later if needed.
+        self._kb = {
+            "single-family": {
+                "best_practices": [
+                    "Prioritize envelope first: roof/walls/airtightness",
+                    "Uw <= 1.0 W/m²K windows for efficiency",
+                    "Consider heat pump + low-temp emitters",
+                    "MVHR for indoor air quality and heat recovery",
+                    "Plan permits early; coordinate scaffolding access",
+                ],
+                "regulatory_notes": "GEG compliance; check local Bauamt for structural changes",
+            },
+            "apartment": {
+                "best_practices": [
+                    "Focus on windows, balcony doors, infiltration",
+                    "Coordinate HOA (WEG) rules for facade changes",
+                    "Electrical safety per DIN VDE 0100",
+                ],
+                "regulatory_notes": "HOA approval may be required for external changes",
+            },
+            "commercial": {
+                "best_practices": [
+                    "Check occupancy, egress, fire safety systems",
+                    "Right-size HVAC for loads; zoning",
+                    "Acoustic treatment and lighting standards",
+                ],
+                "regulatory_notes": "Fire safety, accessibility (DIN 18040)",
+            },
+        }
+
+    def _rag_context(self, building_type: str, goals: List[str]) -> str:
+        bt = (building_type or "").lower()
+        entry = self._kb.get(bt) or self._kb.get("single-family")
+        if not entry:
+            return ""
+        bullets = []
+        # Simple goal-aware selection (code-only)
+        goals_l = [g.lower() for g in (goals or [])]
+        if any("insulation" in g or "efficiency" in g for g in goals_l):
+            bullets.append(entry["best_practices"][0])
+        if any("windows" in g for g in goals_l) and len(entry["best_practices"]) > 1:
+            bullets.append(entry["best_practices"][1])
+        # Add 1-2 generic best practices
+        for bp in entry["best_practices"]:
+            if len(bullets) >= 4:
+                break
+            if bp not in bullets:
+                bullets.append(bp)
+        # Regulatory note
+        bullets.append(f"Note: {entry['regulatory_notes']}")
+        # Cap to 5 lines total
+        bullets = bullets[:5]
+        return "\n".join(f"- {b}" for b in bullets)
+
+    def _ensure_genai(self):
+        if not _HAS_GENAI:
+            raise ValueError("google-generativeai SDK not installed. Install with: pip install google-generativeai")
+        if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
-        
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
+        genai.configure(api_key=self.api_key)
+
+    def _get_model(self, quality: str):
+        self._ensure_genai()
+        q = (quality or self.default_quality or "fast").lower()
+        if q == "pro":
+            if not self._pro:
+                self._pro = genai.GenerativeModel(self.pro_model, generation_config={
+                    "temperature": 0.3,
+                    "max_output_tokens": 2048,
+                    "top_p": 0.8,
+                    "top_k": 40,
+                })
+            return self._pro
+        # fast or auto default
+        if not self._fast:
+            self._fast = genai.GenerativeModel(self.fast_model, generation_config={
+                "temperature": 0.25,
+                "max_output_tokens": 1400,
+                "top_p": 0.8,
+                "top_k": 40,
+            })
+        return self._fast
+
+    def _cache_key(self, payload: Dict[str, Any]) -> str:
+        # Normalize payload: sort keys, round budget & size to reduce key explosion
+        normalized = dict(payload)
+        if "budget" in normalized:
+            try:
+                normalized["budget"] = float(normalized["budget"])
+            except Exception:
+                pass
+        if "building_size" in normalized:
+            try:
+                normalized["building_size"] = int(normalized["building_size"])
+            except Exception:
+                pass
+        blob = json.dumps(normalized, sort_keys=True, separators=(",", ":"))
+        return hashlib.md5(blob.encode("utf-8")).hexdigest()
+
+    def _cache_path(self, key: str) -> str:
+        return os.path.join(self.cache_dir, f"plan_{key}.json")
+
+    def _cache_get(self, key: str) -> Optional[dict]:
+        path = self._cache_path(key)
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    def _cache_set(self, key: str, data: dict):
+        try:
+            with open(self._cache_path(key), "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
+        except Exception as e:
+            logger.debug(f"Cache write failed: {e}")
     
     def generate_renovation_plan(
         self,
@@ -38,7 +196,8 @@ class GeminiService:
         current_insulation_status: str = None,
         heating_system_type: str = None,
         window_type: str = None,
-        known_major_issues: str = None
+        known_major_issues: str = None,
+        quality: Optional[str] = None,
     ) -> dict:
         """
         Generate a comprehensive renovation plan using Gemini AI
@@ -67,7 +226,63 @@ class GeminiService:
             dict: Contains success status, plan data, and metadata
         """
         try:
-            # Construct the prompt for Gemini
+            t0 = time.perf_counter()
+            payload_for_cache = {
+                "building_type": building_type,
+                "budget": budget,
+                "location": location,
+                "building_size": building_size,
+                "renovation_goals": sorted(list(renovation_goals or [])),
+                "building_age": building_age,
+                "target_start_date": target_start_date,
+                "financing_preference": financing_preference,
+                "incentive_intent": incentive_intent,
+                "living_during_renovation": living_during_renovation,
+                "heritage_protection": heritage_protection,
+                "energy_certificate_available": energy_certificate_available,
+                "surveys_require": surveys_require,
+                "neighbor_impacts": neighbor_impacts,
+                "current_insulation_status": current_insulation_status,
+                "heating_system_type": heating_system_type,
+                "window_type": window_type,
+                "known_major_issues": known_major_issues,
+            }
+
+            # Cache lookup
+            ck = self._cache_key(payload_for_cache)
+            cached = self._cache_get(ck)
+            if cached:
+                cached["cached"] = True
+                cached.setdefault("timings", {}).update({"total_ms": int((time.perf_counter() - t0) * 1000)})
+                return cached
+
+            # Construct the prompt for Gemini (with RAG context if available)
+            rag = ""
+            if self.use_rag and self.rag_retriever:
+                try:
+                    # Build a comprehensive query combining user's goals and context
+                    query_parts = [
+                        f"Building renovation project: {building_type}",
+                        f"Goals: {', '.join(renovation_goals or [])}",
+                        f"Location: {location}",
+                        f"Heritage protection: {heritage_protection}" if heritage_protection else "",
+                    ]
+                    query = " ".join([p for p in query_parts if p])
+                    
+                    # Retrieve context from multiple categories
+                    rag = self.rag_retriever.retrieve_multi_category(
+                        query=query,
+                        categories=["regulations", "permits", "incentives", "processes"],
+                        chunks_per_category=1  # 1 chunk per category = 4 total, keeps prompt compact
+                    )
+                    logger.info(f"Retrieved RAG context: {len(rag)} chars")
+                except Exception as e:
+                    logger.warning(f"RAG retrieval failed, using fallback: {str(e)}")
+                    rag = self._rag_context(building_type, renovation_goals)
+            else:
+                # Fallback to simple knowledge base
+                rag = self._rag_context(building_type, renovation_goals)
+            
             prompt = self._build_renovation_prompt(
                 building_type=building_type,
                 budget=budget,
@@ -86,27 +301,115 @@ class GeminiService:
                 current_insulation_status=current_insulation_status,
                 heating_system_type=heating_system_type,
                 window_type=window_type,
-                known_major_issues=known_major_issues
+                known_major_issues=known_major_issues,
+                rag_context=rag,
             )
-            
-            # Generate content using Gemini
-            response = self.model.generate_content(prompt)
-            
+            t_prompt = time.perf_counter()
+
+            # Choose model (fast default; upgrade to pro on demand)
+            model = self._get_model(quality or "fast")
+
+            # Run with timeout in a thread to avoid blocking
+            timeout_s = max(1, int(self.timeout_ms / 1000))
+            try:
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    future = pool.submit(lambda: model.generate_content(prompt))
+                    response = future.result(timeout=timeout_s)
+            except Exception as e:
+                # If the fast model fails (e.g., 404 model not found), try pro as fallback once
+                logger.warning(f"Fast model failed ({self.fast_model}): {e}. Trying pro model once.")
+                try:
+                    model = self._get_model("pro")
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        future = pool.submit(lambda: model.generate_content(prompt))
+                        response = future.result(timeout=timeout_s)
+                except Exception as e2:
+                    logger.error(f"Gemini generation failed after fallback: {e2}")
+                    return {
+                        'success': False,
+                        'plan': {},
+                        'building_type': building_type,
+                        'budget': budget,
+                        'location': location,
+                        'error': str(e2),
+                        'generated_at': datetime.now().isoformat(),
+                        'cached': False,
+                        'timings': {
+                            'prompt_ms': int((time.perf_counter() - t0) * 1000),
+                            'llm_ms': 0,
+                            'parse_ms': 0,
+                            'total_ms': int((time.perf_counter() - t0) * 1000),
+                        },
+                    }
+
+            t_gen = time.perf_counter()
+
             # Parse the response
-            plan_data = self._parse_gemini_response(response.text)
-            
-            return {
+            plan_data = self._parse_gemini_response(getattr(response, "text", ""))
+
+            # Minimal validation; if weak, escalate once to pro
+            def _weak(pd: dict) -> bool:
+                if not isinstance(pd, dict):
+                    return True
+                if len(pd.get("phases", [])) != 6:
+                    return True
+                if len(pd.get("gantt_chart", [])) != 6:
+                    return True
+                return False
+
+            escalated = False
+            if _weak(plan_data) and (quality or self.default_quality) in ("auto",):
+                try:
+                    model_pro = self._get_model("pro")
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        future2 = pool.submit(lambda: model_pro.generate_content(prompt))
+                        response2 = future2.result(timeout=max(1, int(self.timeout_ms / 1000)))
+                    plan2 = self._parse_gemini_response(getattr(response2, "text", ""))
+                    if not _weak(plan2):
+                        plan_data = plan2
+                        escalated = True
+                except Exception:
+                    logger.debug("Pro escalation failed; keeping fast result")
+            t_parse = time.perf_counter()
+
+            result = {
                 'success': True,
                 'plan': plan_data,
                 'building_type': building_type,
                 'budget': budget,
                 'location': location,
                 'error': None,
-                'generated_at': datetime.now().isoformat()
+                'generated_at': datetime.now().isoformat(),
+                'cached': False,
+                'timings': {
+                    'prompt_ms': int((t_prompt - t0) * 1000),
+                    'llm_ms': int((t_gen - t_prompt) * 1000),
+                    'parse_ms': int((t_parse - t_gen) * 1000),
+                    'total_ms': int((t_parse - t0) * 1000),
+                }
             }
+            if escalated:
+                result['timings']['escalated'] = True
+
+            # Cache store
+            self._cache_set(ck, dict(result))
+            return result
             
+        except TimeoutError:
+            logger.warning("Gemini generation timed out; returning fallback plan")
+            return {
+                'success': True,
+                'plan': self._get_fallback_plan(),
+                'building_type': building_type,
+                'budget': budget,
+                'location': location,
+                'error': None,
+                'generated_at': datetime.now().isoformat(),
+                'cached': False,
+                'timings': {'total_ms': self.timeout_ms}
+            }
         except Exception as e:
-            print('failed')
+            logger.exception("GeminiService failed")
             return {
                 'success': False,
                 'plan': None,
@@ -136,19 +439,18 @@ class GeminiService:
         current_insulation_status: str = None,
         heating_system_type: str = None,
         window_type: str = None,
-        known_major_issues: str = None
+        known_major_issues: str = None,
+        rag_context: str = ""
     ) -> str:
-        """Build a detailed prompt for the Gemini AI"""
+        """Build a compact prompt for the Gemini AI (slimmed for speed)"""
         
         # Format renovation goals as a comma-separated string
         goals_str = ", ".join(renovation_goals)
         
         prompt = f"""
-You are an expert renovation consultant specializing in German building regulations, energy efficiency standards (EnEV/GEG), and renovation financing options including KfW grants.
+    You are an expert renovation consultant (Germany) and must output STRICT JSON only. Keep responses concise but complete.
 
-Generate a comprehensive, structured renovation plan in JSON format for the following project:
-
-**Building Information:**
+    Input:
 - Building Type: {building_type}
 - Location (Bundesland): {location}
 - Building Size: {building_size} m²
@@ -162,19 +464,22 @@ Generate a comprehensive, structured renovation plan in JSON format for the foll
 - Window Type: {window_type or 'Not specified'}
 - Known Major Issues: {known_major_issues or 'None reported'}
 
-**Renovation Details:**
-- Renovation Goals: {goals_str}
+Goals & Constraints:
+- Goals: {goals_str}
 - Budget: €{budget:,.2f}
 - Target Start Date: {target_start_date}
 - Living During Renovation: {living_during_renovation}
 
-**Financing & Compliance:**
+Financing & Compliance:
 - Financing Preference: {financing_preference}
-- Incentive Intent (KfW/Grants): {incentive_intent}
+- Incentive Intent: {incentive_intent}
 - Surveys Required: {surveys_require or 'To be determined'}
 - Neighbor Impacts: {neighbor_impacts or 'None expected'}
 
-**CRITICAL: Follow this EXACT JSON structure for frontend compatibility:**
+Context (RAG hints):
+{rag_context or '-'}
+
+Output JSON schema (EXACT keys; concise values):
 
 {{
     "project_summary": {{
@@ -411,19 +716,13 @@ Generate a comprehensive, structured renovation plan in JSON format for the foll
     ]
 }}
 
-**IMPORTANT RULES:**
-1. phases MUST have exactly 6 items with ids 1-6
-2. phases icons MUST be one of: "Search", "Zap", "FileText", "Users", "Wrench", "CheckCircle2"
-3. phases colors MUST be one of: "emerald", "blue", "amber", "purple", "rose", "gray"
-4. phases status MUST be either "ready" or "pending"
-5. gantt_chart MUST have exactly 6 items matching the phases
-6. gantt_chart colors MUST be in format: "bg-emerald-500", "bg-blue-500", "bg-amber-500", "bg-purple-500", "bg-rose-500", "bg-gray-500"
-7. gantt_chart start values should be cumulative (each task starts after the previous)
-8. gantt_chart duration should be in days
-9. permits MUST include all 5 items with exact ids: "geg", "baug", "architect", "energy-cert", "heritage"
-10. Calculate realistic timeline based on target start date: {target_start_date}
+Rules:
+1) phases: exactly 6 (ids 1..6); icons: Search, Zap, FileText, Users, Wrench, CheckCircle2; colors: emerald, blue, amber, purple, rose, gray; status: ready or pending.
+2) gantt_chart: 6 items matching phases; colors bg-*-500; cumulative starts; duration in days.
+3) permits: include ids 'geg','baug','architect','energy-cert','heritage'.
+4) Date-based timeline should reflect start date {target_start_date}.
 
-Please provide ONLY the JSON output without any additional text or markdown formatting.
+Return ONLY JSON, no extra text.
 """
         
         return prompt

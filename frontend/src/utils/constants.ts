@@ -13,16 +13,15 @@ export const HEATING_SYSTEM_OPTIONS = [
   { value: "gas", label: "Gas" },
   { value: "oil", label: "Oil" },
   { value: "electric", label: "Electric" },
-  { value: "heat-pump", label: "Heat pump" },
-  { value: "district-heating", label: "District Heating (Fernwärme)" },
-  { value: "wood-pellet", label: "Wood Pellet" },
+  { value: "heat-pump", label: "Heat Pump" },
+  { value: "district-heating", label: "District Heating" },
+  { value: "other", label: "Other" },
 ];
 
 export const INSULATION_OPTIONS = [
   { value: "none", label: "None" },
   { value: "partial", label: "Partial (specify area like roof/attic)" },
-  { value: "full-old", label: "Full (but old)" },
-  { value: "unknown", label: "Unknown" },
+  { value: "full", label: "Full" },
 ];
 
 export const BUILDING_TYPES = [
@@ -30,10 +29,12 @@ export const BUILDING_TYPES = [
   { value: "multi-family", label: "Multi-Family Home" },
   { value: "apartment", label: "Apartment" },
   { value: "commercial", label: "Commercial Building" },
+  { value: "villa", label: "Villa" },
+  { value: "office", label: "Office" },
 ];
 
 export const BUNDESLAND = [
-  { value: "baden-wuerttemberg", label: "Baden-Württemberg" },
+  { value: "baden-wurttemberg", label: "Baden-Württemberg" },
   { value: "bavaria", label: "Bavaria (Bayern)" },
   { value: "berlin", label: "Berlin" },
   { value: "brandenburg", label: "Brandenburg" },
@@ -64,41 +65,49 @@ export const BUNDESLAND = [
   },
   { value: "schleswig-holstein", label: "Schleswig-Holstein" },
   { value: "thuringia", label: "Thuringia (Thüringen)" },
+  { value: "north-rhine-westphalia", label: "North Rhine-Westphalia (Nordrhein-Westfalen)" },
+  { value: "rhineland-palatinate", label: "Rhineland-Palatinate (Rheinland-Pfalz)" },
+  { value: "saarland", label: "Saarland" },
 ];
 
 export const WINDOWS_TYPE_OPTIONS = [
   { value: "single-pane", label: "Single-pane" },
   { value: "double-pane", label: "Double-pane (older)" },
   { value: "triple-pane", label: "Triple-pane (modern)" },
+  { value: "mixed", label: "Mixed" },
 ];
 
 export const NEIGHBOR_IMPACTS_OPTIONS = [
-  { value: "party-wall", label: "Party wall changes" },
   { value: "scaffolding", label: "Scaffolding over neighbor property" },
-  { value: "noise-windows", label: "Noise time windows" },
+  { value: "noise", label: "Noise disruption" },
+  { value: "access", label: "Access restrictions" },
+  { value: "none", label: "None" },
 ];
 
 export const FINANCING_PREFERENCE_OPTIONS = [
   { value: "personal-savings", label: "Personal savings" },
   { value: "bank-loan", label: "Bank loan" },
   { value: "kfw-loan", label: "KfW loan" },
-  { value: "combination", label: "Combination" },
+  { value: "mixed", label: "Mixed Financing" },
 ];
 
 export const INCENTIVE_INTENT_OPTIONS = [
   { value: "yes", label: "Yes, planning to apply" },
-  { value: "maybe", label: "Maybe/Undecided" },
-  { value: "no", label: "No, not interested" },
+  { value: "yes-applied", label: "Yes, already applied" },
+  { value: "no", label: "No" },
+  { value: "unsure", label: "Unsure" },
 ];
 
 export const HERITAGE_PROTECTION = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
+  { value: "unsure", label: "Unsure" },
 ];
 
 export const LIVING_DURING_RENOVATION_OPTIONS = [
-  { value: "yes", label: "Will you live in the property during work?" },
+  { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
+  { value: "partial", label: "Partially" },
 ];
 
 export const ENERGY_CERTIFICATE_RATING_OPTIONS = [
@@ -111,19 +120,21 @@ export const ENERGY_CERTIFICATE_RATING_OPTIONS = [
   { value: "f", label: "F" },
   { value: "g", label: "G" },
   { value: "h", label: "H" },
-  { value: "unknown", label: "Unknown" },
+  { value: "not-available", label: "Not Available" },
 ];
 
 export const KNOWN_MAJOR_ISSUES_OPTIONS = [
-  { value: "structural", label: "Structural problems" },
-  { value: "moisture-mold", label: "Moisture/mold" },
-  { value: "roof-damage", label: "Roof damage" },
-  { value: "electrical-plumbing", label: "Electrical/plumbing issues (specify)" },
+  { value: "mold", label: "Mold" },
+  { value: "water-damage", label: "Water damage" },
+  { value: "structural-cracks", label: "Structural cracks" },
+  { value: "roof-leaks", label: "Roof leaks" },
+  { value: "none", label: "None" },
 ];
 
 export const SURVEYS_REQUIRED_OPTIONS = [
-  { value: "energy-consultant", label: "Energy consultant report" },
-  { value: "structural-engineer", label: "Structural engineer statement" },
-  { value: "fire-protection", label: "Fire protection concept" },
-  { value: "noise-thermal", label: "Noise/thermal calculations (EnEV/GEG)" },
+  { value: "energy-audit", label: "Energy Audit" },
+  { value: "structural-assessment", label: "Structural Assessment" },
+  { value: "asbestos-survey", label: "Asbestos Survey" },
+  { value: "none", label: "None" },
+  { value: "unsure", label: "Unsure" },
 ];

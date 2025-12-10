@@ -22,6 +22,7 @@ export interface ProjectPlanData {
   buildingAge: string;
   buildingSize: number;
   bundesland: string;
+  heritageProtection: string;
   heatingSystem?: string;
   insulationType?: string;
   windowsType?: string;
@@ -60,30 +61,60 @@ export function Planning() {
     setProjectPlan(planData);
 
     try {
+      // Map frontend field names to backend API field names
+      // Build payload and only include optional fields when present
+      const requestPayload: any = {
+        building_type: planData.buildingType,
+        budget: planData.budget,
+        location: planData.bundesland, // Maps to Bundesland choice field
+        building_size: planData.buildingSize,
+        renovation_goals: planData.goals, // Should be array of goal choices
+        building_age: planData.buildingAge, // ISO date format: YYYY-MM-DD
+        target_start_date: planData.startDate, // ISO date format: YYYY-MM-DD
+        financing_preference: planData.financingPreference,
+        incentive_intent: planData.incentiveIntent,
+        living_during_renovation: planData.livingDuringRenovation,
+        heritage_protection: planData.heritageProtection,
+      };
+
+      if (planData.energyCertificateRating) {
+        requestPayload.energy_certificate_available = planData.energyCertificateRating;
+      }
+      if (planData.heatingSystem) {
+        requestPayload.heating_system_type = planData.heatingSystem;
+      }
+      if (planData.windowsType) {
+        requestPayload.window_type = planData.windowsType;
+      }
+      if (planData.insulationType) {
+        requestPayload.current_insulation_status = planData.insulationType;
+      }
+
+      // Log payload both as object and JSON for easier copy/paste debugging
+      console.log("Sending renovation plan request:", requestPayload);
+      try {
+        console.log("Sending renovation plan request (JSON):", JSON.stringify(requestPayload));
+      } catch (e) {
+        // ignore stringify errors
+      }
+
       const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          building_type: planData.buildingType,
-          budget: planData.budget,
-          location: planData.bundesland,
-          building_size: planData.buildingSize,
-          renovation_goals: planData.goals,
-          building_age: planData.buildingAge,
-          target_start_date: planData.startDate,
-          financing_preference: planData.financingPreference,
-          incentive_intent: planData.incentiveIntent,
-          living_during_renovation: planData.livingDuringRenovation,
-          heritage_protection: planData.neighborImpact,
-          energy_certificate_available: planData.energyCertificateRating,
-          heating_system_type: planData.heatingSystem,
-          window_type: planData.windowsType,
-          current_insulation_status: planData.insulationType,
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestPayload),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate plan");
+        // Try to parse error details from response
+        try {
+          const errorData = await response.json();
+          console.error("API Error Response:", errorData);
+          throw new Error(`API error: ${JSON.stringify(errorData)}`);
+        } catch (e) {
+          throw new Error(`Failed to generate plan (Status: ${response.status})`);
+        }
       }
 
       const result: ApiPlanResponse = await response.json();
@@ -92,6 +123,7 @@ export function Planning() {
 
     } catch (error) {
       console.error("Error generating plan:", error);
+      alert(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsGeneratingPlan(false);
     }

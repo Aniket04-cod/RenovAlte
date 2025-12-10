@@ -45,8 +45,17 @@ def generate_renovation_plan(request):
     from .serializers import RenovationPlanRequestSerializer, RenovationPlanResponseSerializer
     
     serializer = RenovationPlanRequestSerializer(data=request.data)
+    # Log incoming request data for debugging invalid requests
+    try:
+        logger.info("DEBUG REQUEST DATA: %s", request.data)
+    except Exception:
+        # fallback to print if logger has issues
+        print("DEBUG REQUEST DATA:", request.data)
     
     if not serializer.is_valid():
+        # Log serializer errors along with the raw request for easier debugging
+        logger.warning("Serializer validation failed: %s", serializer.errors)
+        logger.debug("Invalid request payload: %s", request.data)
         return Response(
             {
                 'success': False,
@@ -71,20 +80,25 @@ def generate_renovation_plan(request):
         if provider == 'groq':
             try:
                 gemini_service = GroqService()
-            except ValueError as e:
+            except (ValueError, Exception) as e:
                 logger.warning(f"GROQ not configured or SDK missing: {e}. Using mock service.")
                 gemini_service = MockGeminiService()
         else:
-            try:
-                gemini_service = GeminiService()
-                print("Using GeminiService")
-            except ValueError as e:
-                print(f"GeminiService initialization failed: {e}")
-                # Fallback to mock service if API key not configured
-                logger.warning(f"Gemini API key not configured: {e}. Using mock service.")
+            # Check if Gemini is configured before instantiating
+            gemini_api_key = os.getenv('GEMINI_API_KEY')
+            if gemini_api_key:
+                try:
+                    gemini_service = GeminiService()
+                    print("Using GeminiService")
+                except (ValueError, Exception) as e:
+                    print(f"GeminiService initialization failed: {e}. Using mock service.")
+                    logger.warning(f"Gemini initialization failed: {e}. Using mock service.")
+                    gemini_service = MockGeminiService()
+            else:
+                print("GEMINI_API_KEY not set. Using MockGeminiService")
+                logger.info("GEMINI_API_KEY not set. Using mock service.")
                 gemini_service = MockGeminiService()
         
-        # Generate renovation plan
         # Generate renovation plan
         result = gemini_service.generate_renovation_plan(
             building_type=validated_data['building_type'],
@@ -104,8 +118,35 @@ def generate_renovation_plan(request):
             current_insulation_status=validated_data.get('current_insulation_status'),
             heating_system_type=validated_data.get('heating_system_type'),
             window_type=validated_data.get('window_type'),
-            known_major_issues=validated_data.get('known_major_issues')
+            known_major_issues=validated_data.get('known_major_issues'),
+            quality=request.data.get('quality')
         )
+
+        # If Gemini failed, fall back to mock to return a usable plan
+        if (not result.get('success')) or (result.get('plan') in (None, {})):
+            logger.warning("Gemini generation failed; falling back to MockGeminiService")
+            mock_service = MockGeminiService()
+            result = mock_service.generate_renovation_plan(
+                building_type=validated_data['building_type'],
+                budget=float(validated_data['budget']),
+                location=validated_data['location'],
+                building_size=validated_data['building_size'],
+                renovation_goals=validated_data['renovation_goals'],
+                building_age=validated_data['building_age'].isoformat(),
+                target_start_date=validated_data['target_start_date'].isoformat(),
+                financing_preference=validated_data['financing_preference'],
+                incentive_intent=validated_data['incentive_intent'],
+                living_during_renovation=validated_data['living_during_renovation'],
+                heritage_protection=validated_data['heritage_protection'],
+                energy_certificate_available=validated_data.get('energy_certificate_available'),
+                surveys_require=validated_data.get('surveys_require'),
+                neighbor_impacts=validated_data.get('neighbor_impacts'),
+                current_insulation_status=validated_data.get('current_insulation_status'),
+                heating_system_type=validated_data.get('heating_system_type'),
+                window_type=validated_data.get('window_type'),
+                known_major_issues=validated_data.get('known_major_issues'),
+                quality=request.data.get('quality')
+            )
         print("=" * 50)
         print("DEBUG: Result from generate_renovation_plan")
         print("=" * 50)
