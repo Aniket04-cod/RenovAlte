@@ -10,6 +10,7 @@ import { Input } from "../../components/Input/Input";
 import { Label } from "../../components/Label/Ladel";
 import { Select } from "../../components/Select/Select";
 import { Badge } from "../../components/Bagde/Badge";
+import  Text  from "../../components/Text/Text";
 import {
   Calendar,
   Sparkles,
@@ -19,7 +20,7 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   RENOVATIONGOALS,
   HEATING_SYSTEM_OPTIONS,
@@ -68,7 +69,7 @@ export function ProjectSetupWizard({
 }: ProjectSetupWizardProps) {
   const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [prompt, setPrompt] = useState("");
-  
+
   // Chatbot states for prompt mode
   const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [chatSessionId, setChatSessionId] = useState("");
@@ -118,6 +119,26 @@ export function ProjectSetupWizard({
   const [questionHistory, setQuestionHistory] = useState<AIQuestion[]>([]);
   const [questionCount, setQuestionCount] = useState(0);
   const [dynamicError, setDynamicError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+  };
 
   const handleStartDynamicFlow = async () => {
     // you can re-use selectedGoals from manual as "goals" here
@@ -220,10 +241,10 @@ export function ProjectSetupWizard({
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/chatbot/message/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: prompt,
           session_id: chatSessionId
         })
       });
@@ -233,7 +254,7 @@ export function ProjectSetupWizard({
       }
 
       const data = await response.json();
-      
+
       // Store session_id
       if (data.session_id) {
         setChatSessionId(data.session_id);
@@ -242,12 +263,12 @@ export function ProjectSetupWizard({
       // Add assistant response
       const assistantMessage = { role: 'assistant' as const, content: data.response };
       setChatMessages(prev => [...prev, assistantMessage]);
-      
+
       // Clear input
       setPrompt("");
     } catch (error) {
       console.error("Chat error:", error);
-      const errorMessage = { 
+      const errorMessage = {
         role: 'assistant' as const, 
         content: "Sorry, I'm having trouble connecting. Please try again." 
       };
@@ -330,12 +351,12 @@ export function ProjectSetupWizard({
     }
   };
 
-/*   const handlePromptSubmit = () => {
+  /*   const handlePromptSubmit = () => {
     if (prompt.trim()) {
       handleGeneratePlan();
     }
   }; */
-    return (
+  return (
     <Card className="border-emerald-100 shadow-sm transition-all duration-300">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -807,6 +828,33 @@ export function ProjectSetupWizard({
               )}
             </div>
 
+            {/* File upload + preview */}
+            <div className="space-y-2">
+              {previewUrl && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={previewUrl}
+                    alt={selectedFile?.name || "Uploaded image"}
+                    className="h-16 w-16 rounded-md object-cover border border-gray-200"
+                  />
+                  <div className="text-xs text-gray-600">
+                    <Text className="font-medium">{selectedFile?.name}</Text>
+                    <Text>{(selectedFile!.size / 1024).toFixed(1)} KB</Text>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
+
             {/* Chat Input */}
             <div className="flex gap-2">
               <Input
@@ -816,8 +864,15 @@ export function ProjectSetupWizard({
                 placeholder="Ask about your renovation project..."
                 className="flex-1"
               />
-              <Button 
-                onClick={handleSendChatMessage} 
+              <Button
+                type="button"
+                onClick={handleFileButtonClick}
+                className="text-sm"
+              >
+                Upload Image
+              </Button>
+              <Button
+                onClick={handleSendChatMessage}
                 disabled={!prompt.trim() || isChatLoading}
                 variant="primary"
               >

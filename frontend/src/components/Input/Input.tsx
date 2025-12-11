@@ -3,6 +3,7 @@ import { cn } from "../../utils/utils";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string;
+  ref?:any
 }
 
 export const Input: React.FC<InputProps> = ({ className, type = "text", ...props }) => {
