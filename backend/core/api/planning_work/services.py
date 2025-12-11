@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import google.generativeai as genai
 
+from django.conf import settings
+from .rag_service import get_rag_service
+
 
 class GeminiService:
     """Service for interacting with Google's Gemini AI"""
@@ -17,7 +20,7 @@ class GeminiService:
             # Fallback for local dev if env var not set (Note: In production, always use env var)
             # This key should be revoked if exposed publicly
             print('static api')
-            api_key = 'PLACE_YOUR_API'
+            api_key = 'AIzaSyCgiMNI9uawk414JVUKb7cpdd0PBSa67A0'
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
@@ -78,6 +81,7 @@ class GeminiService:
             
             # Parse the response
             plan_data = self._parse_json_response(response.text)
+            print('Plan data parsed successfully.', plan_data)
             
             return {
                 'success': True,
@@ -129,9 +133,29 @@ Return EXACT JSON format:
 
     def _build_renovation_prompt_dynamic(self, context: Dict[str, Any]) -> str:
         """Build a prompt using the full dynamic context"""
-        
+        # Get RAG context from PDFs
+        rag_context = ""
+        try:
+            rag = get_rag_service(
+                    pdf_directory=settings.PDF_DIRECTORY,
+                    qdrant_url=settings.QDRANT_URL,
+                    qdrant_api_key=settings.QDRANT_API_KEY
+                )
+            if rag:
+                rag_context = rag.get_context(
+                    building_type=context.get('building_type', ''),
+                    location=context.get('location', ''),
+                    budget=float(context.get('budget', 0)),
+                    goals=context.get('renovation_goals', []),
+                    top_k=6
+                )
+            print('RAG context retrieved successfully.', rag_context)
+        except Exception as e:
+            print(f"RAG failed, continuing without: {e}")
         return f"""
 You are an expert renovation consultant specializing in German building regulations (GEG), KfW grants, and construction planning.
+
+{rag_context}
 
 Generate a comprehensive, structured renovation plan in JSON format based on these project details:
 
@@ -154,7 +178,7 @@ All text content in the JSON (titles, descriptions, tasks, reasons, suggestions)
     "phases": [
         {{
             "id": 1,
-            "title": "Phase Title",
+            "title": "Analysis & Planning",
             "icon": "Search", 
             "duration": "1-2 weeks",
             "cost": "€500 - €1,200",
@@ -162,27 +186,120 @@ All text content in the JSON (titles, descriptions, tasks, reasons, suggestions)
             "color": "emerald",
             "tasks": [
                 {{
-                    "task_name": "Task description",
-                    "estimated_time": "X days",
-                    "estimated_cost": "€X",
-                    "required_by": "Stakeholder"
+                    "task_name": "Site inspection and assessment",
+                    "estimated_time": "2 days",
+                    "estimated_cost": "€300",
+                    "required_by": "Energy consultant"
                 }}
             ],
-            "required_documents": ["doc1"],
-            "stakeholders": ["role1"]
+            "required_documents": ["Building plans", "Energy certificate"],
+            "stakeholders": ["Energy consultant", "Architect"]
+        }},
+        {{
+            "id": 2,
+            "title": "Detail Planning & Tendering",
+            "icon": "FileText",
+            "duration": "2-4 weeks",
+            "cost": "€1,000 - €3,000",
+            "status": "pending",
+            "color": "blue",
+            "tasks": [],
+            "required_documents": [],
+            "stakeholders": []
+        }},
+        {{
+            "id": 3,
+            "title": "Permitting & Financing",
+            "icon": "Zap",
+            "duration": "2-3 weeks",
+            "cost": "€1,000 - €2,000",
+            "status": "pending",
+            "color": "amber",
+            "tasks": [],
+            "required_documents": [],
+            "stakeholders": []
+        }},
+        {{
+            "id": 4,
+            "title": "Contractor Selection",
+            "icon": "Users",
+            "duration": "2-4 weeks",
+            "cost": "Variable",
+            "status": "pending",
+            "color": "purple",
+            "tasks": [],
+            "required_documents": [],
+            "stakeholders": []
+        }},
+        {{
+            "id": 5,
+            "title": "Implementation",
+            "icon": "Wrench",
+            "duration": "8-12 weeks",
+            "cost": "€XX,XXX - €XX,XXX",
+            "status": "pending",
+            "color": "rose",
+            "tasks": [],
+            "required_documents": [],
+            "stakeholders": []
+        }},
+        {{
+            "id": 6,
+            "title": "Acceptance & Handover",
+            "icon": "CheckCircle2",
+            "duration": "1 week",
+            "cost": "€300 - €600",
+            "status": "pending",
+            "color": "gray",
+            "tasks": [],
+            "required_documents": [],
+            "stakeholders": []
         }}
-        // ... Generate exactly 6 phases ...
     ],
     
     "gantt_chart": [
         {{
             "id": 1,
-            "name": "Phase Title",
+            "name": "Analysis & Planning",
             "start": 0,
             "duration": 10,
             "color": "bg-emerald-500"
+        }},
+        {{
+            "id": 2,
+            "name": "Detail Planning & Tendering",
+            "start": 10,
+            "duration": 21,
+            "color": "bg-blue-500"
+        }},
+        {{
+            "id": 3,
+            "name": "Permitting & Financing",
+            "start": 31,
+            "duration": 17,
+            "color": "bg-amber-500"
+        }},
+        {{
+            "id": 4,
+            "name": "Contractor Selection",
+            "start": 48,
+            "duration": 21,
+            "color": "bg-purple-500"
+        }},
+        {{
+            "id": 5,
+            "name": "Implementation",
+            "start": 69,
+            "duration": 70,
+            "color": "bg-rose-500"
+        }},
+        {{
+            "id": 6,
+            "name": "Acceptance & Handover",
+            "start": 139,
+            "duration": 7,
+            "color": "bg-gray-500"
         }}
-        // ... Generate exactly 6 items matching phases ...
     ],
     
     "permits": [
@@ -220,28 +337,42 @@ All text content in the JSON (titles, descriptions, tasks, reasons, suggestions)
     
     "stakeholders": [
         {{
-            "name": "Role Name",
-            "role": "Description",
-            "when_needed": "Phase X",
-            "estimated_cost": "€X",
-            "how_to_find": "Source"
+            "name": "Energy Consultant",
+            "role": "GEG compliance and energy audit",
+            "when_needed": "Phase 1-2",
+            "estimated_cost": "€1,500 - €3,000",
+            "how_to_find": "BAFA certified consultant list"
+        }},
+        {{
+            "name": "Architect",
+            "role": "Planning and building permit",
+            "when_needed": "Phase 1-3",
+            "estimated_cost": "10-15% of construction",
+            "how_to_find": "Local chamber of architects"
         }}
     ],
 
     "ai_suggestions": [
-        "Suggestion 1",
-        "Suggestion 2",
-        "Suggestion 3"
+        "Consider applying for KfW 261 program for up to 45,000€ subsidy",
+        "Schedule energy audit within 2 weeks to qualify for funding",
+        "Plan construction to avoid winter months (November-February)"
     ]
 }}
 
-**RULES:**
-1. phases MUST have exactly 6 items (ids 1-6).
-2. phases icons must be one of: "Search", "Zap", "FileText", "Users", "Wrench", "CheckCircle2".
-3. gantt_chart 'start' is cumulative days from start. 'duration' is days.
-4. permits must include the 5 specific IDs listed above.
-5. Infer 'checked' status for permits based on the user context (e.g., if heritage protection is 'yes', that permit is likely checked/required).
-6. Provide ONLY valid JSON.
+**CRITICAL RULES FOR GANTT CHART:**
+1. gantt_chart MUST have exactly 6 items matching the 6 phases
+2. 'id' must match phase id (1-6)
+3. 'name' must exactly match phase title
+4. 'start' is cumulative days from project start (Phase 1 starts at 0, Phase 2 starts after Phase 1 ends)
+5. 'duration' is in days (convert weeks to days: 1-2 weeks = 10 days, 8-12 weeks = 70 days)
+6. 'color' must be one of: "bg-emerald-500", "bg-blue-500", "bg-amber-500", "bg-purple-500", "bg-rose-500", "bg-gray-500"
+7. Calculate 'start' as sum of all previous durations
+
+**OTHER RULES:**
+1. Use RAG context above for accurate German standards, KfW programs, costs
+2. phases icons must be one of: "Search", "Zap", "FileText", "Users", "Wrench", "CheckCircle2"
+3. permits must include the 5 specific IDs listed above
+4. Provide ONLY valid JSON, no markdown blocks
 """
 
     def _parse_json_response(self, response_text: str) -> dict:
