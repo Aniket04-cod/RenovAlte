@@ -351,6 +351,18 @@ export function ProjectSetupWizard({
     }
   };
 
+  const handleRemoveFile = () => {
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+  }
+  setPreviewUrl(null);
+  setSelectedFile(null);
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+};
+
   /*   const handlePromptSubmit = () => {
     if (prompt.trim()) {
       handleGeneratePlan();
@@ -831,19 +843,25 @@ export function ProjectSetupWizard({
             {/* File upload + preview */}
             <div className="space-y-2">
               {previewUrl && (
-                <div className="flex items-center gap-3">
+                <div className="relative inline-flex items-center gap-3">
                   <img
                     src={previewUrl}
                     alt={selectedFile?.name || "Uploaded image"}
                     className="h-16 w-16 rounded-md object-cover border border-gray-200"
                   />
-                  <div className="text-xs text-gray-600">
+                  <Button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow hover:bg-red-600"
+                  >
+                    ×
+                  </Button>
+                  <div className="text-xs text-gray-600 ml-2">
                     <Text className="font-medium">{selectedFile?.name}</Text>
                     <Text>{(selectedFile!.size / 1024).toFixed(1)} KB</Text>
                   </div>
                 </div>
               )}
-
               <div>
                 <Input
                   type="file"
