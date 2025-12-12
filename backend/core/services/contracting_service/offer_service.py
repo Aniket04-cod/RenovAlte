@@ -175,6 +175,7 @@ Email Body:
                 # Add metadata
                 extracted_data['gmail_message_id'] = most_recent_email['message_id']
                 extracted_data['contractor_id'] = contractor_id
+                extracted_data['email_received_at'] = most_recent_email.get('received_at')
                 if pdf_attachment:
                     extracted_data['pdf_attachment_id'] = pdf_attachment['attachmentId']
                 
@@ -220,6 +221,7 @@ Email Body:
                 contracting_planning=planning,
                 contractor_id=extracted_data.get('contractor_id'),
                 gmail_message_id=extracted_data.get('gmail_message_id'),
+                email_received_at=extracted_data.get('email_received_at'),
                 
                 # Financial data
                 total_price=Decimal(str(extracted_data.get('total_price', 0))) if extracted_data.get('total_price') else None,
@@ -261,10 +263,11 @@ Email Body:
     def analyze_single_offer(
         self,
         offer: ContractorOffer,
-        planning: ContractingPlanning
+        planning: ContractingPlanning,
+        conversation_history: Optional[str] = None
     ) -> OfferAnalysis:
         """
-        Analyze a single offer with project context.
+        Analyze a single offer with project context and conversation history.
         
         RAG Pipeline (placeholder for future):
         1. Fetch relevant project documents (files, requirements)
@@ -275,6 +278,7 @@ Email Body:
         Args:
             offer: ContractorOffer instance to analyze
             planning: ContractingPlanning instance
+            conversation_history: Optional conversation history for re-analysis context
             
         Returns:
             OfferAnalysis instance with analysis report
@@ -282,6 +286,10 @@ Email Body:
         try:
             # Get relevant context (RAG-ready)
             context = self._get_relevant_context(offer, planning)
+            
+            # Add conversation history to context if provided
+            if conversation_history:
+                context['conversation_history'] = conversation_history
             
             # Load analysis prompt
             analysis_prompt_template = self._load_prompt('offer_analysis_prompt.md')
@@ -299,18 +307,55 @@ Email Body:
             response = model.generate_content(analysis_prompt)
             
             if response.text:
-                analysis_report = response.text.strip()
+                response_text = response.text.strip()
+                
+                # Try to parse JSON response
+                structured_data = None
+                analysis_report = response_text
+                
+                try:
+                    # Extract JSON from code blocks if present
+                    if '```json' in response_text:
+                        json_start = response_text.find('```json') + 7
+                        json_end = response_text.find('```', json_start)
+                        json_str = response_text[json_start:json_end].strip()
+                    elif response_text.startswith('{'):
+                        json_str = response_text
+                    else:
+                        json_str = None
+                    
+                    if json_str:
+                        parsed_response = json.loads(json_str)
+                        if 'structured_data' in parsed_response:
+                            structured_data = parsed_response['structured_data']
+                            # Store structured_data as JSON string in analysis_report
+                            analysis_report = json.dumps(structured_data, ensure_ascii=False)
+                            logger.info(f"Successfully parsed structured analysis data for offer {offer.id}")
+                        else:
+                            logger.warning(f"Response JSON missing 'structured_data' field for offer {offer.id}")
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"Could not parse JSON from Gemini response for offer {offer.id}: {str(e)}")
+                    # Fall back to using the full response as text
+                    analysis_report = response_text
+                
+                # Prepare analysis_data
+                analysis_data = {
+                    'offer_id': offer.id,
+                    'analyzed_at': timezone.now().isoformat(),
+                    'context_used': list(context.keys()),
+                    'has_conversation_context': bool(conversation_history)
+                }
+                
+                # Add structured data if available
+                if structured_data:
+                    analysis_data['structured_data'] = structured_data
                 
                 # Create and save analysis
                 analysis = OfferAnalysis.objects.create(
                     offer=offer,
                     analysis_type='single',
                     analysis_report=analysis_report,
-                    analysis_data={
-                        'offer_id': offer.id,
-                        'analyzed_at': timezone.now().isoformat(),
-                        'context_used': list(context.keys())
-                    },
+                    analysis_data=analysis_data,
                     documents_used=context.get('document_ids', []),
                 )
                 
@@ -379,19 +424,55 @@ Email Body:
             response = model.generate_content(comparison_prompt)
             
             if response.text:
-                comparison_report = response.text.strip()
+                response_text = response.text.strip()
+                
+                # Try to parse JSON response
+                structured_data = None
+                comparison_report = response_text
+                
+                try:
+                    # Extract JSON from code blocks if present
+                    if '```json' in response_text:
+                        json_start = response_text.find('```json') + 7
+                        json_end = response_text.find('```', json_start)
+                        json_str = response_text[json_start:json_end].strip()
+                    elif response_text.startswith('{'):
+                        json_str = response_text
+                    else:
+                        json_str = None
+                    
+                    if json_str:
+                        parsed_response = json.loads(json_str)
+                        if 'structured_data' in parsed_response:
+                            structured_data = parsed_response['structured_data']
+                            # Store structured_data as JSON string in comparison_report
+                            comparison_report = json.dumps(structured_data, ensure_ascii=False)
+                            logger.info(f"Successfully parsed structured comparison data for offer {primary_offer.id}")
+                        else:
+                            logger.warning(f"Response JSON missing 'structured_data' field for offer {primary_offer.id}")
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"Could not parse JSON from Gemini response for offer {primary_offer.id}: {str(e)}")
+                    # Fall back to using the full response as text
+                    comparison_report = response_text
+                
+                # Prepare analysis_data
+                analysis_data = {
+                    'primary_offer_id': primary_offer.id,
+                    'compared_offer_ids': [o.id for o in comparison_offers],
+                    'analyzed_at': timezone.now().isoformat(),
+                    'comparison_count': len(comparison_offers)
+                }
+                
+                # Add structured data if available
+                if structured_data:
+                    analysis_data['structured_data'] = structured_data
                 
                 # Create and save comparison analysis
                 analysis = OfferAnalysis.objects.create(
                     offer=primary_offer,
                     analysis_type='comparison',
                     analysis_report=comparison_report,
-                    analysis_data={
-                        'primary_offer_id': primary_offer.id,
-                        'compared_offer_ids': [o.id for o in comparison_offers],
-                        'analyzed_at': timezone.now().isoformat(),
-                        'comparison_count': len(comparison_offers)
-                    },
+                    analysis_data=analysis_data,
                     compared_offer_ids=[o.id for o in comparison_offers],
                     documents_used=context.get('document_ids', []),
                 )
@@ -494,6 +575,9 @@ Email Body:
 **Warranty:** {offer.warranty_period} - {offer.warranty_details}
 """
         
+        # Get conversation history if available
+        conversation_history = context.get('conversation_history', 'No conversation history available.')
+        
         # Replace placeholders
         prompt = template
         replacements = {
@@ -504,6 +588,7 @@ Email Body:
             '{project_description}': context['project_description'],
             '{offer_summary}': offer_summary,
             '{offer_details_json}': json.dumps(offer.extracted_data, indent=2),
+            '{conversation_history}': conversation_history,
         }
         
         for key, value in replacements.items():

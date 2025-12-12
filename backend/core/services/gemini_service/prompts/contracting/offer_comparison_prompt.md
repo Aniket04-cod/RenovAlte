@@ -154,6 +154,230 @@ Consider these factors with appropriate weight:
 
 ## Output Format
 
-Provide your comparison in clean, well-formatted Markdown with clear sections, tables, and bullet points. Make it easy to scan and understand at a glance.
+**CRITICAL:** You must return your response as a JSON object containing ONLY the `structured_data` field. All comparison analysis must be captured in this structured format.
+
+### Required JSON Structure:
+
+```json
+{
+  "structured_data": {
+    "executive_summary": "3-4 sentence overview of key differences and top recommendation",
+    "recommended_contractor": "Contractor Name",
+    "recommendation_reasoning": "2-3 sentences explaining why this is the best choice",
+    "runner_up_contractor": "Contractor Name",
+    "runner_up_reasoning": "Brief explanation of why it's second choice",
+    "best_value_contractor": "Contractor Name",
+    
+    "comparison_matrix": [
+      {
+        "contractor_name": "ABC Bau",
+        "contractor_id": 1,
+        "total_price": 45000,
+        "currency": "EUR",
+        "timeline_days": 43,
+        "warranty_period": "2 years",
+        "payment_terms_summary": "30/40/30",
+        "overall_rating": 4.5,
+        "price_rating": 4,
+        "timeline_rating": 5,
+        "quality_rating": 4,
+        "terms_rating": 5,
+        "strengths": [
+          "Specific strength 1 with details",
+          "Specific strength 2 with details"
+        ],
+        "weaknesses": [
+          "Specific weakness 1 with details"
+        ],
+        "risk_level": "low",
+        "notable_features": [
+          "Unique or notable feature of this offer"
+        ]
+      }
+    ],
+    
+    "key_differences": [
+      "Major difference 1 with specific details",
+      "Major difference 2 with specific details",
+      "Major difference 3 with specific details"
+    ],
+    
+    "detailed_comparisons": {
+      "price_analysis": "Detailed analysis of price differences, value propositions, and cost-benefit",
+      "timeline_analysis": "Detailed analysis of timeline differences and realism",
+      "quality_analysis": "Detailed analysis of quality indicators, materials, and warranties",
+      "terms_analysis": "Detailed analysis of payment terms, conditions, and contractual risks",
+      "scope_analysis": "Detailed analysis of scope completeness and differences"
+    },
+    
+    "price_comparison": {
+      "lowest_price_contractor": "Contractor Name",
+      "lowest_price_eur": 42500,
+      "highest_price_contractor": "Contractor Name",
+      "highest_price_eur": 48000,
+      "price_range_eur": [42500, 48000],
+      "average_price_eur": 45250,
+      "best_value_contractor": "Contractor Name",
+      "value_analysis": "Explanation of why best_value_contractor offers best value"
+    },
+    
+    "timeline_comparison": {
+      "fastest_contractor": "Contractor Name",
+      "fastest_days": 35,
+      "slowest_contractor": "Contractor Name",
+      "slowest_days": 60,
+      "most_realistic_timeline": "Contractor Name",
+      "realism_explanation": "Why this timeline is most realistic"
+    },
+    
+    "quality_comparison": {
+      "highest_quality_contractor": "Contractor Name",
+      "quality_reasoning": "Explanation based on materials, warranty, certifications",
+      "material_comparison_summary": "Summary of material quality differences",
+      "warranty_comparison_summary": "Summary of warranty differences"
+    },
+    
+    "risk_comparison": {
+      "lowest_risk_contractor": "Contractor Name",
+      "highest_risk_contractor": "Contractor Name",
+      "risk_summary_by_contractor": [
+        {
+          "contractor_name": "Contractor Name",
+          "risk_level": "low",
+          "main_risks": ["Risk 1", "Risk 2"]
+        }
+      ]
+    },
+    
+    "scenario_recommendations": {
+      "lowest_cost": "Contractor Name",
+      "fastest_completion": "Contractor Name",
+      "highest_quality": "Contractor Name",
+      "best_overall_value": "Contractor Name",
+      "safest_choice": "Contractor Name",
+      "most_flexible_terms": "Contractor Name"
+    },
+    
+    "trade_offs": [
+      "Important trade-off 1 the homeowner should consider",
+      "Important trade-off 2 the homeowner should consider"
+    ],
+    
+    "negotiation_opportunities": [
+      "Specific negotiation opportunity with Contractor X",
+      "Specific negotiation opportunity with Contractor Y"
+    ],
+    
+    "next_steps": [
+      "Specific action 1 to take",
+      "Specific action 2 to take",
+      "Specific action 3 to take"
+    ],
+    
+    "additional_insights": {
+      "market_context": "Context about these offers relative to market conditions",
+      "standout_observations": [
+        "Notable observation 1 across all offers",
+        "Notable observation 2"
+      ],
+      "german_standards_compliance": "Summary of how offers comply with German standards",
+      "final_considerations": [
+        "Final important consideration for decision-making"
+      ]
+    }
+  }
+}
+```
+
+### Field Definitions:
+
+**Core Recommendation:**
+- `executive_summary`: 3-4 sentence overview (string)
+- `recommended_contractor`: Top recommendation (string)
+- `recommendation_reasoning`: 2-3 sentences explaining recommendation (string)
+- `runner_up_contractor`: Second choice (string)
+- `runner_up_reasoning`: Brief explanation (string)
+- `best_value_contractor`: Contractor offering best value (string)
+
+**Comparison Matrix (one object per contractor):**
+- `contractor_name`: Contractor name (string)
+- `contractor_id`: ID number (number)
+- `total_price`: Total price (number)
+- `currency`: Currency code (string)
+- `timeline_days`: Duration in days (number)
+- `warranty_period`: Warranty period (string)
+- `payment_terms_summary`: Payment structure summary (string)
+- `overall_rating`: Overall rating 1-5 (number, decimal allowed)
+- `price_rating`: Price rating 1-5 (number)
+- `timeline_rating`: Timeline rating 1-5 (number)
+- `quality_rating`: Quality rating 1-5 (number)
+- `terms_rating`: Terms rating 1-5 (number)
+- `strengths`: Specific strengths with details (array of strings)
+- `weaknesses`: Specific weaknesses with details (array of strings)
+- `risk_level`: "low", "medium", or "high" (string)
+- `notable_features`: Unique features (array of strings)
+
+**Key Differences:**
+- Array of 4-6 major differences with specific details (array of strings)
+
+**Detailed Comparisons:**
+- `price_analysis`: Comprehensive price comparison analysis (string)
+- `timeline_analysis`: Comprehensive timeline comparison (string)
+- `quality_analysis`: Comprehensive quality comparison (string)
+- `terms_analysis`: Comprehensive terms comparison (string)
+- `scope_analysis`: Comprehensive scope comparison (string)
+
+**Price Comparison (comprehensive):**
+- `lowest_price_contractor`: Name (string)
+- `lowest_price_eur`: Amount (number)
+- `highest_price_contractor`: Name (string)
+- `highest_price_eur`: Amount (number)
+- `price_range_eur`: [min, max] (array of 2 numbers)
+- `average_price_eur`: Average (number)
+- `best_value_contractor`: Name (string)
+- `value_analysis`: Value explanation (string)
+
+**Timeline Comparison (comprehensive):**
+- `fastest_contractor`: Name (string)
+- `fastest_days`: Duration (number)
+- `slowest_contractor`: Name (string)
+- `slowest_days`: Duration (number)
+- `most_realistic_timeline`: Name (string)
+- `realism_explanation`: Explanation (string)
+
+**Quality Comparison:**
+- `highest_quality_contractor`: Name (string)
+- `quality_reasoning`: Explanation (string)
+- `material_comparison_summary`: Materials summary (string)
+- `warranty_comparison_summary`: Warranty summary (string)
+
+**Risk Comparison:**
+- `lowest_risk_contractor`: Name (string)
+- `highest_risk_contractor`: Name (string)
+- `risk_summary_by_contractor`: Array of risk summaries per contractor
+
+**Scenario Recommendations:**
+- Map of scenarios to contractor names for different priorities
+
+**Additional Analysis:**
+- `trade_offs`: Important trade-offs to consider (array of strings)
+- `negotiation_opportunities`: Specific negotiation points (array of strings)
+- `next_steps`: 4-7 actionable next steps (array of strings)
+
+**Additional Insights:**
+- `market_context`: Market condition context (string)
+- `standout_observations`: Notable observations (array of strings)
+- `german_standards_compliance`: Standards compliance summary (string)
+- `final_considerations`: Final decision factors (array of strings)
+
+### Important Notes:
+1. Return ONLY the JSON object with `structured_data` field
+2. NO markdown report field anymore
+3. All comparison analysis must be captured in JSON
+4. Be thorough and use all fields
+5. Ratings must be consistent with written analysis
+6. Include specific details and examples
+7. Ensure valid JSON formatting
+8. No additional text before or after JSON
 
 Begin your comparison analysis now:

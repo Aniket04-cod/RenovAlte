@@ -62,6 +62,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 		type: 'analysis' | 'comparison';
 		offer?: Offer;
 		comparedOffers?: Offer[];
+		structuredData?: any;
 	} | null>(null);
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -363,7 +364,8 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 					setAnalysisReport({
 						content: result.analysis_report,
 						type: 'analysis',
-						offer: offer
+						offer: offer,
+						structuredData: result.analysis_data?.structured_data
 					});
 					setShowAnalysisReport(true);
 				}
@@ -383,7 +385,8 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 						content: result.comparison_report,
 						type: 'comparison',
 						offer: primaryOffer,
-						comparedOffers: comparedOffers
+						comparedOffers: comparedOffers,
+						structuredData: result.comparison_data?.structured_data
 					});
 					setShowAnalysisReport(true);
 				}
@@ -466,7 +469,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	// Helper function to get sender label
 	const getSenderLabel = (message: Message): string => {
 		if (message.sender === 'user') return 'You';
-		if (message.sender === 'ai') return 'AI Assistant';
+		if (message.sender === 'ai') return 'AI Agent';
 		if (message.sender === 'contractor') return 'Contractor (Email)';
 		if (message.message_type === 'ai_action_request') return 'System';
 		return 'System';
@@ -1008,7 +1011,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 											<span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
 											<span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
 										</div>
-										<p className="text-sm">AI Assistant is typing...</p>
+										<p className="text-sm">AI Agent is typing...</p>
 									</div>
 								)}
 								

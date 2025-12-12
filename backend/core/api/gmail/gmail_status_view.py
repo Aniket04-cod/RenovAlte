@@ -55,3 +55,4 @@ class GmailStatusView(APIView):
 				'detail': f"Failed to check Gmail status: {str(e)}"
 			}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+

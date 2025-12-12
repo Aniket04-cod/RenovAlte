@@ -82,3 +82,4 @@ class EmailCredential(models.Model):
 		# Check if token is still valid (with 5 minute buffer)
 		return self.token_expiry > timezone.now() + timedelta(minutes=5)
 
+

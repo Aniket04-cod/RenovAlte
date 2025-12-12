@@ -470,6 +470,12 @@ class ContractorOffer(models.Model):
 		blank=True,
 		help_text="Gmail attachment ID if offer was in PDF"
 	)
+	email_received_at = models.DateTimeField(
+		"Email Received At",
+		null=True,
+		blank=True,
+		help_text="Timestamp when the offer email was received in Gmail"
+	)
 	
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
@@ -477,10 +483,11 @@ class ContractorOffer(models.Model):
 	class Meta:
 		verbose_name = "Contractor Offer"
 		verbose_name_plural = "Contractor Offers"
-		ordering = ['-created_at']
+		ordering = ['-email_received_at', '-created_at']
 		indexes = [
 			models.Index(fields=['contracting_planning', 'contractor_id']),
 			models.Index(fields=['gmail_message_id']),
+			models.Index(fields=['email_received_at']),
 		]
 	
 	def __str__(self):

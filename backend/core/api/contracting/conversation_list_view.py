@@ -2,6 +2,8 @@
 View for listing all conversations with contractors
 """
 import logging
+from datetime import datetime
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -71,8 +73,10 @@ class ConversationListView(APIView):
 				conversations.append(conversation_data)
 			
 			# Sort by last message timestamp (most recent first)
+			# Use a minimum datetime for conversations without messages
+			min_datetime = timezone.make_aware(datetime.min)
 			conversations.sort(
-				key=lambda x: x['last_message_timestamp'] or '',
+				key=lambda x: x['last_message_timestamp'] or min_datetime,
 				reverse=True
 			)
 			

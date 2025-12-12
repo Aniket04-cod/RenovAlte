@@ -16,3 +16,4 @@ urlpatterns = [
 	path('revoke/', GmailRevokeView.as_view(), name='revoke'),
 ]
 
+

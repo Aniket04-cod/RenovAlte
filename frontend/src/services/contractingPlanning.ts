@@ -244,7 +244,16 @@ export interface OfferAnalysis {
 	offer_details?: ContractorOffer;
 	analysis_type: 'single' | 'comparison';
 	analysis_report: string;
-	analysis_data: any;
+	analysis_data: {
+		offer_id?: number;
+		primary_offer_id?: number;
+		compared_offer_ids?: number[];
+		comparison_count?: number;
+		analyzed_at: string;
+		context_used: string[];
+		has_conversation_context: boolean;
+		structured_data?: any; // StructuredAnalysis | StructuredComparison from types/offerAnalysis
+	};
 	compared_offer_ids: number[];
 	compared_offers_details?: ContractorOffer[];
 	documents_used: string[];

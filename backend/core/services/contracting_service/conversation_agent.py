@@ -92,16 +92,32 @@ class ConversationAgent:
                     type=genai.protos.Type.INTEGER,
                     description="ID of the offer to analyze"
                 ),
+                "contractor_name": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Name of the contractor who submitted this offer"
+                ),
+                "offer_title": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Brief title or description of the offer (e.g., 'Kitchen Renovation Offer - €25,000')"
+                ),
+                "total_price": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Total price of the offer with currency (e.g., '€25,000')"
+                ),
+                "timeline": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Timeline information (e.g., '30 days', 'Start: Jan 15, End: Feb 15')"
+                ),
                 "reasoning": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="Brief explanation of why analyzing this offer will help the user"
                 ),
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
-                    description="One-sentence summary for future conversation context"
+                    description="One-sentence summary for future conversation context (e.g., 'Analyzed BauMeister GmbH offer for €25,000')"
                 )
             },
-            required=["offer_id", "reasoning", "action_summary"]
+            required=["offer_id", "contractor_name", "offer_title", "reasoning", "action_summary"]
         )
     )
     
@@ -115,10 +131,19 @@ class ConversationAgent:
                     type=genai.protos.Type.INTEGER,
                     description="ID of the primary offer to compare"
                 ),
+                "primary_offer_title": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Brief title of the primary offer (e.g., 'BauMeister GmbH - €25,000')"
+                ),
                 "compare_with_ids": genai.protos.Schema(
                     type=genai.protos.Type.ARRAY,
                     description="Optional: Array of offer IDs to compare against. If not provided, compares with all other offers for this project",
                     items=genai.protos.Schema(type=genai.protos.Type.INTEGER)
+                ),
+                "compare_with_titles": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="Optional: Brief titles of the offers being compared against",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
                 ),
                 "reasoning": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
@@ -126,10 +151,10 @@ class ConversationAgent:
                 ),
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
-                    description="One-sentence summary for future conversation context"
+                    description="One-sentence summary for future conversation context (e.g., 'Compared BauMeister GmbH offer with 2 other offers')"
                 )
             },
-            required=["primary_offer_id", "reasoning", "action_summary"]
+            required=["primary_offer_id", "primary_offer_title", "reasoning", "action_summary"]
         )
     )
     
@@ -194,6 +219,9 @@ class ConversationAgent:
         # Format conversation history
         conversation_history = self._format_conversation_history(messages)
         
+        # Get available offers for this contractor
+        offers_summary = self._format_available_offers(planning, contractor_id)
+        
         # Build context dictionary
         context = {
             'current_date': datetime.now().strftime('%Y-%m-%d'),
@@ -208,6 +236,7 @@ class ConversationAgent:
             'user_email': user.email,
             'user_phone': getattr(user, 'phone', 'Not provided'),
             'conversation_history': conversation_history,
+            'available_offers': offers_summary,
         }
         
         return context
@@ -240,6 +269,113 @@ class ConversationAgent:
                     history_lines.append(f"[AI]: {msg.content}")
         
         return "\n".join(history_lines)
+    
+    def _format_conversation_for_analysis(self, messages: List[Message]) -> str:
+        """
+        Format conversation history for offer analysis context.
+        Includes questions asked, contractor responses, and important details.
+        
+        Args:
+            messages: List of Message objects in chronological order
+            
+        Returns:
+            Formatted conversation context string for analysis
+        """
+        if not messages:
+            return "No conversation history available."
+        
+        history_lines = []
+        for msg in messages:
+            timestamp = msg.timestamp.strftime('%Y-%m-%d %H:%M') if msg.timestamp else ''
+            
+            if msg.message_type == 'user':
+                history_lines.append(f"[{timestamp}] User: {msg.content}")
+            elif msg.message_type == 'ai':
+                history_lines.append(f"[{timestamp}] AI: {msg.content}")
+            elif msg.message_type == 'ai_action_executed':
+                # For executed actions, show details based on type
+                try:
+                    action = msg.action
+                    if action.action_type == 'send_email':
+                        # Show email subject and a snippet of the body
+                        subject = action.action_data.get('subject', 'No subject')
+                        history_lines.append(f"[{timestamp}] Email Sent: {subject}")
+                    elif action.action_type == 'fetch_email':
+                        history_lines.append(f"[{timestamp}] Fetched emails from contractor")
+                    else:
+                        history_lines.append(f"[{timestamp}] Action: {action.action_summary}")
+                except MessageAction.DoesNotExist:
+                    history_lines.append(f"[{timestamp}] {msg.content}")
+        
+        return "\n".join(history_lines)
+    
+    def _format_available_offers(self, planning: ContractingPlanning, contractor_id: int) -> str:
+        """
+        Format available offers for the context.
+        Shows the most recent offer from each contractor.
+        Marks which contractor is current (for analyze restrictions).
+        
+        Args:
+            planning: ContractingPlanning instance
+            contractor_id: ID of the CURRENT contractor in this conversation
+            
+        Returns:
+            Formatted string with available offers (most recent per contractor)
+        """
+        # Get all offers for this planning (all contractors)
+        # Order by email_received_at (most recent first), fallback to created_at if null
+        all_offers = ContractorOffer.objects.filter(
+            contracting_planning=planning
+        ).select_related('contracting_planning').order_by('-email_received_at', '-created_at')
+        
+        if not all_offers.exists():
+            return "No offers received yet."
+        
+        # Group offers by contractor_id and keep only the most recent one for each
+        seen_contractors = set()
+        recent_offers = []
+        
+        for offer in all_offers:
+            if offer.contractor_id not in seen_contractors:
+                seen_contractors.add(offer.contractor_id)
+                recent_offers.append(offer)
+        
+        offer_lines = []
+        for offer in recent_offers:
+            # Get contractor info
+            contractor = None
+            if offer.contractor_id:
+                contractor = Contractor.objects.filter(id=offer.contractor_id).first()
+            
+            contractor_name = contractor.name if contractor else "Unknown Contractor"
+            
+            # Format price
+            price_str = f"€{offer.total_price:,.0f}" if offer.total_price else "Price not specified"
+            
+            # Format timeline
+            timeline_str = ""
+            if offer.timeline_start and offer.timeline_end:
+                timeline_str = f"{offer.timeline_start.strftime('%b %d')} to {offer.timeline_end.strftime('%b %d, %Y')}"
+            elif offer.timeline_duration_days:
+                timeline_str = f"{offer.timeline_duration_days} days"
+            else:
+                timeline_str = "Timeline not specified"
+            
+            # Format scope (truncated)
+            scope_str = ""
+            if offer.scope_of_work:
+                scope_truncated = offer.scope_of_work[:100] + "..." if len(offer.scope_of_work) > 100 else offer.scope_of_work
+                scope_str = f" • Scope: {scope_truncated}"
+            
+            # Mark if this is the current contractor's offer
+            is_current = offer.contractor_id == contractor_id
+            current_marker = " **(CURRENT - can analyze)**" if is_current else " (can only compare, not analyze)"
+            
+            # Build offer line - DO NOT expose offer ID to user, only for internal tool use
+            offer_line = f"• {contractor_name} - {price_str} ({timeline_str}){current_marker}{scope_str}\n  [Internal ID for tool use only: {offer.id}]"
+            offer_lines.append(offer_line)
+        
+        return "\n\n".join(offer_lines)
     
     def _build_prompt(self, context: Dict[str, str], user_message: str) -> str:
         """
@@ -542,8 +678,10 @@ class ConversationAgent:
         
         elif action_type == 'analyze_offer':
             offer_id = args.get('offer_id')
+            contractor_name_from_args = args.get('contractor_name', contractor_name)
+            offer_title = args.get('offer_title', 'offer')
             
-            message_content = f"I can analyze the offer from {contractor_name} to provide detailed insights about pricing, timeline, quality, and recommendations. 📊"
+            message_content = f"I can analyze the {offer_title} from {contractor_name_from_args} to provide detailed insights about pricing, timeline, quality, and recommendations. 📊"
             
             action_data = {
                 'offer_id': offer_id,
@@ -552,14 +690,20 @@ class ConversationAgent:
         
         elif action_type == 'compare_offers':
             primary_offer_id = args.get('primary_offer_id')
+            primary_offer_title = args.get('primary_offer_title', 'offer')
             compare_with_ids = args.get('compare_with_ids')
+            compare_with_titles = args.get('compare_with_titles', [])
             
             # Determine how many offers will be compared
             if compare_with_ids:
                 offer_count = len(compare_with_ids) + 1
-                message_content = f"I can compare {offer_count} offers side-by-side to help you choose the best contractor. 📈"
+                if compare_with_titles and len(compare_with_titles) > 0:
+                    titles_text = ", ".join(compare_with_titles)
+                    message_content = f"I can compare the {primary_offer_title} with {titles_text} to help you choose the best contractor. 📈"
+                else:
+                    message_content = f"I can compare {offer_count} offers side-by-side to help you choose the best contractor. 📈"
             else:
-                message_content = f"I can compare this offer with all other offers you've received to help you make the best decision. 📈"
+                message_content = f"I can compare the {primary_offer_title} with all other offers you've received to help you make the best decision. 📈"
             
             action_data = {
                 'primary_offer_id': primary_offer_id,
@@ -1047,14 +1191,14 @@ Provide your summary now:"""
             else:
                 email_summary = f"I found {len(emails)} email(s) from the contractor, but I couldn't generate a summary. Please review them directly."
             
-            # If offer was detected, append offer notification to summary
-            if detected_offer:
-                contractor_name = context.get('contractor_name', 'the contractor')
-                price_text = f"€{detected_offer.total_price:,.0f}" if detected_offer.total_price else "pricing details"
-                timeline_text = f"{detected_offer.timeline_duration_days} days" if detected_offer.timeline_duration_days else "timeline information"
-                
-                offer_notification = f"\n\n📄 Great news! I detected an offer from {contractor_name} with {price_text} and {timeline_text}. Would you like me to analyze this offer for you?"
-                email_summary += offer_notification
+            # # If offer was detected, append offer notification to summary
+            # if detected_offer:
+            #     contractor_name = context.get('contractor_name', 'the contractor')
+            #     price_text = f"€{detected_offer.total_price:,.0f}" if detected_offer.total_price else "pricing details"
+            #     timeline_text = f"{detected_offer.timeline_duration_days} days" if detected_offer.timeline_duration_days else "timeline information"
+            #
+            #     offer_notification = f"\n\n📄 Great news! I detected an offer from {contractor_name} with {price_text} and {timeline_text}. Would you like me to analyze this offer for you?"
+            #     email_summary += offer_notification
             
             return email_summary, detected_offer
         
@@ -1172,10 +1316,36 @@ Provide your summary now:"""
             if offer.contracting_planning.project.user != user:
                 raise ValueError("User does not have permission to analyze this offer")
             
-            # Generate analysis
+            # GUARDRAIL: Verify the offer is from the CURRENT contractor in this conversation
+            current_contractor_id = action.message.contractor_id
+            if offer.contractor_id != current_contractor_id:
+                current_contractor = Contractor.objects.filter(id=current_contractor_id).first()
+                offer_contractor = Contractor.objects.filter(id=offer.contractor_id).first()
+                current_name = current_contractor.name if current_contractor else "this contractor"
+                offer_name = offer_contractor.name if offer_contractor else "another contractor"
+                raise ValueError(
+                    f"You are in {current_name}'s conversation and can only analyze their offer. "
+                    f"The offer you're trying to analyze is from {offer_name}. "
+                    f"Please switch to {offer_name}'s chat to analyze their offer."
+                )
+            
+            # Get conversation history for context (last 30 messages)
+            messages = Message.objects.filter(
+                contracting_planning=offer.contracting_planning,
+                contractor_id=current_contractor_id
+            ).order_by('-timestamp')[:30]
+            
+            # Reverse to chronological order
+            messages = list(reversed(messages))
+            
+            # Format conversation history for analysis
+            conversation_context = self._format_conversation_for_analysis(messages)
+            
+            # Generate analysis with conversation context
             analysis = self.offer_service.analyze_single_offer(
                 offer=offer,
-                planning=offer.contracting_planning
+                planning=offer.contracting_planning,
+                conversation_history=conversation_context
             )
             
             return {
@@ -1214,10 +1384,39 @@ Provide your summary now:"""
             if primary_offer.contracting_planning.project.user != user:
                 raise ValueError("User does not have permission to compare this offer")
             
+            # GUARDRAIL: Verify primary offer is the most recent from its contractor
+            most_recent_primary = ContractorOffer.objects.filter(
+                contracting_planning=primary_offer.contracting_planning,
+                contractor_id=primary_offer.contractor_id
+            ).order_by('-email_received_at', '-created_at').first()
+            
+            if most_recent_primary and most_recent_primary.id != primary_offer.id:
+                contractor = Contractor.objects.filter(id=primary_offer.contractor_id).first()
+                contractor_name = contractor.name if contractor else "this contractor"
+                raise ValueError(
+                    f"The primary offer is not the most recent one from {contractor_name}. "
+                    f"Only the most recent offer from each contractor can be compared."
+                )
+            
             # Get comparison offers if specified
             comparison_offers = None
             if compare_with_ids:
                 comparison_offers = list(ContractorOffer.objects.filter(id__in=compare_with_ids))
+                
+                # GUARDRAIL: Verify each comparison offer is the most recent from its contractor
+                for comp_offer in comparison_offers:
+                    most_recent_comp = ContractorOffer.objects.filter(
+                        contracting_planning=comp_offer.contracting_planning,
+                        contractor_id=comp_offer.contractor_id
+                    ).order_by('-email_received_at', '-created_at').first()
+                    
+                    if most_recent_comp and most_recent_comp.id != comp_offer.id:
+                        contractor = Contractor.objects.filter(id=comp_offer.contractor_id).first()
+                        contractor_name = contractor.name if contractor else "a contractor"
+                        raise ValueError(
+                            f"One of the comparison offers from {contractor_name} is not their most recent offer. "
+                            f"Only the most recent offer from each contractor can be compared."
+                        )
             
             # Generate comparison
             comparison = self.offer_service.compare_offers(
