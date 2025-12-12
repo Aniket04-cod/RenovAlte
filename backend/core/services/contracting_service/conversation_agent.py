@@ -14,10 +14,12 @@ from core.models import (
     Message,
     MessageAction,
     Contractor,
-    EmailCredential
+    EmailCredential,
+    ContractorOffer
 )
 from core.services.gemini_service.gemini_service import get_gemini_service
 from core.services.gmail_service import GmailService
+from core.services.contracting_service.offer_service import OfferService, convert_to_serializable
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
@@ -80,9 +82,61 @@ class ConversationAgent:
         )
     )
     
+    ANALYZE_OFFER_TOOL = genai.protos.FunctionDeclaration(
+        name="analyze_offer",
+        description="Analyze a detected contractor offer to provide detailed insights about pricing, timeline, quality, risks, and recommendations",
+        parameters=genai.protos.Schema(
+            type=genai.protos.Type.OBJECT,
+            properties={
+                "offer_id": genai.protos.Schema(
+                    type=genai.protos.Type.INTEGER,
+                    description="ID of the offer to analyze"
+                ),
+                "reasoning": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Brief explanation of why analyzing this offer will help the user"
+                ),
+                "action_summary": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="One-sentence summary for future conversation context"
+                )
+            },
+            required=["offer_id", "reasoning", "action_summary"]
+        )
+    )
+    
+    COMPARE_OFFERS_TOOL = genai.protos.FunctionDeclaration(
+        name="compare_offers",
+        description="Compare multiple contractor offers side-by-side to help the user choose the best option based on price, quality, timeline, and value",
+        parameters=genai.protos.Schema(
+            type=genai.protos.Type.OBJECT,
+            properties={
+                "primary_offer_id": genai.protos.Schema(
+                    type=genai.protos.Type.INTEGER,
+                    description="ID of the primary offer to compare"
+                ),
+                "compare_with_ids": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="Optional: Array of offer IDs to compare against. If not provided, compares with all other offers for this project",
+                    items=genai.protos.Schema(type=genai.protos.Type.INTEGER)
+                ),
+                "reasoning": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Brief explanation of why comparing these offers will help the user"
+                ),
+                "action_summary": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="One-sentence summary for future conversation context"
+                )
+            },
+            required=["primary_offer_id", "reasoning", "action_summary"]
+        )
+    )
+    
     def __init__(self):
         """Initialize the conversation agent with Gemini service."""
         self.gemini_service = get_gemini_service()
+        self.offer_service = OfferService()
     
     def _load_prompt_template(self) -> str:
         """Load the conversation agent prompt template."""
@@ -275,9 +329,14 @@ class ConversationAgent:
                     except Exception as e:
                         logger.error(f"Error uploading file {attachment.name}: {str(e)}")
             
-            # Create tool wrapper with both tools
+            # Create tool wrapper with all tools
             tools = genai.protos.Tool(
-                function_declarations=[self.SEND_EMAIL_TOOL, self.FETCH_EMAIL_TOOL]
+                function_declarations=[
+                    self.SEND_EMAIL_TOOL,
+                    self.FETCH_EMAIL_TOOL,
+                    self.ANALYZE_OFFER_TOOL,
+                    self.COMPARE_OFFERS_TOOL
+                ]
             )
             
             # Create model with function calling enabled
@@ -353,7 +412,7 @@ class ConversationAgent:
             Dictionary with action request data
         """
         function_name = function_call.name
-        args = dict(function_call.args)
+        args = convert_to_serializable(dict(function_call.args))
         
         if function_name == 'send_email':
             return self._create_action_request(
@@ -366,6 +425,20 @@ class ConversationAgent:
         elif function_name == 'fetch_email':
             return self._create_action_request(
                 'fetch_email',
+                args,
+                planning,
+                contractor_id
+            )
+        elif function_name == 'analyze_offer':
+            return self._create_action_request(
+                'analyze_offer',
+                args,
+                planning,
+                contractor_id
+            )
+        elif function_name == 'compare_offers':
+            return self._create_action_request(
+                'compare_offers',
                 args,
                 planning,
                 contractor_id
@@ -467,6 +540,33 @@ class ConversationAgent:
                 'reasoning': reasoning
             }
         
+        elif action_type == 'analyze_offer':
+            offer_id = args.get('offer_id')
+            
+            message_content = f"I can analyze the offer from {contractor_name} to provide detailed insights about pricing, timeline, quality, and recommendations. 📊"
+            
+            action_data = {
+                'offer_id': offer_id,
+                'reasoning': reasoning
+            }
+        
+        elif action_type == 'compare_offers':
+            primary_offer_id = args.get('primary_offer_id')
+            compare_with_ids = args.get('compare_with_ids')
+            
+            # Determine how many offers will be compared
+            if compare_with_ids:
+                offer_count = len(compare_with_ids) + 1
+                message_content = f"I can compare {offer_count} offers side-by-side to help you choose the best contractor. 📈"
+            else:
+                message_content = f"I can compare this offer with all other offers you've received to help you make the best decision. 📈"
+            
+            action_data = {
+                'primary_offer_id': primary_offer_id,
+                'compare_with_ids': compare_with_ids,
+                'reasoning': reasoning
+            }
+        
         else:
             raise ValueError(f"Unknown action type: {action_type}")
         
@@ -478,6 +578,9 @@ class ConversationAgent:
             message_type='ai_action_request',
             content=message_content
         )
+        
+        # Convert action_data to JSON-serializable format
+        action_data = convert_to_serializable(action_data)
         
         # Create MessageAction
         action = MessageAction.objects.create(
@@ -553,12 +656,16 @@ class ConversationAgent:
                 result = self._execute_send_email(action, user)
             elif action.action_type == 'fetch_email':
                 result = self._execute_fetch_email(action, user)
+            elif action.action_type == 'analyze_offer':
+                result = self._execute_analyze_offer(action, user)
+            elif action.action_type == 'compare_offers':
+                result = self._execute_compare_offers(action, user)
             else:
                 raise ValueError(f"Unknown action type: {action.action_type}")
             
             # Update action status
             action.action_status = 'executed'
-            action.execution_result = result
+            action.execution_result = convert_to_serializable(result)
             action.save()
             
             # Update message type
@@ -569,12 +676,13 @@ class ConversationAgent:
             # Create confirmation message based on action type
             if action.action_type == 'send_email':
                 confirmation_content = f"Email successfully sent to {action.action_data.get('recipient_email', 'contractor')}. I'll let you know if they reply."
+                detected_offer = None
             elif action.action_type == 'fetch_email':
                 emails_fetched = result.get('emails_count', 0)
                 
                 if emails_fetched > 0:
-                    # Analyze the fetched emails and provide a summary
-                    email_summary = self._analyze_fetched_emails(
+                    # Analyze the fetched emails and provide a summary (also detects offers)
+                    email_summary, detected_offer = self._analyze_fetched_emails(
                         result.get('emails', []),
                         planning,
                         message.contractor_id,
@@ -583,8 +691,17 @@ class ConversationAgent:
                     confirmation_content = email_summary
                 else:
                     confirmation_content = "I couldn't find any recent emails from this contractor in your inbox. They may not have sent anything yet, or the emails might be in a different folder."
+                    detected_offer = None
+            elif action.action_type == 'analyze_offer':
+                confirmation_content = "I've generated a detailed analysis of this offer! 📊 Check it out to understand the strengths, weaknesses, and key considerations."
+                detected_offer = None
+            elif action.action_type == 'compare_offers':
+                offer_count = len(result.get('compared_offer_ids', [])) + 1
+                confirmation_content = f"I've compared {offer_count} offers side-by-side! 📈 The comparison includes pricing, timelines, quality, and recommendations."
+                detected_offer = None
             else:
                 confirmation_content = "Action completed successfully."
+                detected_offer = None
 
 
             
@@ -596,12 +713,46 @@ class ConversationAgent:
                 content=confirmation_content
             )
             
-            return {
+            # If an offer was detected, create an analyze_offer action
+            offer_analysis_action = None
+            if action.action_type == 'fetch_email' and 'detected_offer' in locals() and detected_offer:
+                try:
+                    # Create action request message for offer analysis
+                    offer_action_message = Message.objects.create(
+                        contracting_planning=planning,
+                        contractor_id=message.contractor_id,
+                        sender='ai',
+                        message_type='ai_action_request',
+                        content=f"I found an offer! Would you like me to analyze it?"
+                    )
+                    
+                    # Create the analyze_offer action
+                    offer_analysis_action = MessageAction.objects.create(
+                        message=offer_action_message,
+                        action_type='analyze_offer',
+                        action_status='pending',
+                        action_data=convert_to_serializable({
+                            'offer_id': detected_offer.id,
+                            'reasoning': 'Detected an offer in the fetched emails'
+                        }),
+                        action_summary=f"Analyze offer from contractor"
+                    )
+                    logger.info(f"Created analyze_offer action {offer_analysis_action.id} for offer {detected_offer.id}")
+                except Exception as e:
+                    logger.error(f"Error creating offer analysis action: {str(e)}", exc_info=True)
+            
+            result_dict = {
                 'success': True,
                 'action': action,
                 'confirmation_message': confirmation_message,
                 'result': result
             }
+            
+            # Add offer analysis action if created
+            if 'offer_analysis_action' in locals() and offer_analysis_action:
+                result_dict['offer_analysis_action'] = offer_analysis_action
+            
+            return result_dict
         
         except Exception as e:
             logger.error(f"Error executing action: {str(e)}", exc_info=True)
@@ -609,7 +760,7 @@ class ConversationAgent:
             # Update action status to failed
             if 'action' in locals():
                 action.action_status = 'failed'
-                action.execution_result = {'error': str(e)}
+                action.execution_result = convert_to_serializable({'error': str(e)})
                 action.save()
             
             return {
@@ -639,6 +790,7 @@ class ConversationAgent:
         if modified_email_html:
             # User directly edited the HTML
             action.action_data['body_html'] = modified_email_html
+            action.action_data = convert_to_serializable(action.action_data)
             action.save()
         elif modifications:
             # User provided modification instructions - re-prompt Gemini
@@ -685,6 +837,7 @@ class ConversationAgent:
                     
                     result = json.loads(response_text)
                     action.action_data['body_html'] = result.get('email_html', current_email_html)
+                    action.action_data = convert_to_serializable(action.action_data)
                     action.save()
                 except json.JSONDecodeError:
                     logger.error(f"Failed to parse Gemini modification response: {response.text}")
@@ -781,9 +934,10 @@ class ConversationAgent:
         planning: ContractingPlanning,
         contractor_id: int,
         user
-    ) -> str:
+    ) -> Tuple[str, Optional[ContractorOffer]]:
         """
         Analyze fetched emails using Gemini and provide a helpful summary.
+        Also detects if emails contain an offer and extracts it.
         
         Args:
             emails: List of fetched email dictionaries
@@ -792,10 +946,37 @@ class ConversationAgent:
             user: User instance
             
         Returns:
-            AI-generated summary of the emails
+            Tuple of (AI-generated summary, detected Offer or None)
         """
         if not emails:
-            return "No emails found from this contractor."
+            return "No emails found from this contractor.", None
+        
+        # NEW: Detect and extract offer
+        detected_offer = None
+        try:
+            # Get user's email credentials for downloading attachments
+            email_cred = EmailCredential.objects.filter(user=user).first()
+            if email_cred and email_cred.access_token:
+                # Detect offer using offer service
+                extracted_data = self.offer_service.detect_and_extract_offer(
+                    emails=emails,
+                    contractor_id=contractor_id,
+                    access_token=email_cred.access_token
+                )
+                
+                # If offer detected and not already analyzed
+                if extracted_data:
+                    gmail_message_id = extracted_data.get('gmail_message_id')
+                    if not self.offer_service.offer_already_analyzed(gmail_message_id):
+                        # Store the offer
+                        detected_offer = self.offer_service.store_offer(
+                            extracted_data=extracted_data,
+                            planning=planning
+                        )
+                        logger.info(f"Detected and stored new offer {detected_offer.id} from contractor {contractor_id}")
+        except Exception as e:
+            logger.error(f"Error detecting offer: {str(e)}", exc_info=True)
+            # Continue with normal email analysis even if offer detection fails
         
         # Build context for analysis
         context = self._build_context(planning, contractor_id, user)
@@ -860,15 +1041,28 @@ Provide your summary now:"""
             model = genai.GenerativeModel(self.gemini_service.model_name)
             response = model.generate_content(prompt)
             
+            email_summary = ""
             if response.text:
-                return response.text.strip()
+                email_summary = response.text.strip()
             else:
-                return f"I found {len(emails)} email(s) from the contractor, but I couldn't generate a summary. Please review them directly."
+                email_summary = f"I found {len(emails)} email(s) from the contractor, but I couldn't generate a summary. Please review them directly."
+            
+            # If offer was detected, append offer notification to summary
+            if detected_offer:
+                contractor_name = context.get('contractor_name', 'the contractor')
+                price_text = f"€{detected_offer.total_price:,.0f}" if detected_offer.total_price else "pricing details"
+                timeline_text = f"{detected_offer.timeline_duration_days} days" if detected_offer.timeline_duration_days else "timeline information"
+                
+                offer_notification = f"\n\n📄 Great news! I detected an offer from {contractor_name} with {price_text} and {timeline_text}. Would you like me to analyze this offer for you?"
+                email_summary += offer_notification
+            
+            return email_summary, detected_offer
         
         except Exception as e:
             logger.error(f"Error analyzing emails: {str(e)}", exc_info=True)
             # Fallback to simple summary
-            return f"I found {len(emails)} email(s) from {context['contractor_name']}. The most recent one was about: {emails[0].get('subject', 'No subject')}"
+            summary = f"I found {len(emails)} email(s) from {context['contractor_name']}. The most recent one was about: {emails[0].get('subject', 'No subject')}"
+            return summary, detected_offer
     
     def _execute_fetch_email(self, action: MessageAction, user) -> Dict:
         """
@@ -933,6 +1127,7 @@ Provide your summary now:"""
                     'body': details['body'],
                     'received_at': details['received_at'].isoformat() if details['received_at'] else None,
                     'received_at_datetime': details['received_at'],  # Keep datetime object for sorting
+                    'attachments': details.get('attachments', []),  # Include attachments for offer detection
                 })
             except Exception as e:
                 logger.warning(f"Failed to fetch details for message {msg['id']}: {str(e)}")
@@ -953,6 +1148,94 @@ Provide your summary now:"""
             'contractor_email': contractor_email,
             'emails': fetched_emails
         }
+    
+    def _execute_analyze_offer(self, action: MessageAction, user) -> Dict:
+        """
+        Execute analyze offer action.
+        
+        Args:
+            action: MessageAction instance
+            user: User instance
+            
+        Returns:
+            Execution result dictionary with analysis
+        """
+        try:
+            offer_id = action.action_data.get('offer_id')
+            if not offer_id:
+                raise ValueError("Offer ID not found in action data")
+            
+            # Get the offer
+            offer = ContractorOffer.objects.select_related('contracting_planning').get(id=offer_id)
+            
+            # Verify user owns this offer
+            if offer.contracting_planning.project.user != user:
+                raise ValueError("User does not have permission to analyze this offer")
+            
+            # Generate analysis
+            analysis = self.offer_service.analyze_single_offer(
+                offer=offer,
+                planning=offer.contracting_planning
+            )
+            
+            return {
+                'offer_id': offer.id,
+                'analysis_id': analysis.id,
+                'analysis_report': analysis.analysis_report,
+                'analysis_data': analysis.analysis_data
+            }
+        
+        except Exception as e:
+            logger.error(f"Error executing analyze_offer action: {str(e)}", exc_info=True)
+            raise
+    
+    def _execute_compare_offers(self, action: MessageAction, user) -> Dict:
+        """
+        Execute compare offers action.
+        
+        Args:
+            action: MessageAction instance
+            user: User instance
+            
+        Returns:
+            Execution result dictionary with comparison
+        """
+        try:
+            primary_offer_id = action.action_data.get('primary_offer_id')
+            compare_with_ids = action.action_data.get('compare_with_ids')  # Optional
+            
+            if not primary_offer_id:
+                raise ValueError("Primary offer ID not found in action data")
+            
+            # Get the primary offer
+            primary_offer = ContractorOffer.objects.select_related('contracting_planning').get(id=primary_offer_id)
+            
+            # Verify user owns this offer
+            if primary_offer.contracting_planning.project.user != user:
+                raise ValueError("User does not have permission to compare this offer")
+            
+            # Get comparison offers if specified
+            comparison_offers = None
+            if compare_with_ids:
+                comparison_offers = list(ContractorOffer.objects.filter(id__in=compare_with_ids))
+            
+            # Generate comparison
+            comparison = self.offer_service.compare_offers(
+                primary_offer=primary_offer,
+                comparison_offers=comparison_offers
+            )
+            
+            return {
+                'primary_offer_id': primary_offer.id,
+                'compared_offer_ids': comparison.compared_offer_ids,
+                'comparison_id': comparison.id,
+                'comparison_report': comparison.analysis_report,
+                'comparison_data': comparison.analysis_data
+            }
+        
+        except Exception as e:
+            logger.error(f"Error executing compare_offers action: {str(e)}", exc_info=True)
+            raise
     
     def reject_action(self, action_id: int, user) -> Dict:
         """

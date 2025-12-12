@@ -11,6 +11,14 @@ from .conversation_list_view import ConversationListView
 from .conversation_messages_view import ConversationMessagesView
 from .update_step_view import UpdateStepView
 from .action_views import ApproveActionView, RejectActionView, ModifyActionView
+from .offer_views import (
+	OfferListView,
+	OfferDetailView,
+	AnalyzeOfferView,
+	CompareOffersView,
+	OfferAnalysisDetailView,
+	StructuredComparisonView
+)
 
 app_name = "contracting"
 
@@ -36,5 +44,13 @@ urlpatterns = [
 	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/approve/', ApproveActionView.as_view(), name='action-approve'),
 	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/reject/', RejectActionView.as_view(), name='action-reject'),
 	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/modify/', ModifyActionView.as_view(), name='action-modify'),
+	
+	# Offer endpoints
+	path('planning/<int:project_id>/offers/', OfferListView.as_view(), name='offer-list'),
+	path('planning/<int:project_id>/offers/<int:offer_id>/', OfferDetailView.as_view(), name='offer-detail'),
+	path('planning/<int:project_id>/offers/<int:offer_id>/analyze/', AnalyzeOfferView.as_view(), name='offer-analyze'),
+	path('planning/<int:project_id>/offers/<int:offer_id>/analysis/', OfferAnalysisDetailView.as_view(), name='offer-analysis-detail'),
+	path('planning/<int:project_id>/offers/compare/', CompareOffersView.as_view(), name='offers-compare'),
+	path('planning/<int:project_id>/offers/comparison-dashboard/', StructuredComparisonView.as_view(), name='offers-comparison-dashboard'),
 ]
 

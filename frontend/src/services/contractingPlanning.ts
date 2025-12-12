@@ -100,6 +100,44 @@ export type MessageAction =
 		} | null;
 		created_at: string;
 		updated_at: string;
+	}
+	| {
+		id: number;
+		action_type: 'analyze_offer';
+		action_status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed';
+		action_data: {
+			offer_id: number;
+			reasoning: string;
+		};
+		action_summary: string;
+		execution_result?: {
+			offer_id?: number;
+			analysis_id?: number;
+			analysis_report?: string;
+			analysis_data?: any;
+		} | null;
+		created_at: string;
+		updated_at: string;
+	}
+	| {
+		id: number;
+		action_type: 'compare_offers';
+		action_status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed';
+		action_data: {
+			primary_offer_id: number;
+			compare_with_ids?: number[];
+			reasoning: string;
+		};
+		action_summary: string;
+		execution_result?: {
+			primary_offer_id?: number;
+			compared_offer_ids?: number[];
+			comparison_id?: number;
+			comparison_report?: string;
+			comparison_data?: any;
+		} | null;
+		created_at: string;
+		updated_at: string;
 	};
 
 export interface Message {
@@ -164,6 +202,73 @@ export interface ModifyActionResponse {
 		recipient?: string;
 		subject?: string;
 	};
+}
+
+export interface ContractorOffer {
+	id: number;
+	contractor_id: number;
+	contractor_name?: string;
+	gmail_message_id: string;
+	total_price?: number;
+	currency: string;
+	timeline_start?: string;
+	timeline_end?: string;
+	timeline_duration_days?: number;
+	scope_of_work: string;
+	materials_included: string[];
+	labor_breakdown: Record<string, number>;
+	payment_terms: string;
+	payment_schedule: Array<{
+		milestone: string;
+		amount: number;
+		percentage: number;
+	}>;
+	warranty_period?: string;
+	warranty_details: string;
+	insurance_details: string;
+	special_conditions: string;
+	offer_date?: string;
+	valid_until?: string;
+	extracted_data: any;
+	pdf_attachment_id?: string;
+	created_at: string;
+	updated_at: string;
+}
+
+// Alias for backward compatibility and clarity
+export type Offer = ContractorOffer;
+
+export interface OfferAnalysis {
+	id: number;
+	offer: number;
+	offer_details?: ContractorOffer;
+	analysis_type: 'single' | 'comparison';
+	analysis_report: string;
+	analysis_data: any;
+	compared_offer_ids: number[];
+	compared_offers_details?: ContractorOffer[];
+	documents_used: string[];
+	embeddings_version?: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface OfferListResponse {
+	offers: ContractorOffer[];
+	total: number;
+}
+
+export interface AnalyzeOfferResponse {
+	success: boolean;
+	analysis: OfferAnalysis;
+	offer: Offer;
+}
+
+export interface CompareOffersResponse {
+	success: boolean;
+	comparison: OfferAnalysis;
+	primary_offer: Offer;
+	compared_offers: Offer[];
 }
 
 const getCsrfToken = (): string => {
@@ -761,6 +866,144 @@ export const contractingPlanningApi = {
 				// Keep default message
 			}
 			throw new Error(message);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Get list of offers for a project
+	 */
+	async getOffers(projectId: number): Promise<OfferListResponse> {
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/offers/`,
+			{
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch offers: ${response.status}`);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Get details of a specific offer
+	 */
+	async getOffer(projectId: number, offerId: number): Promise<ContractorOffer> {
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/offers/${offerId}/`,
+			{
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch offer: ${response.status}`);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Analyze an offer
+	 */
+	async analyzeOffer(projectId: number, offerId: number): Promise<AnalyzeOfferResponse> {
+		const csrfToken = await ensureCsrfToken();
+
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/offers/${offerId}/analyze/`,
+			{
+				method: "POST",
+				credentials: "include",
+				headers: {
+					"X-CSRFToken": csrfToken,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			let message = `HTTP error! status: ${response.status}`;
+			try {
+				const data = await response.json();
+				message = data.detail || data.message || message;
+			} catch {
+				// Keep default message
+			}
+			throw new Error(message);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Compare offers
+	 */
+	async compareOffers(
+		projectId: number,
+		primaryOfferId: number,
+		compareWith?: number[]
+	): Promise<CompareOffersResponse> {
+		const csrfToken = await ensureCsrfToken();
+
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/offers/compare/`,
+			{
+				method: "POST",
+				credentials: "include",
+				headers: {
+					"X-CSRFToken": csrfToken,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					primary_offer_id: primaryOfferId,
+					compare_with: compareWith,
+				}),
+			}
+		);
+
+		if (!response.ok) {
+			let message = `HTTP error! status: ${response.status}`;
+			try {
+				const data = await response.json();
+				message = data.detail || data.message || message;
+			} catch {
+				// Keep default message
+			}
+			throw new Error(message);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Get existing analysis for an offer
+	 */
+	async getOfferAnalysis(projectId: number, offerId: number): Promise<OfferAnalysis> {
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/offers/${offerId}/analysis/`,
+			{
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch offer analysis: ${response.status}`);
 		}
 
 		return response.json();

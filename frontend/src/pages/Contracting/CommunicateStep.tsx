@@ -5,11 +5,15 @@ import {
 	contractingPlanningApi, 
 	Conversation, 
 	Message,
-	MessageAction
+	MessageAction,
+	ContractorOffer,
+	Offer,
+	OfferAnalysis
 } from "../../services/contractingPlanning";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
 import EmailPreviewModal from "../../components/EmailPreviewModal/EmailPreviewModal";
+import AnalysisReportModal from "../../components/AnalysisReportModal/AnalysisReportModal";
 import { 
 	MessageSquare, 
 	Send, 
@@ -21,7 +25,9 @@ import {
 	CheckCircle,
 	XCircle,
 	Paperclip,
-	RefreshCw
+	RefreshCw,
+	FileText,
+	BarChart
 } from "lucide-react";
 
 interface CommunicateStepProps {
@@ -50,6 +56,13 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	const [isActionProcessing, setIsActionProcessing] = useState(false);
 	const [isAITyping, setIsAITyping] = useState(false);
 	const [attachments, setAttachments] = useState<File[]>([]);
+	const [showAnalysisReport, setShowAnalysisReport] = useState(false);
+	const [analysisReport, setAnalysisReport] = useState<{
+		content: string;
+		type: 'analysis' | 'comparison';
+		offer?: Offer;
+		comparedOffers?: Offer[];
+	} | null>(null);
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -340,6 +353,41 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			// Add confirmation message
 			const confirmationMessage = response.confirmation_message;
 			setMessages((prev) => [...prev, confirmationMessage]);
+			
+			// If this was an analyze_offer or compare_offers action, show the analysis
+			if (response.action.action_type === 'analyze_offer' && response.action.execution_result) {
+				const result = response.action.execution_result;
+				if (result.analysis_report) {
+					// Fetch the full offer details
+					const offer = await contractingPlanningApi.getOffer(selectedProject.id, result.offer_id!);
+					setAnalysisReport({
+						content: result.analysis_report,
+						type: 'analysis',
+						offer: offer
+					});
+					setShowAnalysisReport(true);
+				}
+			} else if (response.action.action_type === 'compare_offers' && response.action.execution_result) {
+				// Show comparison report in modal
+				const result = response.action.execution_result;
+				if (result.comparison_report) {
+					const primaryOffer = await contractingPlanningApi.getOffer(selectedProject.id, result.primary_offer_id!);
+					const comparedOffers: ContractorOffer[] = [];
+					if (result.compared_offer_ids) {
+						for (const offerId of result.compared_offer_ids) {
+							const offer = await contractingPlanningApi.getOffer(selectedProject.id, offerId);
+							comparedOffers.push(offer);
+						}
+					}
+					setAnalysisReport({
+						content: result.comparison_report,
+						type: 'comparison',
+						offer: primaryOffer,
+						comparedOffers: comparedOffers
+					});
+					setShowAnalysisReport(true);
+				}
+			}
 			
 		} catch (err) {
 			console.error("Error executing action:", err);
@@ -723,6 +771,150 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 															</div>
 														</div>
 													</div>
+												) : message.action.action_type === "analyze_offer" ? (
+													// Analyze Offer Action
+													<div className="w-full flex justify-start">
+														<div className="max-w-xl">
+															<p className="text-xs uppercase tracking-wide text-gray-500 mb-1 ml-1">System</p>
+															
+															<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm space-y-3">
+																<div className="flex items-start gap-2 text-sm text-blue-900">
+																	<FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+																	<span className="font-medium">{message.content}</span>
+																</div>
+																
+																{message.action.action_status === "pending" && (
+																	<>
+																		<div className="border-t border-blue-200 pt-3"></div>
+																		<div className="flex flex-col gap-2">
+																			<button
+																				onClick={() => handleExecuteAction(message.action!.id)}
+																				className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+																				disabled={isActionProcessing}
+																			>
+																				{isActionProcessing ? (
+																					<>
+																						<Loader2 className="w-4 h-4 animate-spin" />
+																						Analyzing...
+																					</>
+																				) : (
+																					<>
+																						<FileText className="w-4 h-4" />
+																						Analyze Offer
+																					</>
+																				)}
+																			</button>
+																			<button
+																				onClick={() => handleRejectAction(message.action!.id)}
+																				className="text-gray-600 hover:text-gray-800 text-sm underline text-center"
+																				disabled={isActionProcessing}
+																			>
+																				Cancel
+																			</button>
+																		</div>
+																	</>
+																)}
+																
+																{message.action.action_status === "rejected" && (
+																	<div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 px-2 py-1 rounded">
+																		<XCircle className="w-3 h-3" />
+																		<span>Cancelled</span>
+																	</div>
+																)}
+																
+																{message.action.action_status === "failed" && (
+																	<>
+																		<div className="flex items-center gap-2 text-orange-600 text-xs font-medium bg-orange-50 px-2 py-1 rounded">
+																			<XCircle className="w-3 h-3" />
+																			<span>Failed to analyze</span>
+																		</div>
+																		<button
+																			onClick={() => handleExecuteAction(message.action!.id)}
+																			className="w-full px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+																			disabled={isActionProcessing}
+																		>
+																			<FileText className="w-4 h-4" />
+																			Retry Analysis
+																		</button>
+																	</>
+																)}
+																
+																<p className="text-xs text-gray-400">{formatTime(message.timestamp)}</p>
+															</div>
+														</div>
+													</div>
+												) : message.action.action_type === "compare_offers" ? (
+													// Compare Offers Action
+													<div className="w-full flex justify-start">
+														<div className="max-w-xl">
+															<p className="text-xs uppercase tracking-wide text-gray-500 mb-1 ml-1">System</p>
+															
+															<div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm space-y-3">
+																<div className="flex items-start gap-2 text-sm text-emerald-900">
+																	<BarChart className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+																	<span className="font-medium">{message.content}</span>
+																</div>
+																
+																{message.action.action_status === "pending" && (
+																	<>
+																		<div className="border-t border-emerald-200 pt-3"></div>
+																		<div className="flex flex-col gap-2">
+																			<button
+																				onClick={() => handleExecuteAction(message.action!.id)}
+																				className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+																				disabled={isActionProcessing}
+																			>
+																				{isActionProcessing ? (
+																					<>
+																						<Loader2 className="w-4 h-4 animate-spin" />
+																						Comparing...
+																					</>
+																				) : (
+																					<>
+																						<BarChart className="w-4 h-4" />
+																						Compare Offers
+																					</>
+																				)}
+																			</button>
+																			<button
+																				onClick={() => handleRejectAction(message.action!.id)}
+																				className="text-gray-600 hover:text-gray-800 text-sm underline text-center"
+																				disabled={isActionProcessing}
+																			>
+																				Cancel
+																			</button>
+																		</div>
+																	</>
+																)}
+																
+																{message.action.action_status === "rejected" && (
+																	<div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 px-2 py-1 rounded">
+																		<XCircle className="w-3 h-3" />
+																		<span>Cancelled</span>
+																	</div>
+																)}
+																
+																{message.action.action_status === "failed" && (
+																	<>
+																		<div className="flex items-center gap-2 text-orange-600 text-xs font-medium bg-orange-50 px-2 py-1 rounded">
+																			<XCircle className="w-3 h-3" />
+																			<span>Failed to compare</span>
+																		</div>
+																		<button
+																			onClick={() => handleExecuteAction(message.action!.id)}
+																			className="w-full px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+																			disabled={isActionProcessing}
+																		>
+																			<BarChart className="w-4 h-4" />
+																			Retry Comparison
+																		</button>
+																	</>
+																)}
+																
+																<p className="text-xs text-gray-400">{formatTime(message.timestamp)}</p>
+															</div>
+														</div>
+													</div>
 												) : null
 											) : message.message_type === "ai_action_executed" ? (
 												// Action Executed Message
@@ -948,6 +1140,20 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 						setPreviewAction(null);
 					}}
 					isLoading={isActionProcessing}
+				/>
+			)}
+			
+			{/* Analysis Report Modal - For both single offer analysis and comparisons */}
+			{showAnalysisReport && analysisReport && (
+				<AnalysisReportModal
+					reportContent={analysisReport.content}
+					reportType={analysisReport.type}
+					offerDetails={analysisReport.offer}
+					comparedOffers={analysisReport.comparedOffers}
+					onClose={() => {
+						setShowAnalysisReport(false);
+						setAnalysisReport(null);
+					}}
 				/>
 			)}
 		</div>

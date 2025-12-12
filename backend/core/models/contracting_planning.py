@@ -220,6 +220,9 @@ class MessageAction(models.Model):
 	ACTION_TYPE_CHOICES = [
 		('send_email', 'Send Email'),
 		('draft_email', 'Draft Email'),
+		('fetch_email', 'Fetch Email'),
+		('analyze_offer', 'Analyze Offer'),
+		('compare_offers', 'Compare Offers'),
 	]
 	
 	ACTION_STATUS_CHOICES = [
@@ -313,4 +316,248 @@ class MessageAttachment(models.Model):
 	
 	def __str__(self):
 		return f"{self.filename} - {self.message}"
+
+
+class ContractorOffer(models.Model):
+	"""
+	Store extracted offer data from contractors
+	"""
+	contracting_planning = models.ForeignKey(
+		ContractingPlanning,
+		on_delete=models.CASCADE,
+		related_name='offers',
+		help_text="The contracting planning this offer is for"
+	)
+	contractor_id = models.IntegerField(
+		"Contractor ID",
+		null=True,
+		blank=True,
+		help_text="ID of the contractor who made this offer"
+	)
+	gmail_message_id = models.CharField(
+		"Gmail Message ID",
+		max_length=255,
+		unique=True,
+		null=True,
+		blank=True,
+		help_text="Link to the email containing this offer"
+	)
+	
+	# Extracted structured data (comprehensive fields)
+	total_price = models.DecimalField(
+		"Total Price",
+		max_digits=12,
+		decimal_places=2,
+		null=True,
+		blank=True,
+		help_text="Total offer price"
+	)
+	currency = models.CharField(
+		"Currency",
+		max_length=3,
+		default='EUR',
+		null=True,
+		blank=True,
+		help_text="Currency code (ISO 4217)"
+	)
+	timeline_start = models.DateField(
+		"Timeline Start",
+		null=True,
+		blank=True,
+		help_text="Proposed project start date"
+	)
+	timeline_end = models.DateField(
+		"Timeline End",
+		null=True,
+		blank=True,
+		help_text="Proposed project end date"
+	)
+	timeline_duration_days = models.IntegerField(
+		"Timeline Duration (Days)",
+		null=True,
+		blank=True,
+		help_text="Project duration in days"
+	)
+	
+	# Detailed breakdown
+	scope_of_work = models.TextField(
+		"Scope of Work",
+		null=True,
+		blank=True,
+		help_text="Description of work to be performed"
+	)
+	materials_included = models.JSONField(
+		"Materials Included",
+		default=list,
+		blank=True,
+		help_text="List of materials included in the offer"
+	)
+	labor_breakdown = models.JSONField(
+		"Labor Breakdown",
+		default=dict,
+		blank=True,
+		help_text="Cost breakdown by labor type"
+	)
+	payment_terms = models.TextField(
+		"Payment Terms",
+		null=True,
+		blank=True,
+		help_text="Payment terms and conditions"
+	)
+	payment_schedule = models.JSONField(
+		"Payment Schedule",
+		default=list,
+		blank=True,
+		help_text="Payment milestones and amounts"
+	)
+	
+	# Additional details
+	warranty_period = models.CharField(
+		"Warranty Period",
+		max_length=100,
+		null=True,
+		blank=True,
+		help_text="Warranty period (e.g., '2 years')"
+	)
+	warranty_details = models.TextField(
+		"Warranty Details",
+		null=True,
+		blank=True,
+		help_text="Detailed warranty information"
+	)
+	insurance_details = models.TextField(
+		"Insurance Details",
+		null=True,
+		blank=True,
+		help_text="Insurance coverage information"
+	)
+	special_conditions = models.TextField(
+		"Special Conditions",
+		null=True,
+		blank=True,
+		help_text="Any special conditions or notes"
+	)
+	misc_details = models.JSONField(
+		"Miscellaneous Details",
+		default=dict,
+		blank=True,
+		help_text="Additional information not captured in other fields (e.g., project manager, certifications, references)"
+	)
+	
+	# Metadata
+	offer_date = models.DateField(
+		"Offer Date",
+		null=True,
+		blank=True,
+		help_text="Date the offer was made"
+	)
+	valid_until = models.DateField(
+		"Valid Until",
+		null=True,
+		blank=True,
+		help_text="Date until which the offer is valid"
+	)
+	extracted_data = models.JSONField(
+		"Extracted Data",
+		default=dict,
+		blank=True,
+		help_text="Full extracted JSON for flexibility"
+	)
+	pdf_attachment_id = models.CharField(
+		"PDF Attachment ID",
+		max_length=255,
+		null=True,
+		blank=True,
+		help_text="Gmail attachment ID if offer was in PDF"
+	)
+	
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	
+	class Meta:
+		verbose_name = "Contractor Offer"
+		verbose_name_plural = "Contractor Offers"
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['contracting_planning', 'contractor_id']),
+			models.Index(fields=['gmail_message_id']),
+		]
+	
+	def __str__(self):
+		contractor_text = f"Contractor {self.contractor_id}"
+		price_text = f"€{self.total_price}" if self.total_price else "Price TBD"
+		return f"Offer from {contractor_text} - {price_text}"
+
+
+class OfferAnalysis(models.Model):
+	"""
+	Store analysis reports for offers
+	"""
+	ANALYSIS_TYPE_CHOICES = [
+		('single', 'Single Offer Analysis'),
+		('comparison', 'Offer Comparison'),
+	]
+	
+	offer = models.ForeignKey(
+		ContractorOffer,
+		on_delete=models.CASCADE,
+		related_name='analyses',
+		help_text="The primary offer being analyzed"
+	)
+	analysis_type = models.CharField(
+		"Analysis Type",
+		max_length=20,
+		choices=ANALYSIS_TYPE_CHOICES,
+		help_text="Type of analysis performed"
+	)
+	
+	# Analysis content
+	analysis_report = models.TextField(
+		"Analysis Report",
+		help_text="Markdown formatted analysis report"
+	)
+	analysis_data = models.JSONField(
+		"Analysis Data",
+		default=dict,
+		blank=True,
+		help_text="Structured analysis data for programmatic access"
+	)
+	
+	# Comparison specific
+	compared_offer_ids = models.JSONField(
+		"Compared Offer IDs",
+		default=list,
+		blank=True,
+		help_text="List of offer IDs compared (if type='comparison')"
+	)
+	
+	# RAG metadata (for future)
+	documents_used = models.JSONField(
+		"Documents Used",
+		default=list,
+		blank=True,
+		null=True,
+		help_text="List of document IDs used in RAG pipeline"
+	)
+	embeddings_version = models.CharField(
+		"Embeddings Version",
+		max_length=50,
+		null=True,
+		blank=True,
+		help_text="Version of embeddings model used"
+	)
+	
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	
+	class Meta:
+		verbose_name = "Offer Analysis"
+		verbose_name_plural = "Offer Analyses"
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['offer', 'analysis_type']),
+		]
+	
+	def __str__(self):
+		return f"{self.get_analysis_type_display()} for {self.offer}"
 
