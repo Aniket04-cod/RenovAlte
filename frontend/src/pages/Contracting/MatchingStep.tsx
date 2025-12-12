@@ -158,7 +158,7 @@ const MatchingStep: React.FC<MatchingStepProps> = ({
 					{selectedContractors.size > 0 && (
 						<div className="mt-4 pt-4 border-t border-emerald-200">
 							<button
-								onClick={() => onStepChange(2)}
+								onClick={() => onStepChange(3)}
 								className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
 							>
 								<Users className="w-4 h-4" />

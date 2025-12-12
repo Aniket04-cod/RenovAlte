@@ -172,4 +172,22 @@ REST_FRAMEWORK = {
 # create a backend/.env file (gitignored) with GOOGLE_API_KEY=your_key_here.
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
+# Gmail API Configuration for OAuth and Email Sending
+# Get these credentials from Google Cloud Console
+GMAIL_API_CLIENT_ID = os.getenv("GMAIL_API_CLIENT_ID", "")
+GMAIL_API_CLIENT_SECRET = os.getenv("GMAIL_API_CLIENT_SECRET", "")
+GMAIL_OAUTH_REDIRECT_URI = os.getenv(
+	"GMAIL_OAUTH_REDIRECT_URI",
+	"http://localhost:3000/gmail/callback"
+)
+GMAIL_OAUTH_SCOPES = ["https://www.googleapis.com/auth/gmail.send",
+                      "https://www.googleapis.com/auth/gmail.readonly",
+                      "https://www.googleapis.com/auth/userinfo.email",
+                      "openid",
+                      "https://www.googleapis.com/auth/gmail.modify"]
+
+# Media files configuration for file uploads
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 

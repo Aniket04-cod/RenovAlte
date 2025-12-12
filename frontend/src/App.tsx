@@ -9,6 +9,7 @@ import Contracting from "./pages/Contracting/Contracting";
 import Financing from "./pages/Financing/Financing";
 import LoginPage from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import GmailCallback from "./pages/GmailCallback/GmailCallback";
 import { ProjectProvider, useProject } from "./contexts/ProjectContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
@@ -66,6 +67,9 @@ const AppRoutes: React.FC = () => {
             isAuthenticated ? <Navigate to="/home" replace /> : <LandingPage />
           }
         />
+        {/* Gmail OAuth Callback - public route for popup authentication */}
+        <Route path="/gmail/callback" element={<GmailCallback />} />
+        <Route path="/gmail-callback" element={<GmailCallback />} />
         {/* Protected routes with layout */}
         <Route
           element={

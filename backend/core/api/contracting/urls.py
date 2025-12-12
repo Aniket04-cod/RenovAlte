@@ -1,0 +1,40 @@
+from django.urls import path
+from .contracting_planning_create_view import ContractingPlanningCreateView
+from .contracting_planning_detail_view import ContractingPlanningDetailView
+from .contracting_planning_answer_view import ContractingPlanningAnswerView
+from .contracting_planning_invitation_view import ContractingPlanningInvitationView
+from .contracting_planning_pdf_view import ContractingPlanningPDFView
+from .contracting_planning_modify_email_view import ContractingPlanningModifyEmailView
+from .send_invitations_view import SendInvitationsView
+from .contractor_list_view import ContractorListView
+from .conversation_list_view import ConversationListView
+from .conversation_messages_view import ConversationMessagesView
+from .update_step_view import UpdateStepView
+from .action_views import ApproveActionView, RejectActionView, ModifyActionView
+
+app_name = "contracting"
+
+urlpatterns = [
+	# Planning endpoints
+	path('planning/', ContractingPlanningCreateView.as_view(), name='contracting-planning-create'),
+	path('planning/<int:project_id>/', ContractingPlanningDetailView.as_view(), name='contracting-planning-detail'),
+	path('planning/<int:project_id>/answers/', ContractingPlanningAnswerView.as_view(), name='contracting-planning-answers'),
+	path('planning/<int:project_id>/step/', UpdateStepView.as_view(), name='contracting-planning-update-step'),
+	path('planning/<int:project_id>/invitation/', ContractingPlanningInvitationView.as_view(), name='contracting-planning-invitation'),
+	path('planning/<int:project_id>/invitation/modify/', ContractingPlanningModifyEmailView.as_view(), name='contracting-planning-modify-email'),
+	path('planning/<int:project_id>/invitation/send/', SendInvitationsView.as_view(), name='contracting-planning-send-invitations'),
+	path('planning/<int:project_id>/pdf/', ContractingPlanningPDFView.as_view(), name='contracting-planning-pdf'),
+	
+	# Contractor endpoints
+	path('contractors/', ContractorListView.as_view(), name='contractor-list'),
+	
+	# Conversation endpoints
+	path('planning/<int:project_id>/conversations/', ConversationListView.as_view(), name='conversation-list'),
+	path('planning/<int:project_id>/conversations/<int:contractor_id>/messages/', ConversationMessagesView.as_view(), name='conversation-messages'),
+	
+	# Action endpoints
+	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/approve/', ApproveActionView.as_view(), name='action-approve'),
+	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/reject/', RejectActionView.as_view(), name='action-reject'),
+	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/modify/', ModifyActionView.as_view(), name='action-modify'),
+]
+
