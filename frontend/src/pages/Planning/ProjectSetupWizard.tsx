@@ -36,6 +36,8 @@ import {
   ENERGY_CERTIFICATE_RATING_OPTIONS,
   KNOWN_MAJOR_ISSUES_OPTIONS,
   SURVEYS_REQUIRED_OPTIONS,
+  ROOM_OPTIONS,
+  STANDARD_OPTIONS,
 } from "../../utils/constants";
 import { ProjectPlanData } from "./Planning";
 
@@ -82,6 +84,8 @@ export function ProjectSetupWizard({
   const [buildingAge, setBuildingAge] = useState("2024-01-15");
   const [buildingSize, setBuildingSize] = useState(50);
   const [bundesland, setBundesland] = useState("hesse");
+  const [renovationSpecification,setRenovationSpecification] = useState("")
+  const [renovationStandard,setRenovationStandard] = useState("")
   const [heatingSystem, setHeatingSystem] = useState("electric");
   const [insulationType, setInsulationType] = useState("partial");
   const [windowsType, setWindowsType] = useState("single-pane");
@@ -447,6 +451,26 @@ export function ProjectSetupWizard({
                   placeholder="60"
                   value={buildingSize}
                   onChange={(e) => setBuildingSize(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="renovation-specification">
+                  Renovation Specification
+                </Label>
+                <Select
+                  value={renovationSpecification}
+                  options={ROOM_OPTIONS}
+                  onChange={setRenovationSpecification}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="renovation-standard">Renovation Standard</Label>
+                <Select
+                  value={renovationStandard}
+                  options={STANDARD_OPTIONS}
+                  onChange={setRenovationStandard}
                 />
               </div>
             </div>
