@@ -13,7 +13,6 @@ import {
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
 import EmailPreviewModal from "../../components/EmailPreviewModal/EmailPreviewModal";
-import AnalysisReportModal from "../../components/AnalysisReportModal/AnalysisReportModal";
 import { 
 	MessageSquare, 
 	Send, 
@@ -56,14 +55,6 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	const [isActionProcessing, setIsActionProcessing] = useState(false);
 	const [isAITyping, setIsAITyping] = useState(false);
 	const [attachments, setAttachments] = useState<File[]>([]);
-	const [showAnalysisReport, setShowAnalysisReport] = useState(false);
-	const [analysisReport, setAnalysisReport] = useState<{
-		content: string;
-		type: 'analysis' | 'comparison';
-		offer?: Offer;
-		comparedOffers?: Offer[];
-		structuredData?: any;
-	} | null>(null);
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -355,42 +346,14 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			const confirmationMessage = response.confirmation_message;
 			setMessages((prev) => [...prev, confirmationMessage]);
 			
-			// If this was an analyze_offer or compare_offers action, show the analysis
-			if (response.action.action_type === 'analyze_offer' && response.action.execution_result) {
-				const result = response.action.execution_result;
-				if (result.analysis_report) {
-					// Fetch the full offer details
-					const offer = await contractingPlanningApi.getOffer(selectedProject.id, result.offer_id!);
-					setAnalysisReport({
-						content: result.analysis_report,
-						type: 'analysis',
-						offer: offer,
-						structuredData: result.analysis_data?.structured_data
-					});
-					setShowAnalysisReport(true);
-				}
-			} else if (response.action.action_type === 'compare_offers' && response.action.execution_result) {
-				// Show comparison report in modal
-				const result = response.action.execution_result;
-				if (result.comparison_report) {
-					const primaryOffer = await contractingPlanningApi.getOffer(selectedProject.id, result.primary_offer_id!);
-					const comparedOffers: ContractorOffer[] = [];
-					if (result.compared_offer_ids) {
-						for (const offerId of result.compared_offer_ids) {
-							const offer = await contractingPlanningApi.getOffer(selectedProject.id, offerId);
-							comparedOffers.push(offer);
-						}
-					}
-					setAnalysisReport({
-						content: result.comparison_report,
-						type: 'comparison',
-						offer: primaryOffer,
-						comparedOffers: comparedOffers,
-						structuredData: result.comparison_data?.structured_data
-					});
-					setShowAnalysisReport(true);
-				}
-			}
+			// // If this was an analyze_offer or compare_offers action, open the analysis in a new tab
+			// if ((response.action.action_type === 'analyze_offer' || response.action.action_type === 'compare_offers')
+			// 	&& response.action.execution_result
+			// 	&& response.action.execution_result.analysis_id) {
+			// 	const analysisId = response.action.execution_result.analysis_id;
+			// 	const url = `/projects/${selectedProject.id}/contractors/${activeContractorId}/analysis/${analysisId}`;
+			// 	window.open(url, '_blank');
+			// }
 			
 		} catch (err) {
 			console.error("Error executing action:", err);
@@ -445,8 +408,8 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	if (conversations.length === 0) {
 		return (
 			<div className="space-y-6 mx-auto max-w-4xl">
-				<div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
-					<MessageSquare className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+				<div className="bg-emerald-50 border border-emerald-200 rounded-xl p-8 text-center">
+					<MessageSquare className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
 					<Heading level={2} className="text-xl mb-3">
 						No Conversations Yet
 					</Heading>
@@ -477,16 +440,6 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	
 	return (
 		<div className="space-y-4">
-			{/* Header */}
-			<div className="mb-4">
-				<Heading level={2} className="text-2xl mb-1">
-					Contractor Communication
-				</Heading>
-				<Text className="text-gray-600">
-					AI-mediated conversations with your selected contractors
-				</Text>
-			</div>
-			
 			{error && (
 				<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
 					<Text className="text-red-800">{error}</Text>
@@ -602,18 +555,18 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 															<p className="text-xs uppercase tracking-wide text-gray-500 mb-1 ml-1">System</p>
 															
 															<div className="flex gap-2">
-																<div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-blue-600">
+																<div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-600">
 																	<Bot className="w-4 h-4 text-white" />
 																</div>
-																<div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 flex-1 shadow-sm">
+																<div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-4 flex-1 shadow-sm">
 															<div className="space-y-3">
 																{/* AI Message */}
-																<div className="text-sm text-blue-900 font-medium">
+																<div className="text-sm text-emerald-900 font-medium">
 																	{message.content}
 																</div>
 																
 																{/* Email Preview Card */}
-																<div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm">
+																<div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
 																	<div className="space-y-2">
 																		<div>
 																			<div className="text-xs font-semibold text-gray-500 uppercase mb-1">
@@ -627,7 +580,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																			<div className="text-xs font-semibold text-gray-500 uppercase mb-1">
 																				Email Preview
 																			</div>
-																			<div 
+																			<div
 																				className="text-sm text-gray-700 line-clamp-3"
 																				dangerouslySetInnerHTML={{
 																					__html: message.action.action_data.body_html.substring(0, 200) + "..."
@@ -642,7 +595,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																	<div className="flex gap-2 pt-2">
 																		<button
 																			onClick={() => handleViewEmailPreview(message.action!)}
-																			className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+																			className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
 																			disabled={isActionProcessing}
 																		>
 																			<Eye className="w-4 h-4" />
@@ -668,22 +621,22 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																
 																{message.action.action_status === "failed" && (
 																	<div className="space-y-2">
-																		<div className="flex items-center gap-2 text-orange-600 text-sm font-medium bg-orange-50 px-3 py-2 rounded-lg">
+																		<div className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 px-3 py-2 rounded-lg">
 																			<XCircle className="w-4 h-4" />
 																			<span>Failed to send</span>
 																		</div>
 																		<button
 																			onClick={() => handleViewEmailPreview(message.action!)}
-																			className="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+																			className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
 																			disabled={isActionProcessing}
 																		>
-																			<Eye className="w-4 h-4" />
+																			<RefreshCw className="w-4 h-4" />
 																			Retry Sending
 																		</button>
 																	</div>
 																)}
 															</div>
-															<Text className="text-xs text-blue-600 mt-3">
+															<Text className="text-xs text-emerald-600 mt-3">
 																{formatTime(message.timestamp)}
 															</Text>
 																</div>
@@ -697,9 +650,9 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 															{/* Sender Label */}
 															<p className="text-xs uppercase tracking-wide text-gray-500 mb-1 ml-1">System</p>
 															
-															<div className="bg-purple-50 border border-purple-200 rounded-xl p-3 shadow-sm space-y-2">
-																<div className="flex items-start gap-2 text-sm text-purple-900">
-																	<Mail className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+															<div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 shadow-sm space-y-2">
+																<div className="flex items-start gap-2 text-sm text-emerald-900">
+																	<Mail className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
 																	<span className="font-medium break-words">
 																		Fetching up to {('max_emails' in message.action.action_data) ? message.action.action_data.max_emails : 5} email(s) from {('contractor_email' in message.action.action_data) ? message.action.action_data.contractor_email : ''}...
 																	</span>
@@ -707,11 +660,11 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																
 																{message.action.action_status === "pending" && (
 																	<>
-																		<div className="border-t border-purple-200 my-2"></div>
+																		<div className="border-t border-emerald-200 my-2"></div>
 																		<div className="flex flex-col gap-2">
 																			<button
 																				onClick={() => handleExecuteAction(message.action!.id)}
-																				className="w-full px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+																				className="w-full px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
 																				disabled={isActionProcessing}
 																			>
 																				{isActionProcessing ? (
@@ -746,13 +699,13 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																
 																{message.action.action_status === "failed" && (
 																	<>
-																		<div className="flex items-center gap-2 text-orange-600 text-xs font-medium bg-orange-50 px-2 py-1 rounded">
+																		<div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 px-2 py-1 rounded">
 																			<XCircle className="w-3 h-3" />
 																			<span>Failed to fetch</span>
 																		</div>
 																		<button
 																			onClick={() => handleExecuteAction(message.action!.id)}
-																			className="w-full px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+																			className="w-full px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
 																			disabled={isActionProcessing}
 																		>
 																			{isActionProcessing ? (
@@ -762,7 +715,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																				</>
 																			) : (
 																				<>
-																					<CheckCircle className="w-4 h-4" />
+																					<RefreshCw className="w-4 h-4" />
 																					Retry Fetching
 																				</>
 																			)}
@@ -780,19 +733,19 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 														<div className="max-w-xl">
 															<p className="text-xs uppercase tracking-wide text-gray-500 mb-1 ml-1">System</p>
 															
-															<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm space-y-3">
-																<div className="flex items-start gap-2 text-sm text-blue-900">
-																	<FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+															<div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm space-y-3">
+																<div className="flex items-start gap-2 text-sm text-emerald-900">
+																	<FileText className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
 																	<span className="font-medium">{message.content}</span>
 																</div>
 																
 																{message.action.action_status === "pending" && (
 																	<>
-																		<div className="border-t border-blue-200 pt-3"></div>
+																		<div className="border-t border-emerald-200 pt-3"></div>
 																		<div className="flex flex-col gap-2">
 																			<button
 																				onClick={() => handleExecuteAction(message.action!.id)}
-																				className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+																				className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
 																				disabled={isActionProcessing}
 																			>
 																				{isActionProcessing ? (
@@ -827,16 +780,16 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																
 																{message.action.action_status === "failed" && (
 																	<>
-																		<div className="flex items-center gap-2 text-orange-600 text-xs font-medium bg-orange-50 px-2 py-1 rounded">
+																		<div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 px-2 py-1 rounded">
 																			<XCircle className="w-3 h-3" />
 																			<span>Failed to analyze</span>
 																		</div>
 																		<button
 																			onClick={() => handleExecuteAction(message.action!.id)}
-																			className="w-full px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+																			className="w-full px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
 																			disabled={isActionProcessing}
 																		>
-																			<FileText className="w-4 h-4" />
+																			<RefreshCw className="w-4 h-4" />
 																			Retry Analysis
 																		</button>
 																	</>
@@ -899,16 +852,16 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																
 																{message.action.action_status === "failed" && (
 																	<>
-																		<div className="flex items-center gap-2 text-orange-600 text-xs font-medium bg-orange-50 px-2 py-1 rounded">
+																		<div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 px-2 py-1 rounded">
 																			<XCircle className="w-3 h-3" />
 																			<span>Failed to compare</span>
 																		</div>
 																		<button
 																			onClick={() => handleExecuteAction(message.action!.id)}
-																			className="w-full px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+																			className="w-full px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
 																			disabled={isActionProcessing}
 																		>
-																			<BarChart className="w-4 h-4" />
+																			<RefreshCw className="w-4 h-4" />
 																			Retry Comparison
 																		</button>
 																	</>
@@ -930,10 +883,49 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 															<div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-green-600">
 																<CheckCircle className="w-4 h-4 text-white" />
 															</div>
-															<div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm">
+															<div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm space-y-2">
 																<div className="text-sm text-green-900 font-medium">
 																	{message.content}
 																</div>
+																
+								{/* View Analysis Button for analyze_offer and compare_offers actions */}
+								{message.action && 
+								 message.action.execution_result && 
+								 (message.action.action_type === 'analyze_offer' || message.action.action_type === 'compare_offers') &&
+								 ('analysis_id' in message.action.execution_result) &&
+								 message.action.execution_result.analysis_id && (
+									<button
+										onClick={() => {
+											try {
+												const action = message.action!;
+												// Type guard to ensure we have the right action type and project ID
+												if (!selectedProject?.id || !activeContractorId) {
+													console.error('Missing project or contractor ID');
+													return;
+												}
+												
+												if ((action.action_type === 'analyze_offer' || action.action_type === 'compare_offers') &&
+												    action.execution_result &&
+												    'analysis_id' in action.execution_result) {
+													const analysisId = action.execution_result.analysis_id;
+													const url = `/projects/${selectedProject.id}/contractors/${activeContractorId}/analysis/${analysisId}`;
+													window.open(url, '_blank');
+												}
+											} catch (err) {
+												console.error('Error opening analysis:', err);
+												setError(err instanceof Error ? err.message : 'Failed to open analysis');
+											}
+										}}
+										className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors"
+									>
+										{message.action.action_type === 'analyze_offer' ? (
+											<><FileText className="w-3.5 h-3.5" />View Analysis Report</>
+										) : (
+											<><BarChart className="w-3.5 h-3.5" />View Comparison Report</>
+										)}
+									</button>
+								)}
+																
 																<Text className="text-xs text-green-700 mt-1">
 																	{formatTime(message.timestamp)}
 																</Text>
@@ -960,7 +952,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 																className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
 																	message.sender === "user"
 																		? "bg-emerald-600"
-																		: "bg-blue-600"
+																		: "bg-emerald-600"
 																}`}
 															>
 																{message.sender === "user" ? (
@@ -1143,20 +1135,6 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 						setPreviewAction(null);
 					}}
 					isLoading={isActionProcessing}
-				/>
-			)}
-			
-			{/* Analysis Report Modal - For both single offer analysis and comparisons */}
-			{showAnalysisReport && analysisReport && (
-				<AnalysisReportModal
-					reportContent={analysisReport.content}
-					reportType={analysisReport.type}
-					offerDetails={analysisReport.offer}
-					comparedOffers={analysisReport.comparedOffers}
-					onClose={() => {
-						setShowAnalysisReport(false);
-						setAnalysisReport(null);
-					}}
 				/>
 			)}
 		</div>

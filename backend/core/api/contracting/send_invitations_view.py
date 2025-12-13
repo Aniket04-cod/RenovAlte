@@ -285,7 +285,7 @@ class SendInvitationsView(generics.GenericAPIView):
 			if not existing_message:
 				# Create initial AI welcome message
 				welcome_message = (
-					f"Hello! I'm your AI assistant helping you communicate with {contractor_name}. "
+					f"Hello! I'm your AI agent helping you communicate with {contractor_name}. "
 					f"I'll facilitate your conversation and help clarify any questions you have about "
 					f"your renovation project. Feel free to ask me anything!"
 				)

@@ -14,6 +14,7 @@ import { ProjectProvider, useProject } from "./contexts/ProjectContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import LandingPage from "./pages/Landing/Landing";
+import AnalysisReportPage from "./pages/Contracting/AnalysisReportPage";
 
 const Layout: React.FC = () => {
   const { selectedProject } = useProject();
@@ -84,6 +85,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/contracting" element={<Contracting />} />
           <Route path="/financing" element={<Financing />} />
           <Route path="/planning" element={<Planning />} />
+          <Route 
+            path="/projects/:projectId/contractors/:contractorId/analysis/:analysisId" 
+            element={<AnalysisReportPage />} 
+          />
         </Route>
       </Routes>
     </Router>

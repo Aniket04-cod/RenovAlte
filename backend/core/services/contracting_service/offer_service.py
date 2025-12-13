@@ -869,3 +869,43 @@ Email Body:
             True if offer exists, False otherwise
         """
         return ContractorOffer.objects.filter(gmail_message_id=gmail_message_id).exists()
+    
+    def get_recent_analysis_for_contractor(
+        self,
+        contractor_id: int,
+        planning: ContractingPlanning,
+        analysis_type: Optional[str] = None
+    ) -> Optional['OfferAnalysis']:
+        """
+        Get the most recent analysis for offers from a specific contractor.
+        
+        Args:
+            contractor_id: ID of the contractor
+            planning: ContractingPlanning instance
+            analysis_type: Optional filter ('single' or 'comparison')
+            
+        Returns:
+            Most recent OfferAnalysis or None
+        """
+        # Get offers from this contractor for this planning
+        offers = ContractorOffer.objects.filter(
+            contracting_planning=planning,
+            contractor_id=contractor_id
+        ).values_list('id', flat=True)
+        
+        if not offers:
+            return None
+        
+        # Query for analyses
+        analyses_query = OfferAnalysis.objects.filter(
+            offer__id__in=offers
+        )
+        
+        # Filter by analysis type if specified
+        if analysis_type:
+            analyses_query = analyses_query.filter(analysis_type=analysis_type)
+        
+        # Get the most recent analysis
+        analysis = analyses_query.order_by('-created_at').first()
+        
+        return analysis

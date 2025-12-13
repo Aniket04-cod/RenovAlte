@@ -17,7 +17,8 @@ from .offer_views import (
 	AnalyzeOfferView,
 	CompareOffersView,
 	OfferAnalysisDetailView,
-	StructuredComparisonView
+	StructuredComparisonView,
+	AnalysisDetailView
 )
 
 app_name = "contracting"
@@ -52,5 +53,8 @@ urlpatterns = [
 	path('planning/<int:project_id>/offers/<int:offer_id>/analysis/', OfferAnalysisDetailView.as_view(), name='offer-analysis-detail'),
 	path('planning/<int:project_id>/offers/compare/', CompareOffersView.as_view(), name='offers-compare'),
 	path('planning/<int:project_id>/offers/comparison-dashboard/', StructuredComparisonView.as_view(), name='offers-comparison-dashboard'),
+	
+	# Analysis endpoints
+	path('planning/<int:project_id>/analyses/<int:analysis_id>/', AnalysisDetailView.as_view(), name='analysis-detail'),
 ]
 

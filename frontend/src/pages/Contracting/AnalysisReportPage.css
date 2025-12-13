@@ -31,59 +31,8 @@
 	@apply text-gray-700;
 }
 
-.markdown-content table {
-	@apply min-w-full divide-y divide-gray-200 border border-gray-200 mb-4;
-}
-
-.markdown-content thead {
-	@apply bg-gray-50;
-}
-
-.markdown-content th {
-	@apply px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider;
-}
-
-.markdown-content td {
-	@apply px-4 py-2 text-sm text-gray-700 border-t border-gray-200;
-}
-
 .markdown-content strong {
 	@apply font-semibold text-gray-900;
-}
-
-.markdown-content code {
-	@apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800;
-}
-
-.markdown-content pre {
-	@apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
-}
-
-.markdown-content blockquote {
-	@apply border-l-4 border-emerald-500 pl-4 italic text-gray-600 my-4;
-}
-
-.markdown-content a {
-	@apply text-emerald-600 hover:text-emerald-700 underline;
-}
-
-/* Custom scrollbar */
-.markdown-content::-webkit-scrollbar {
-	width: 8px;
-}
-
-.markdown-content::-webkit-scrollbar-track {
-	background: #f1f1f1;
-	border-radius: 4px;
-}
-
-.markdown-content::-webkit-scrollbar-thumb {
-	background: #888;
-	border-radius: 4px;
-}
-
-.markdown-content::-webkit-scrollbar-thumb:hover {
-	background: #555;
 }
 
 /* Modern Card Styles */
@@ -128,308 +77,7 @@
 	animation: fadeInScale 0.2s ease-out;
 }
 
-/* PDF Generation Styles */
-@media print {
-	body {
-		print-color-adjust: exact;
-		-webkit-print-color-adjust: exact;
-	}
-	
-	.stat-card,
-	[class*="bg-"],
-	[class*="border-"] {
-		print-color-adjust: exact;
-		-webkit-print-color-adjust: exact;
-	}
-	
-	/* Ensure all content is visible when printing */
-	[data-collapsible] {
-		display: block !important;
-	}
-	
-	/* Remove shadows for cleaner print */
-	.shadow-2xl,
-	.shadow-md,
-	.hover\:shadow-md {
-		box-shadow: none !important;
-	}
-	
-	/* Ensure proper page breaks */
-	.stat-card,
-	.border-2 {
-		page-break-inside: avoid;
-	}
-	
-	/* Hide interactive elements */
-	button {
-		display: none !important;
-	}
-}
-
-/* Hover Effects for Interactive Elements */
-.hover-lift {
-	transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-}
-
-.hover-lift:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Score Badge Pulse Animation */
-@keyframes pulse {
-	0%, 100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.8;
-	}
-}
-
-.score-badge {
-	animation: pulse 2s ease-in-out infinite;
-}
-
-/* Gradient Backgrounds for Cards */
-.gradient-card {
-	background: linear-gradient(135deg, #f0fdf4 0%, #ecfccb 100%);
-}
-
-.gradient-card-blue {
-	background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-}
-
-.gradient-card-amber {
-	background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-	.stat-card {
-		padding: 1rem;
-	}
-	
-	.markdown-content {
-		font-size: 0.875rem;
-	}
-	
-	/* Stack cards vertically on mobile */
-	.grid-cols-3 {
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-	}
-}
-
-/* Loading Spinner for PDF Generation */
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-.animate-spin {
-	animation: spin 1s linear infinite;
-}
-
-/* Focus States for Accessibility */
-button:focus-visible {
-	outline: 2px solid #10b981;
-	outline-offset: 2px;
-}
-
-/* Smooth Transitions */
-* {
-	transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	transition-duration: 150ms;
-}
-
-/* Icon Badge Styles */
-.icon-badge {
-	@apply inline-flex items-center justify-center;
-	@apply rounded-lg;
-	@apply transition-all duration-200;
-}
-
-.icon-badge:hover {
-	@apply transform scale-110;
-}
-
-/* Divider with Text */
-.divider-text {
-	display: flex;
-	align-items: center;
-	text-align: center;
-	color: #6b7280;
-	font-size: 0.875rem;
-	font-weight: 500;
-}
-
-.divider-text::before,
-.divider-text::after {
-	content: '';
-	flex: 1;
-	border-bottom: 1px solid #e5e7eb;
-}
-
-.divider-text::before {
-	margin-right: 1rem;
-}
-
-.divider-text::after {
-	margin-left: 1rem;
-}
-
-/* Enhanced Border Styles */
-.border-gradient {
-	border: 2px solid;
-	border-image-slice: 1;
-	border-image-source: linear-gradient(to right, #10b981, #3b82f6);
-}
-
-/* Status Indicator Dots */
-.status-dot {
-	@apply inline-block w-2 h-2 rounded-full;
-}
-
-.status-dot-green {
-	@apply bg-green-500;
-	box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
-}
-
-.status-dot-yellow {
-	@apply bg-yellow-500;
-	box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
-}
-
-.status-dot-red {
-	@apply bg-red-500;
-	box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
-}
-
-/* Card Shimmer Effect */
-@keyframes shimmer {
-	0% {
-		background-position: -1000px 0;
-	}
-	100% {
-		background-position: 1000px 0;
-	}
-}
-
-.card-shimmer {
-	background: linear-gradient(
-		to right,
-		#f9fafb 0%,
-		#f3f4f6 20%,
-		#f9fafb 40%,
-		#f9fafb 100%
-	);
-	background-size: 1000px 100%;
-	animation: shimmer 2s infinite linear;
-}
-
-/* Tooltip Styles */
-.tooltip {
-	@apply absolute z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg;
-	@apply pointer-events-none opacity-0 transition-opacity duration-200;
-}
-
-.tooltip-visible {
-	@apply opacity-100;
-}
-
-/* Enhanced Table Styles for Comparison Matrix */
-.comparison-table {
-	@apply w-full border-collapse;
-}
-
-.comparison-table th {
-	@apply bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3;
-	@apply text-left text-xs font-semibold text-gray-700 uppercase tracking-wider;
-	@apply border-b-2 border-emerald-200;
-}
-
-.comparison-table td {
-	@apply px-4 py-3 text-sm text-gray-700;
-	@apply border-b border-gray-200;
-}
-
-.comparison-table tbody tr:hover {
-	@apply bg-gray-50 transition-colors duration-150;
-}
-
-/* Progress Bar Styles */
-.progress-bar {
-	@apply relative h-2 bg-gray-200 rounded-full overflow-hidden;
-}
-
-.progress-bar-fill {
-	@apply absolute top-0 left-0 h-full rounded-full;
-	@apply transition-all duration-500 ease-out;
-}
-
-.progress-bar-fill-green {
-	@apply bg-gradient-to-r from-green-400 to-green-600;
-}
-
-.progress-bar-fill-blue {
-	@apply bg-gradient-to-r from-blue-400 to-blue-600;
-}
-
-.progress-bar-fill-purple {
-	@apply bg-gradient-to-r from-purple-400 to-purple-600;
-}
-
-.progress-bar-fill-yellow {
-	@apply bg-gradient-to-r from-yellow-400 to-yellow-600;
-}
-
-/* Expand/Collapse Icon Rotation */
-.icon-rotate {
-	@apply transition-transform duration-200;
-}
-
-.icon-rotate-down {
-	@apply transform rotate-0;
-}
-
-.icon-rotate-up {
-	@apply transform rotate-180;
-}
-
-/* Collapsible Content Animations */
-@keyframes slideDown {
-	from {
-		opacity: 0;
-		max-height: 0;
-		transform: translateY(-10px);
-	}
-	to {
-		opacity: 1;
-		max-height: 1000px;
-		transform: translateY(0);
-	}
-}
-
-@keyframes fadeIn {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-
-[data-collapsible] {
-	animation: slideDown 0.3s ease-out, fadeIn 0.2s ease-out;
-}
-
-/* Interactive Section Hover Effects */
-.hover\:shadow-md {
-	transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
-}
-
-/* Badge Pulse for Important Info */
+/* Enhanced animations */
 @keyframes subtlePulse {
 	0%, 100% {
 		opacity: 1;
@@ -441,71 +89,12 @@ button:focus-visible {
 	}
 }
 
-.badge-pulse {
-	animation: subtlePulse 2s ease-in-out infinite;
-}
-
-/* Enhanced Card Borders on Hover */
-.border-2:hover {
-	border-color: #10b981;
-	transition: border-color 0.2s ease-in-out;
-}
-
-/* Gradient Accents for Expanded Sections */
-.bg-gradient-to-b {
-	transition: background-color 0.3s ease;
-}
-
-/* Smooth Icon Transitions */
-.lucide {
-	transition: transform 0.2s ease, color 0.2s ease;
-}
-
-button:hover .lucide {
-	transform: scale(1.05);
-}
-
-/* Tag Hover Effects */
-span[class*="rounded-full"]:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	transition: all 0.2s ease;
-}
-
-/* Nested List Item Hover */
-div[class*="border"][class*="rounded-lg"]:hover {
-	background-color: rgba(255, 255, 255, 0.5);
-	transition: background-color 0.15s ease;
-}
-
-/* Scrollbar for Collapsible Content */
-[data-collapsible]::-webkit-scrollbar {
-	width: 6px;
-}
-
-[data-collapsible]::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-[data-collapsible]::-webkit-scrollbar-thumb {
-	background: #d1d5db;
-	border-radius: 3px;
-}
-
-[data-collapsible]::-webkit-scrollbar-thumb:hover {
-	background: #9ca3af;
-}
-
-/* ============================================
-   ENHANCED COMPARISON SECTIONS
-   ============================================ */
-
 /* Comparison Summary Section */
 .comparison-summary-card {
 	@apply bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50;
 	@apply border-2 border-emerald-200 rounded-2xl overflow-hidden;
 	@apply shadow-lg;
-
+	position: relative;
 }
 
 .comparison-summary-card::before {
@@ -531,15 +120,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	@apply bg-gradient-to-br from-emerald-500 to-teal-600;
 	@apply shadow-xl;
 	animation: subtlePulse 2s ease-in-out infinite;
-}
-
-.comparison-summary-icon::after {
-	content: '';
-	@apply absolute inset-0 rounded-2xl;
-	@apply bg-gradient-to-br from-emerald-400 to-teal-500;
-	opacity: 0.3;
-	filter: blur(10px);
-	z-index: -1;
 }
 
 .comparison-summary-text {
@@ -581,12 +161,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 .contractor-quick-card.recommended {
 	@apply border-emerald-400;
 	background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-}
-
-.contractor-quick-card.recommended::before {
-	content: '⭐';
-	@apply absolute top-2 right-2 text-2xl;
-	animation: float 3s ease-in-out infinite;
 }
 
 .contractor-quick-card.runner-up {
@@ -631,10 +205,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	transition: all 0.2s ease;
 }
 
-.contractor-quick-badge:hover {
-	transform: scale(1.05);
-}
-
 .contractor-quick-card.recommended .contractor-quick-badge {
 	@apply bg-emerald-100 text-emerald-800 border border-emerald-300;
 }
@@ -645,16 +215,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 
 .contractor-quick-card.best-value .contractor-quick-badge {
 	@apply bg-purple-100 text-purple-800 border border-purple-300;
-}
-
-/* Float animation for star */
-@keyframes float {
-	0%, 100% {
-		transform: translateY(0px) rotate(0deg);
-	}
-	50% {
-		transform: translateY(-5px) rotate(5deg);
-	}
 }
 
 /* Summary Stats */
@@ -691,6 +251,24 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	@apply from-purple-400 to-violet-600;
 }
 
+.summary-stat-icon.download {
+	@apply from-orange-400 to-red-600;
+}
+
+.summary-stat-button {
+	@apply transition-all duration-200;
+	border: 2px solid transparent;
+}
+
+.summary-stat-button:hover:not(:disabled) {
+	@apply bg-opacity-100 shadow-lg border-orange-300;
+	transform: translateY(-3px);
+}
+
+.summary-stat-button:disabled {
+	@apply opacity-70 cursor-not-allowed;
+}
+
 .summary-stat-content {
 	@apply flex flex-col;
 }
@@ -701,29 +279,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 
 .summary-stat-value {
 	@apply text-sm font-bold text-gray-900;
-}
-
-/* Responsive adjustments for summary */
-@media (max-width: 768px) {
-	.comparison-summary-content {
-		@apply p-5;
-	}
-	
-	.comparison-summary-header {
-		@apply flex-col gap-4;
-	}
-	
-	.comparison-summary-icon {
-		@apply w-12 h-12;
-	}
-	
-	.comparison-summary-title {
-		@apply text-xl;
-	}
-	
-	.contractor-quick-cards {
-		@apply grid-cols-1;
-	}
 }
 
 /* Key Differences Section */
@@ -762,25 +317,7 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.difference-highlight {
-	@apply inline-block px-2 py-0.5 mx-1;
-	@apply bg-blue-100 text-blue-800 rounded;
-	@apply font-semibold text-xs;
-}
-
-/* Staggered animation for differences */
-.difference-item:nth-child(1) { animation-delay: 0.05s; }
-.difference-item:nth-child(2) { animation-delay: 0.1s; }
-.difference-item:nth-child(3) { animation-delay: 0.15s; }
-.difference-item:nth-child(4) { animation-delay: 0.2s; }
-.difference-item:nth-child(5) { animation-delay: 0.25s; }
-.difference-item:nth-child(6) { animation-delay: 0.3s; }
-
-/* ============================================
-   CONTRACTOR COMPARISON CARDS
-   ============================================ */
-
-/* Main contractor card */
+/* Contractor Comparison Cards */
 .contractor-card {
 	@apply relative rounded-xl overflow-hidden;
 	@apply bg-white border-2 border-gray-200;
@@ -803,7 +340,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	@apply bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500;
 }
 
-/* Contractor header */
 .contractor-header {
 	@apply flex items-start justify-between p-6 pb-4;
 	@apply border-b border-gray-200;
@@ -1015,57 +551,6 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	@apply w-10 h-10 rounded-lg flex items-center justify-center;
 	@apply bg-gradient-to-br from-emerald-400 to-green-600;
 	@apply shadow-md;
-}
-
-/* Enhanced animations for contractor cards */
-@keyframes cardEntrance {
-	from {
-		opacity: 0;
-		transform: translateY(20px) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-}
-
-.contractor-card {
-	animation: cardEntrance 0.4s ease-out;
-}
-
-.contractor-card:nth-child(1) { animation-delay: 0.1s; }
-.contractor-card:nth-child(2) { animation-delay: 0.2s; }
-.contractor-card:nth-child(3) { animation-delay: 0.3s; }
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-	.contractor-ratings {
-		@apply grid-cols-1;
-	}
-	
-	.contractor-name {
-		@apply text-lg;
-	}
-	
-	.contractor-price {
-		@apply text-xl;
-	}
-	
-	.contractor-overall-rating {
-		@apply text-3xl;
-	}
-}
-
-/* Print styles for contractor cards */
-@media print {
-	.contractor-card:hover {
-		transform: none !important;
-		box-shadow: none !important;
-	}
-	
-	.contractor-card.recommended {
-		border: 2px solid #10b981 !important;
-	}
 }
 
 /* Detailed Comparisons Section */
@@ -1307,100 +792,34 @@ div[class*="border"][class*="rounded-lg"]:hover {
 	}
 }
 
-/* Category Tags */
-.category-tag {
-	@apply inline-flex items-center gap-1.5 px-3 py-1;
-	@apply rounded-full text-xs font-semibold;
-	@apply border shadow-sm;
-	transition: all 0.2s ease;
-}
-
-.category-tag:hover {
-	@apply shadow-md transform scale-105;
-}
-
-.category-tag.priority-high {
-	@apply bg-red-50 border-red-300 text-red-700;
-}
-
-.category-tag.priority-medium {
-	@apply bg-yellow-50 border-yellow-300 text-yellow-700;
-}
-
-.category-tag.priority-low {
-	@apply bg-blue-50 border-blue-300 text-blue-700;
-}
-
-/* Enhanced Animations */
-@keyframes slideInLeft {
-	from {
-		opacity: 0;
-		transform: translateX(-20px);
-	}
-	to {
-		opacity: 1;
-		transform: translateX(0);
-	}
-}
-
-.comparison-item,
-.tradeoff-item,
-.negotiation-item,
-.step-item {
-	animation: slideInLeft 0.4s ease-out;
-}
-
-/* Staggered Animation for List Items */
-.comparison-item:nth-child(1) { animation-delay: 0.05s; }
-.comparison-item:nth-child(2) { animation-delay: 0.1s; }
-.comparison-item:nth-child(3) { animation-delay: 0.15s; }
-
-.tradeoff-item:nth-child(1) { animation-delay: 0.05s; }
-.tradeoff-item:nth-child(2) { animation-delay: 0.1s; }
-.tradeoff-item:nth-child(3) { animation-delay: 0.15s; }
-.tradeoff-item:nth-child(4) { animation-delay: 0.2s; }
-
-.negotiation-item:nth-child(1) { animation-delay: 0.05s; }
-.negotiation-item:nth-child(2) { animation-delay: 0.1s; }
-.negotiation-item:nth-child(3) { animation-delay: 0.15s; }
-
-.step-item:nth-child(1) { animation-delay: 0.05s; }
-.step-item:nth-child(2) { animation-delay: 0.1s; }
-.step-item:nth-child(3) { animation-delay: 0.15s; }
-.step-item:nth-child(4) { animation-delay: 0.2s; }
-.step-item:nth-child(5) { animation-delay: 0.25s; }
-
-/* Responsive Typography */
-@media (max-width: 640px) {
-	.section-header-title {
-		@apply text-base;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.contractor-ratings {
+		@apply grid-cols-1;
 	}
 	
-	.step-item {
-		@apply pl-10 py-3;
+	.contractor-name {
+		@apply text-lg;
 	}
 	
-	.step-number {
-		@apply w-6 h-6 text-xs;
+	.contractor-price {
+		@apply text-xl;
+	}
+	
+	.contractor-overall-rating {
+		@apply text-3xl;
+	}
+	
+	.comparison-summary-content {
+		@apply p-5;
+	}
+	
+	.comparison-summary-header {
+		@apply flex-col gap-4;
+	}
+	
+	.contractor-quick-cards {
+		@apply grid-cols-1;
 	}
 }
 
-/* Print Optimizations for Enhanced Sections */
-@media print {
-	.detailed-comparison-card,
-	.tradeoff-card,
-	.negotiation-card,
-	.next-steps-card,
-	.insights-card {
-		page-break-inside: avoid;
-		box-shadow: none !important;
-	}
-	
-	.comparison-item:hover,
-	.tradeoff-item:hover,
-	.negotiation-item:hover,
-	.step-item:hover,
-	.insight-section:hover {
-		transform: none !important;
-	}
-}

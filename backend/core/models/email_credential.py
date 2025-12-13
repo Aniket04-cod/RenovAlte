@@ -83,3 +83,4 @@ class EmailCredential(models.Model):
 		return self.token_expiry > timezone.now() + timedelta(minutes=5)
 
 
+

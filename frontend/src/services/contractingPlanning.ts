@@ -133,6 +133,7 @@ export type MessageAction =
 			primary_offer_id?: number;
 			compared_offer_ids?: number[];
 			comparison_id?: number;
+			analysis_id?: number;
 			comparison_report?: string;
 			comparison_data?: any;
 		} | null;
@@ -1013,6 +1014,32 @@ export const contractingPlanningApi = {
 
 		if (!response.ok) {
 			throw new Error(`Failed to fetch offer analysis: ${response.status}`);
+		}
+
+		return response.json();
+	},
+
+	/**
+	 * Get analysis by ID (for re-viewing previously generated analyses)
+	 */
+	async getAnalysisById(projectId: number, analysisId: number | undefined | null): Promise<OfferAnalysis> {
+		if (!analysisId) {
+			throw new Error('Analysis ID is required');
+		}
+		
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/analyses/${analysisId}/`,
+			{
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch analysis: ${response.status}`);
 		}
 
 		return response.json();

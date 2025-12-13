@@ -15,7 +15,8 @@ from core.models import (
     MessageAction,
     Contractor,
     EmailCredential,
-    ContractorOffer
+    ContractorOffer,
+    OfferAnalysis
 )
 from core.services.gemini_service.gemini_service import get_gemini_service
 from core.services.gmail_service import GmailService
@@ -155,6 +156,29 @@ class ConversationAgent:
                 )
             },
             required=["primary_offer_id", "primary_offer_title", "reasoning", "action_summary"]
+        )
+    )
+    
+    QUERY_OFFER_ANALYSIS_TOOL = genai.protos.FunctionDeclaration(
+        name="query_offer_analysis",
+        description="Query recent offer analysis or comparison reports to provide context for drafting emails or answering questions about the offer. Use this when you need to reference specific details from previous analysis.",
+        parameters=genai.protos.Schema(
+            type=genai.protos.Type.OBJECT,
+            properties={
+                "analysis_type": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Type of analysis to query: 'single' for offer analysis or 'comparison' for offer comparison"
+                ),
+                "reasoning": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="Brief explanation of why you need the analysis data to complete the user's request"
+                ),
+                "action_summary": genai.protos.Schema(
+                    type=genai.protos.Type.STRING,
+                    description="One-sentence summary describing what analysis is being queried (e.g., 'Retrieving offer analysis for email drafting')"
+                )
+            },
+            required=["analysis_type", "reasoning", "action_summary"]
         )
     )
     
@@ -471,7 +495,8 @@ class ConversationAgent:
                     self.SEND_EMAIL_TOOL,
                     self.FETCH_EMAIL_TOOL,
                     self.ANALYZE_OFFER_TOOL,
-                    self.COMPARE_OFFERS_TOOL
+                    self.COMPARE_OFFERS_TOOL,
+                    self.QUERY_OFFER_ANALYSIS_TOOL
                 ]
             )
             
@@ -578,6 +603,14 @@ class ConversationAgent:
                 args,
                 planning,
                 contractor_id
+            )
+        elif function_name == 'query_offer_analysis':
+            # This triggers the multi-step flow
+            return self._handle_query_offer_analysis(
+                args,
+                planning,
+                contractor_id,
+                attachment_ids=attachment_ids
             )
         else:
             logger.warning(f"Unknown function call: {function_name}")
@@ -819,7 +852,7 @@ class ConversationAgent:
             
             # Create confirmation message based on action type
             if action.action_type == 'send_email':
-                confirmation_content = f"Email successfully sent to {action.action_data.get('recipient_email', 'contractor')}. I'll let you know if they reply."
+                confirmation_content = f"Email successfully sent to {action.action_data.get('recipient_email', 'contractor')}."
                 detected_offer = None
             elif action.action_type == 'fetch_email':
                 emails_fetched = result.get('emails_count', 0)
@@ -1352,7 +1385,8 @@ Provide your summary now:"""
                 'offer_id': offer.id,
                 'analysis_id': analysis.id,
                 'analysis_report': analysis.analysis_report,
-                'analysis_data': analysis.analysis_data
+                'analysis_data': analysis.analysis_data,
+                'analysis_type': 'single'
             }
         
         except Exception as e:
@@ -1428,8 +1462,10 @@ Provide your summary now:"""
                 'primary_offer_id': primary_offer.id,
                 'compared_offer_ids': comparison.compared_offer_ids,
                 'comparison_id': comparison.id,
+                'analysis_id': comparison.id,  # For consistency with analyze_offer
                 'comparison_report': comparison.analysis_report,
-                'comparison_data': comparison.analysis_data
+                'comparison_data': comparison.analysis_data,
+                'analysis_type': 'comparison'
             }
         
         except Exception as e:
@@ -1480,3 +1516,202 @@ Provide your summary now:"""
                 'success': False,
                 'error': str(e)
             }
+    
+    def _handle_query_offer_analysis(
+        self,
+        args: Dict,
+        planning: ContractingPlanning,
+        contractor_id: int,
+        attachment_ids: List[int] = None
+    ) -> Dict:
+        """
+        Handle query_offer_analysis function call - this triggers a multi-step flow.
+        
+        Step 1: Query the recent analysis
+        Step 2: Make a second Gemini call with the analysis context to generate response
+        
+        Args:
+            args: Function call arguments
+            planning: ContractingPlanning instance
+            contractor_id: ID of the contractor
+            attachment_ids: Optional list of MessageAttachment IDs
+            
+        Returns:
+            Dictionary with response (usually an action request)
+        """
+        try:
+            analysis_type = args.get('analysis_type', 'single')
+            reasoning = args.get('reasoning', '')
+            action_summary = args.get('action_summary', '')
+            
+            # Step 1: Query recent analysis
+            logger.info(f"Querying {analysis_type} analysis for contractor {contractor_id}")
+
+            # Fetch the most recent analysis for this contractor
+            analysis = self.offer_service.get_recent_analysis_for_contractor(
+                contractor_id=contractor_id,
+                planning=planning,
+                analysis_type=analysis_type
+            )
+            
+            if not analysis:
+                # No analysis found - inform user
+                logger.warning(f"No {analysis_type} analysis found for contractor {contractor_id}")
+                
+                return {
+                    'type': 'normal',
+                }
+
+            
+            # Step 2: Process with analysis context
+            # Get the original user message from the most recent user message
+            recent_user_message = Message.objects.filter(
+                contracting_planning=planning,
+                contractor_id=contractor_id,
+                sender='user'
+            ).order_by('-timestamp').first()
+            
+            user_message_content = recent_user_message.content if recent_user_message else "Please help me with this contractor."
+            
+            # Process with analysis context
+            return self._process_with_analysis_context(
+                user_message_content,
+                analysis,
+                planning,
+                contractor_id,
+                attachment_ids=attachment_ids
+            )
+            
+        except Exception as e:
+            logger.error(f"Error handling query_offer_analysis: {str(e)}", exc_info=True)
+            return self._create_normal_response(
+                f"I encountered an error retrieving the analysis: {str(e)}",
+                planning,
+                contractor_id
+            )
+    
+    def _process_with_analysis_context(
+        self,
+        user_message: str,
+        analysis: 'OfferAnalysis',
+        planning: ContractingPlanning,
+        contractor_id: int,
+        attachment_ids: List[int] = None
+    ) -> Dict:
+        """
+        Process user message with analysis context - makes second Gemini call.
+        
+        Args:
+            user_message: Original user message
+            analysis: OfferAnalysis instance with the report
+            planning: ContractingPlanning instance
+            contractor_id: ID of the contractor
+            attachment_ids: Optional list of MessageAttachment IDs
+            
+        Returns:
+            Dictionary with response (usually an action request for email)
+        """
+        try:
+            # Build context with analysis
+            context = self._build_context(planning, contractor_id, planning.project.user)
+            
+            # Add analysis data to context
+            analysis_summary = f"""
+**Analysis Report Available:**
+Type: {analysis.analysis_type}
+Generated: {analysis.created_at.strftime('%Y-%m-%d %H:%M')}
+
+**Structured Analysis Data:**
+```json
+{json.dumps(analysis.analysis_data.get('structured_data', {}), indent=2)}
+```
+
+**Full Analysis Report:**
+{analysis.analysis_report}
+"""
+            
+            # Load prompt template for analysis-based communication
+            try:
+                prompt_template = self._load_prompt_template_by_name('email_draft_with_analysis_prompt.md')
+            except FileNotFoundError:
+                # Fallback to regular prompt if template doesn't exist yet
+                prompt_template = self._load_prompt_template()
+            
+            # Build enhanced prompt
+            context['analysis_summary'] = analysis_summary
+            context['user_message'] = user_message
+            
+            # Replace placeholders
+            prompt = prompt_template
+            for key, value in context.items():
+                placeholder = "{" + key + "}"
+                prompt = prompt.replace(placeholder, str(value))
+            
+            # Create tool wrapper (all tools available)
+            tools = genai.protos.Tool(
+                function_declarations=[
+                    self.SEND_EMAIL_TOOL,
+                    self.FETCH_EMAIL_TOOL,
+                    self.ANALYZE_OFFER_TOOL,
+                    self.COMPARE_OFFERS_TOOL
+                    # Note: NOT including QUERY_OFFER_ANALYSIS_TOOL to avoid recursion
+                ]
+            )
+            
+            # Create model
+            model = genai.GenerativeModel(
+                self.gemini_service.model_name,
+                tools=[tools]
+            )
+            
+            # Generate response
+            response = model.generate_content(prompt)
+            
+            # Check if function call was made
+            if response.candidates and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'function_call') and part.function_call:
+                        # Function call detected
+                        return self._handle_function_call(
+                            part.function_call,
+                            planning,
+                            contractor_id,
+                            attachment_ids=attachment_ids
+                        )
+            
+            # No function call, return normal text response
+            if response.text:
+                return self._create_normal_response(
+                    response.text,
+                    planning,
+                    contractor_id
+                )
+            else:
+                return self._create_normal_response(
+                    "I've reviewed the analysis. How can I help you with this contractor?",
+                    planning,
+                    contractor_id
+                )
+            
+        except Exception as e:
+            logger.error(f"Error processing with analysis context: {str(e)}", exc_info=True)
+            return self._create_normal_response(
+                f"I encountered an error processing the analysis: {str(e)}",
+                planning,
+                contractor_id
+            )
+    
+    def _load_prompt_template_by_name(self, filename: str) -> str:
+        """Load a specific prompt template by filename."""
+        prompt_path = os.path.join(
+            settings.BASE_DIR,
+            'core',
+            'services',
+            'gemini_service',
+            'prompts',
+            'contracting',
+            filename
+        )
+        
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read()

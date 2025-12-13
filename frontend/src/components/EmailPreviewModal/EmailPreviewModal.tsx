@@ -152,7 +152,6 @@ const EmailPreviewModal: React.FC<EmailPreviewModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-xl font-bold text-gray-900">Email Preview</h2>
-							<p className="text-sm text-gray-600 mt-0.5">{reasoning}</p>
 						</div>
 					</div>
 					<button
@@ -167,7 +166,7 @@ const EmailPreviewModal: React.FC<EmailPreviewModalProps> = ({
 				{/* Email Client-like Header */}
 				<div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
 					<div className="flex items-start gap-2">
-						<span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-0.5">
+						<span className="text-xs font-semibold text-gray-500 uppercase tracking-wide  mt-1">
 							Subject:
 						</span>
 						<span className="font-semibold text-gray-900 flex-1">{subject}</span>

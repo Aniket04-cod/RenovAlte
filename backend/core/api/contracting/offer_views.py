@@ -331,3 +331,40 @@ class StructuredComparisonView(APIView):
                 {'detail': f'Error generating comparison: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class AnalysisDetailView(APIView):
+    """
+    GET /api/projects/<project_id>/contracting/analyses/<analysis_id>/
+    Retrieve a specific analysis by ID (for re-viewing previously generated analyses)
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, project_id, analysis_id):
+        """Get analysis by ID"""
+        try:
+            # Get the analysis and verify it belongs to the user's project
+            analysis = OfferAnalysis.objects.select_related(
+                'offer__contracting_planning__project'
+            ).filter(
+                id=analysis_id,
+                offer__contracting_planning__project_id=project_id,
+                offer__contracting_planning__project__user=request.user
+            ).first()
+            
+            if not analysis:
+                return Response(
+                    {'detail': 'Analysis not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            serializer = OfferAnalysisSerializer(analysis)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            logger.error(f"Error retrieving analysis: {str(e)}", exc_info=True)
+            return Response(
+                {'detail': f'Error retrieving analysis: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

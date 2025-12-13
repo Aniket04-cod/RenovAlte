@@ -18,7 +18,7 @@ We have {offer_count} offers to compare:
 
 ## Your Task
 
-Provide a comprehensive comparison of these offers in Markdown format. Help the user understand the differences, trade-offs, and which offer provides the best value.
+Provide a comprehensive comparison of these offers. Help the user understand the differences, trade-offs, and which offer provides the best value.
 
 ## Comparison Structure
 

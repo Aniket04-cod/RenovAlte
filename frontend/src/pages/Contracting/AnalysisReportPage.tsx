@@ -1,6 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { contractingPlanningApi, Offer } from "../../services/contractingPlanning";
+import { projectApi, Project, PROJECT_TYPES } from "../../services/projects";
 import { 
-	X, 
 	FileText, 
 	BarChart, 
 	Download, 
@@ -20,10 +22,14 @@ import {
 	ClipboardCheck,
 	FileCheck,
 	Award,
-	Info
+	Info,
+	Loader2,
+	MapPin
 } from "lucide-react";
-import "./AnalysisReportModal.css";
+import "./AnalysisReportPage.css";
 import type { StructuredAnalysis, StructuredComparison } from "../../types/offerAnalysis";
+import Heading from "../../components/Heading/Heading";
+import Text from "../../components/Text/Text";
 
 interface ContractorOffer {
 	id: number;
@@ -35,21 +41,21 @@ interface ContractorOffer {
 	offer_date?: string;
 }
 
-interface AnalysisReportModalProps {
-	reportContent: string;
-	reportType: "analysis" | "comparison";
-	offerDetails?: ContractorOffer;
-	comparedOffers?: ContractorOffer[];
-	onClose: () => void;
-}
-
-const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
-	reportContent,
-	reportType,
-	offerDetails,
-	comparedOffers = [],
-	onClose,
-}) => {
+const AnalysisReportPage: React.FC = () => {
+	const { projectId, contractorId, analysisId } = useParams<{
+		projectId: string;
+		contractorId: string;
+		analysisId: string;
+	}>();
+	
+	const [analysisData, setAnalysisData] = useState<any>(null);
+	const [reportContent, setReportContent] = useState<string>("");
+	const [reportType, setReportType] = useState<"analysis" | "comparison">("analysis");
+	const [offerDetails, setOfferDetails] = useState<ContractorOffer | undefined>();
+	const [comparedOffers, setComparedOffers] = useState<ContractorOffer[]>([]);
+	const [projectData, setProjectData] = useState<Project | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 	const contentRef = useRef<HTMLDivElement>(null);
 	
@@ -70,6 +76,53 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		}));
 	};
 
+	useEffect(() => {
+		const loadAnalysis = async () => {
+			if (!projectId || !analysisId) {
+				setError("Missing project or analysis ID");
+				setIsLoading(false);
+				return;
+			}
+
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				// Load analysis and project data in parallel
+				const [analysis, project] = await Promise.all([
+					contractingPlanningApi.getAnalysisById(
+						parseInt(projectId),
+						parseInt(analysisId)
+					),
+					projectApi.getById(parseInt(projectId))
+				]);
+
+				setAnalysisData(analysis);
+				setReportContent(analysis.analysis_report);
+				setReportType(analysis.analysis_type === 'single' ? 'analysis' : 'comparison');
+				setProjectData(project);
+
+				// Set offer details
+				if (analysis.offer_details) {
+					setOfferDetails(analysis.offer_details);
+				}
+
+				// Set compared offers
+				if (analysis.compared_offers_details) {
+					setComparedOffers(analysis.compared_offers_details);
+				}
+
+			} catch (err) {
+				console.error("Error loading analysis:", err);
+				setError(err instanceof Error ? err.message : "Failed to load analysis");
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		loadAnalysis();
+	}, [projectId, analysisId]);
+
 	const formatPrice = (price?: number, currency?: string) => {
 		if (!price) return "N/A";
 		return new Intl.NumberFormat("de-DE", {
@@ -81,6 +134,10 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 	const formatDate = (dateString?: string) => {
 		if (!dateString) return "N/A";
 		return new Date(dateString).toLocaleDateString("de-DE");
+	};
+
+	const getProjectTypeLabel = (projectType: string): string => {
+		return PROJECT_TYPES.find((type) => type.value === projectType)?.label || projectType;
 	};
 
 	const getRecommendationConfig = (recommendation: string) => {
@@ -169,13 +226,11 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 	const handleDownloadPDF = async () => {
 		setIsGeneratingPDF(true);
 		try {
-			// Dynamically import jsPDF and html2canvas
 			const { default: jsPDF } = await import('jspdf');
 			const { default: html2canvas } = await import('html2canvas');
 
 			if (!contentRef.current) return;
 
-			// Create a temporary container with all content visible
 			const tempContainer = document.createElement('div');
 			tempContainer.style.position = 'absolute';
 			tempContainer.style.left = '-9999px';
@@ -183,10 +238,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 			tempContainer.style.backgroundColor = 'white';
 			tempContainer.style.padding = '40px';
 			
-			// Clone and append content
 			const clonedContent = contentRef.current.cloneNode(true) as HTMLElement;
 			
-			// Remove any collapse states
 			const collapsibles = clonedContent.querySelectorAll('[data-collapsible]');
 			collapsibles.forEach((el) => {
 				(el as HTMLElement).style.display = 'block';
@@ -195,7 +248,6 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 			tempContainer.appendChild(clonedContent);
 			document.body.appendChild(tempContainer);
 
-			// Generate canvas
 			const canvas = await html2canvas(tempContainer, {
 				scale: 2,
 				useCORS: true,
@@ -203,24 +255,20 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 				backgroundColor: '#ffffff',
 			});
 
-			// Remove temporary container
 			document.body.removeChild(tempContainer);
 
-			// Create PDF
-			const imgWidth = 210; // A4 width in mm
-			const pageHeight = 297; // A4 height in mm
+			const imgWidth = 210;
+			const pageHeight = 297;
 			const imgHeight = (canvas.height * imgWidth) / canvas.width;
 			let heightLeft = imgHeight;
 
 			const pdf = new jsPDF('p', 'mm', 'a4');
 			let position = 0;
 
-			// Add image to PDF
 			const imgData = canvas.toDataURL('image/png');
 			pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
 			heightLeft -= pageHeight;
 
-			// Add new pages if needed
 			while (heightLeft >= 0) {
 				position = heightLeft - imgHeight;
 				pdf.addPage();
@@ -228,7 +276,6 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 				heightLeft -= pageHeight;
 			}
 
-			// Download PDF
 			const fileName = reportType === "analysis" 
 				? `Offer_Analysis_${offerDetails?.contractor_name || 'Report'}_${new Date().toISOString().split('T')[0]}.pdf`
 				: `Offer_Comparison_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -242,10 +289,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		}
 	};
 
-	// Extract structured data from content string
 	const extractStructuredData = (content: string): StructuredAnalysis | StructuredComparison | null => {
 		try {
-			// The backend now sends structured_data directly as JSON
 			const parsed = JSON.parse(content);
 			return parsed;
 		} catch (error) {
@@ -255,7 +300,6 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		}
 	};
 
-	// Render single offer analysis view
 	const renderAnalysisView = () => {
 		const data = extractStructuredData(reportContent) as StructuredAnalysis;
 		
@@ -275,34 +319,33 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		return renderAnalysisWithData(data);
 	};
 
-	// Separate function to render the modern UI
 	const renderAnalysisWithData = (data: StructuredAnalysis) => {
 		const recommendationConfig = getRecommendationConfig(data.recommendation);
 		const riskConfig = getRiskConfig(data.risk_level);
 		const RecommendationIcon = recommendationConfig.icon;
 
 		return (
-			<div className="space-y-6">
+			<div className="space-y-4">
 				{/* Hero Section - Recommendation */}
-				<div className={`${recommendationConfig.bgColor} ${recommendationConfig.borderColor} border-2 rounded-xl p-6`}>
-					<div className="flex items-start gap-4">
-						<div className={`${recommendationConfig.badgeColor} p-3 rounded-lg`}>
+				<div className={`${recommendationConfig.bgColor} ${recommendationConfig.borderColor} border-2 rounded-xl p-4 sm:p-5 w-full`}>
+					<div className="flex flex-col sm:flex-row items-start gap-4">
+						<div className={`${recommendationConfig.badgeColor} p-3 rounded-lg flex-shrink-0`}>
 							<RecommendationIcon className="w-8 h-8" />
 						</div>
-						<div className="flex-1">
-							<div className="flex items-center gap-3 mb-2">
-								<h3 className={`text-xl font-bold ${recommendationConfig.textColor}`}>
+						<div className="flex-1 min-w-0">
+							<div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+								<h3 className={`text-lg sm:text-xl font-bold ${recommendationConfig.textColor}`}>
 									{recommendationConfig.label}
 								</h3>
-								<span className={`px-3 py-1 rounded-full text-sm font-semibold ${recommendationConfig.badgeColor}`}>
+								<span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${recommendationConfig.badgeColor}`}>
 									Score: {data.overall_score}/10
 								</span>
 							</div>
-							<p className="text-gray-700 leading-relaxed mb-2">
+							<p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
 								{data.executive_summary}
 							</p>
 							{data.recommendation_reasoning && (
-								<p className="text-gray-600 text-sm italic">
+								<p className="text-xs sm:text-sm text-gray-600 italic">
 									{data.recommendation_reasoning}
 								</p>
 							)}
@@ -383,8 +426,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 				{/* Strengths & Weaknesses */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					{/* Strengths */}
-					<div className="bg-green-50 border-2 border-green-200 rounded-lg p-5">
-						<div className="flex items-center gap-2 mb-4">
+					<div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+						<div className="flex items-center gap-2 mb-3">
 							<ThumbsUp className="w-5 h-5 text-green-600" />
 							<h4 className="font-bold text-gray-900">Strengths</h4>
 						</div>
@@ -399,8 +442,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 					</div>
 
 					{/* Weaknesses */}
-					<div className="bg-red-50 border-2 border-red-200 rounded-lg p-5">
-						<div className="flex items-center gap-2 mb-4">
+					<div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+						<div className="flex items-center gap-2 mb-3">
 							<ThumbsDown className="w-5 h-5 text-red-600" />
 							<h4 className="font-bold text-gray-900">Weaknesses</h4>
 						</div>
@@ -416,8 +459,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 				</div>
 
 				{/* Detailed Analysis - Modern Interactive Sections */}
-				<div className="space-y-3">
-					<h4 className="font-bold text-gray-900 text-lg mb-2 flex items-center gap-2">
+				<div className="space-y-2">
+					<h4 className="font-bold text-gray-900 text-base mb-2 flex items-center gap-2">
 						<FileText className="w-5 h-5 text-emerald-600" />
 						Detailed Analysis
 					</h4>
@@ -900,8 +943,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 
 				{/* Questions to Ask */}
 				{data.key_questions && data.key_questions.length > 0 && (
-					<div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-5">
-						<div className="flex items-center gap-2 mb-4">
+					<div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+						<div className="flex items-center gap-2 mb-3">
 							<HelpCircle className="w-5 h-5 text-blue-600" />
 							<h4 className="font-bold text-gray-900">Important Questions to Ask</h4>
 						</div>
@@ -919,7 +962,6 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		);
 	};
 
-	// Render comparison view
 	const renderComparisonView = () => {
 		const data = extractStructuredData(reportContent) as StructuredComparison;
 		
@@ -937,9 +979,9 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		}
 
 		return (
-			<div className="space-y-6">
+			<div className="space-y-4">
 				{/* Executive Summary */}
-				<div className="comparison-summary-card">
+				<div className="comparison-summary-card w-full">
 					<div className="comparison-summary-content">
 						<div className="comparison-summary-header">
 							<div className="comparison-summary-icon-wrapper">
@@ -1007,7 +1049,7 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 							</div>
 						</div>
 
-						{/* Summary Stats */}
+						{/* Summary Stats with Download Button */}
 						{data.comparison_matrix && (
 							<div className="summary-stats">
 								<div className="summary-stat-item">
@@ -1051,6 +1093,27 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 										</div>
 									</>
 								)}
+								{/* Download PDF Button */}
+								<button
+									onClick={handleDownloadPDF}
+									disabled={isGeneratingPDF}
+									className="summary-stat-item summary-stat-button"
+									style={{ cursor: 'pointer' }}
+								>
+									<div className="summary-stat-icon download">
+										{isGeneratingPDF ? (
+											<Loader2 className="w-4 h-4 text-white animate-spin" />
+										) : (
+											<Download className="w-4 h-4 text-white" />
+										)}
+									</div>
+									<div className="summary-stat-content">
+										<span className="summary-stat-label">Export</span>
+										<span className="summary-stat-value">
+											{isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+										</span>
+									</div>
+								</button>
 							</div>
 						)}
 					</div>
@@ -1246,8 +1309,8 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 
 				{/* Scenario Recommendations */}
 				{data.scenario_recommendations && (
-					<div className="bg-white border-2 border-gray-200 rounded-lg p-5">
-						<h4 className="font-bold text-gray-900 mb-4">📋 Recommendation by Priority</h4>
+					<div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+						<h4 className="font-bold text-gray-900 mb-3">📋 Recommendation by Priority</h4>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 							<div className="bg-green-50 border border-green-200 rounded-lg p-3">
 								<span className="text-xs font-semibold text-green-700 uppercase">Lowest Cost</span>
@@ -1445,74 +1508,245 @@ const AnalysisReportModal: React.FC<AnalysisReportModalProps> = ({
 		);
 	};
 
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-			<div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-				{/* Header */}
-				<div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
-					<div className="flex items-center gap-3 flex-1">
-						<div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-							{reportType === "analysis" ? (
-								<FileText className="w-5 h-5 text-white" />
-							) : (
-								<BarChart className="w-5 h-5 text-white" />
-							)}
-						</div>
-						<div>
-							<h2 className="text-xl font-bold text-gray-900">
-								{reportType === "analysis" ? "Offer Analysis" : "Offer Comparison"}
-							</h2>
-							<p className="text-sm text-gray-600 mt-0.5">
-								{reportType === "analysis"
-									? `Analysis for ${offerDetails?.contractor_name || "Contractor"}`
-									: `Comparing ${comparedOffers.length + 1} offers`}
-							</p>
-						</div>
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center py-16">
+				<Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+				<Text className="ml-3 text-gray-600">Loading analysis report...</Text>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+				<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+					<AlertCircle className="w-8 h-8 text-red-600" />
+				</div>
+				<Heading level={2} className="mb-2">Error Loading Analysis</Heading>
+				<Text className="text-gray-600">{error}</Text>
+			</div>
+		);
+	}
+
+	// Render enhanced header for analysis report
+	const renderAnalysisHeader = () => {
+		const data = extractStructuredData(reportContent) as StructuredAnalysis;
+		if (!data) return null;
+
+		const recommendationConfig = getRecommendationConfig(data.recommendation);
+		const RecommendationIcon = recommendationConfig.icon;
+
+		// Build location string
+		const locationParts = [];
+		if (projectData?.address) locationParts.push(projectData.address);
+		if (projectData?.city) locationParts.push(projectData.city);
+		const locationStr = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+
+		return (
+			<div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+				{/* Row 1: Title + Status Badge + Download Button */}
+				<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+					<div className="flex-1">
+						<h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+							Offer Analysis – {offerDetails?.contractor_name || "Contractor"}
+						</h1>
 					</div>
-					<div className="flex items-center gap-2">
+					
+					<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+						{/* Status Badge with Score */}
+						<div className={`${recommendationConfig.badgeColor} px-4 py-2.5 rounded-lg flex items-center gap-2 border-2 ${recommendationConfig.borderColor}`}>
+							<RecommendationIcon className="w-5 h-5 flex-shrink-0" />
+							<div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+								<span className="font-bold text-sm whitespace-nowrap">
+									{recommendationConfig.label}
+								</span>
+								<span className="text-xs sm:text-sm font-semibold opacity-90">
+									· Score {data.overall_score}/10
+								</span>
+							</div>
+						</div>
+
+						{/* Download PDF Button */}
 						<button
 							onClick={handleDownloadPDF}
 							disabled={isGeneratingPDF}
-							className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+							className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
 						>
 							{isGeneratingPDF ? (
 								<>
-									<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-									Generating...
+									<Loader2 className="w-4 h-4 animate-spin" />
+									<span className="text-sm">Generating...</span>
 								</>
 							) : (
 								<>
 									<Download className="w-4 h-4" />
-									Download PDF
+									<span className="text-sm">Download PDF</span>
 								</>
 							)}
-						</button>
-						<button
-							onClick={onClose}
-							className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
-						>
-							<X className="w-5 h-5" />
 						</button>
 					</div>
 				</div>
 
-				{/* Content */}
-				<div className="flex-1 overflow-y-auto p-6" ref={contentRef}>
-					{reportType === "analysis" ? renderAnalysisView() : renderComparisonView()}
+				{/* Row 2: Context Subtitle */}
+				<div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+					<span className="inline-flex items-center gap-1.5 font-medium">
+						<FileText className="w-4 h-4 text-gray-500" />
+						{getProjectTypeLabel(projectData?.project_type || "general")}
+					</span>
+					<span className="text-gray-400">·</span>
+					<span className="inline-flex items-center gap-1.5">
+						<MapPin className="w-4 h-4 text-gray-500" />
+						{locationStr}
+					</span>
+					<span className="text-gray-400">·</span>
+					<span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+						<DollarSign className="w-4 h-4" />
+						Offer {formatPrice(offerDetails?.total_price, offerDetails?.currency)}
+					</span>
+					{projectData?.budget && (
+						<>
+							<span className="text-gray-400">·</span>
+							<span className="inline-flex items-center gap-1.5 text-gray-600">
+								Budget {formatPrice(projectData.budget, offerDetails?.currency)}
+							</span>
+						</>
+					)}
+					{analysisData?.created_at && (
+						<>
+							<span className="text-gray-400">·</span>
+							<span className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
+								<Calendar className="w-3.5 h-3.5" />
+								{formatDate(analysisData.created_at)}
+							</span>
+						</>
+					)}
 				</div>
+			</div>
+		);
+	};
 
-				{/* Footer */}
-				<div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-					<button
-						onClick={onClose}
-						className="px-5 py-2.5 text-gray-700 bg-white border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
-					>
-						Close
-					</button>
+	// Render enhanced header for comparison report
+	// const renderComparisonHeader = () => {
+	// 	const data = extractStructuredData(reportContent) as StructuredComparison;
+	// 	if (!data) return null;
+    //
+	// 	// Build location string
+	// 	const locationParts = [];
+	// 	if (projectData?.address) locationParts.push(projectData.address);
+	// 	if (projectData?.city) locationParts.push(projectData.city);
+	// 	const locationStr = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+    //
+	// 	// Calculate price range
+	// 	let priceRange = "N/A";
+	// 	if (data.comparison_matrix && data.comparison_matrix.length > 1) {
+	// 		const prices = data.comparison_matrix.map(c => c.total_price || 0).filter(p => p > 0);
+	// 		if (prices.length > 0) {
+	// 			const minPrice = Math.min(...prices);
+	// 			const maxPrice = Math.max(...prices);
+	// 			const currency = data.comparison_matrix[0]?.currency || "EUR";
+	// 			priceRange = `${formatPrice(minPrice, currency)} - ${formatPrice(maxPrice, currency)}`;
+	// 		}
+	// 	}
+    //
+	// 	return (
+	// 		<div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+	// 			{/* Row 1: Title + Download Button */}
+	// 			<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+	// 				<div className="flex-1">
+    //
+	// 					{data.recommended_contractor && (
+	// 						<div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200 mt-2">
+	// 							<Award className="w-4 h-4" />
+	// 							<span className="text-sm font-semibold">
+	// 								Top Choice: {data.recommended_contractor}
+	// 							</span>
+	// 						</div>
+	// 					)}
+	// 				</div>
+	//
+	// 				{/* Download PDF Button */}
+	// 				<button
+	// 					onClick={handleDownloadPDF}
+	// 					disabled={isGeneratingPDF}
+	// 					className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap self-start"
+	// 				>
+	// 					{isGeneratingPDF ? (
+	// 						<>
+	// 							<Loader2 className="w-4 h-4 animate-spin" />
+	// 							<span className="text-sm">Generating...</span>
+	// 						</>
+	// 					) : (
+	// 						<>
+	// 							<Download className="w-4 h-4" />
+	// 							<span className="text-sm">Download PDF</span>
+	// 						</>
+	// 					)}
+	// 				</button>
+	// 			</div>
+    //
+	// 			{/* Row 2: Context Subtitle */}
+	// 			<div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+	// 				<span className="inline-flex items-center gap-1.5 font-medium">
+	// 					<FileText className="w-4 h-4 text-gray-500" />
+	// 					{getProjectTypeLabel(projectData?.project_type || "general")}
+	// 				</span>
+	// 				<span className="text-gray-400">·</span>
+	// 				<span className="inline-flex items-center gap-1.5">
+	// 					<MapPin className="w-4 h-4 text-gray-500" />
+	// 					{locationStr}
+	// 				</span>
+	// 				<span className="text-gray-400">·</span>
+	// 				<span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+	// 					<DollarSign className="w-4 h-4" />
+	// 					Price Range {priceRange}
+	// 				</span>
+	// 				{projectData?.budget && (
+	// 					<>
+	// 						<span className="text-gray-400">·</span>
+	// 						<span className="inline-flex items-center gap-1.5 text-gray-600">
+	// 							Budget {formatPrice(projectData.budget, "EUR")}
+	// 						</span>
+	// 					</>
+	// 				)}
+	// 				{analysisData?.created_at && (
+	// 					<>
+	// 						<span className="text-gray-400">·</span>
+	// 						<span className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
+	// 							<Calendar className="w-3.5 h-3.5" />
+	// 							{formatDate(analysisData.created_at)}
+	// 						</span>
+	// 					</>
+	// 				)}
+	// 			</div>
+	// 		</div>
+	// 	);
+	// };
+
+	return (
+		<div className="space-y-4">
+			{/* Enhanced Page Header */}
+			{reportType === "analysis" && renderAnalysisHeader()}
+			
+			{/* Report Content */}
+			<div ref={contentRef}>
+				{reportType === "analysis" ? renderAnalysisView() : renderComparisonView()}
+				
+				{/* Footer note */}
+				<div className="mt-6 pt-6 border-t border-gray-200 text-center bg-white rounded-lg">
+					<Text className="text-xs text-gray-500">
+						Generated on {new Date().toLocaleDateString('en-US', { 
+							weekday: 'long', 
+							year: 'numeric', 
+							month: 'long', 
+							day: 'numeric' 
+						})}
+					</Text>
 				</div>
 			</div>
 		</div>
 	);
 };
 
-export default AnalysisReportModal;
+export default AnalysisReportPage;
+
