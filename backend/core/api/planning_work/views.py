@@ -23,6 +23,7 @@ def generate_next_question(request):
     Generate the next contextual question based on current answers.
     Endpoint: POST /api/renovation/next-question/
     """
+    print('Data from Frontend: ', request.data)
     serializer = NextQuestionRequestSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

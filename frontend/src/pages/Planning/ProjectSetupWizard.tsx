@@ -158,6 +158,9 @@ export function ProjectSetupWizard({
       budget,
       location: bundesland,
       goals: selectedGoals,
+
+      renovation_specification: renovationSpecification,  // ADD
+      renovation_standard: renovationStandard, 
     };
 
     setDynamicAnswers(initialContext);
@@ -179,6 +182,8 @@ export function ProjectSetupWizard({
     setDynamicError(null);
 
     try {
+
+      console.log('response', currentContext);
       const response = await fetch(
         "http://127.0.0.1:8000/api/renovation/next-question/",
         {
@@ -187,7 +192,6 @@ export function ProjectSetupWizard({
           body: JSON.stringify({ current_answers: currentContext }),
         }
       );
-
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
@@ -294,6 +298,8 @@ export function ProjectSetupWizard({
         buildingAge,
         buildingSize,
         bundesland,
+        renovationSpecification,    // <-- ADD THIS
+        renovationStandard, 
         heatingSystem: selectedGoals.includes("Heating System")
           ? heatingSystem
           : undefined,
@@ -333,6 +339,8 @@ export function ProjectSetupWizard({
         buildingAge,
         buildingSize,
         bundesland,
+        renovationSpecification,    // <-- ADD THIS
+        renovationStandard,
         heatingSystem: selectedGoals.includes("Heating System")
           ? heatingSystem
           : undefined,

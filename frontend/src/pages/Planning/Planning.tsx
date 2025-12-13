@@ -19,6 +19,8 @@ export interface ProjectPlanData {
   budget: number;
   startDate: string;
   goals: string[];
+  renovationSpecification: string;
+  renovationStandard: string;
   buildingAge: string;
   buildingSize: number;
   bundesland: string;
@@ -53,12 +55,12 @@ export function Planning() {
   const [projectPlan, setProjectPlan] = useState<ProjectPlanData | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [apiPlanData, setApiPlanData] = useState<ApiPlanResponse | null>(null);
-
+  
   // Function to handle plan generation
   const handleGeneratePlan = async (planData: ProjectPlanData) => {
     setIsGeneratingPlan(true);
     setProjectPlan(planData);
-
+    console.log(planData)
     try {
       const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
         method: "POST",
@@ -69,6 +71,8 @@ export function Planning() {
           location: planData.bundesland,
           building_size: planData.buildingSize,
           renovation_goals: planData.goals,
+          renovation_specification: planData.renovationSpecification,
+          renovation_standard: planData.renovationStandard,
           building_age: planData.buildingAge,
           target_start_date: planData.startDate,
           financing_preference: planData.financingPreference,
