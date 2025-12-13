@@ -7,7 +7,7 @@ from django.conf import settings
 class ChatbotService:
 	def __init__(self):
 		# Configure Gemini API
-		genai.configure(api_key='PLACE_YOUR_API')
+		genai.configure(api_key=settings.GEMINI_API_KEY)
 		self.model = genai.GenerativeModel('gemini-2.5-pro')
 	
 	def get_session_key(self, session_id):
@@ -27,7 +27,7 @@ class ChatbotService:
 		history = history[-10:]
 		cache.set(cache_key, history, 3600)  # 1 hour timeout
 	
-	def generate_response(self, message, session_id=None):
+	def generate_response(self, message, session_id=None, image=None):
 		"""Generate AI response for user message"""
 		# Generate session_id if not provided
 		if not session_id:
@@ -35,6 +35,7 @@ class ChatbotService:
 		
 		# Get conversation history
 		history = self.get_conversation_history(session_id)
+		print('Conversation history:', history)
 		
 		# Build prompt with context
 		system_prompt = """You are a helpful AI assistant specializing in home renovation in Germany.
@@ -64,8 +65,17 @@ User: {message}
 Assistant:"""
 		
 		try:
+			if image:
+			# Read image bytes
+				image_bytes = image.read()
+				# Create image part for Gemini
+				image_part = {"mime_type": image.content_type, "data": image_bytes}
+				# Send both text and image
+				response = self.model.generate_content([full_prompt, image_part])
+			else:
+				response = self.model.generate_content(full_prompt)
 			# Generate response using Gemini
-			response = self.model.generate_content(full_prompt)
+			# response = self.model.generate_content(full_prompt)
 			ai_response = response.text
 		except Exception as e:
 			# Fallback response if API fails

@@ -10,7 +10,7 @@ import { Input } from "../../components/Input/Input";
 import { Label } from "../../components/Label/Ladel";
 import { Select } from "../../components/Select/Select";
 import { Badge } from "../../components/Bagde/Badge";
-import  Text  from "../../components/Text/Text";
+import Text from "../../components/Text/Text";
 import {
   Calendar,
   Sparkles,
@@ -73,7 +73,7 @@ export function ProjectSetupWizard({
   const [prompt, setPrompt] = useState("");
 
   // Chatbot states for prompt mode
-  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
   const [chatSessionId, setChatSessionId] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
 
@@ -84,8 +84,8 @@ export function ProjectSetupWizard({
   const [buildingAge, setBuildingAge] = useState("2024-01-15");
   const [buildingSize, setBuildingSize] = useState(50);
   const [bundesland, setBundesland] = useState("hesse");
-  const [renovationSpecification,setRenovationSpecification] = useState("")
-  const [renovationStandard,setRenovationStandard] = useState("")
+  const [renovationSpecification, setRenovationSpecification] = useState("")
+  const [renovationStandard, setRenovationStandard] = useState("")
   const [heatingSystem, setHeatingSystem] = useState("electric");
   const [insulationType, setInsulationType] = useState("partial");
   const [windowsType, setWindowsType] = useState("single-pane");
@@ -160,7 +160,7 @@ export function ProjectSetupWizard({
       goals: selectedGoals,
 
       renovation_specification: renovationSpecification,  // ADD
-      renovation_standard: renovationStandard, 
+      renovation_standard: renovationStandard,
     };
 
     setDynamicAnswers(initialContext);
@@ -248,13 +248,19 @@ export function ProjectSetupWizard({
     setIsChatLoading(true);
 
     try {
+      const formData = new FormData();
+      formData.append('message', prompt);
+      if (chatSessionId) {
+        formData.append('session_id', chatSessionId);
+      }
+      if (selectedFile) {
+        formData.append('image', selectedFile);
+      }
+
       const response = await fetch("http://127.0.0.1:8000/api/chatbot/message/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: prompt,
-          session_id: chatSessionId
-        })
+        method: "POST",
+        // headers: { "Content-Type": "application/json" },
+        body: formData
       });
 
       if (!response.ok) {
@@ -274,11 +280,13 @@ export function ProjectSetupWizard({
 
       // Clear input
       setPrompt("");
+      setSelectedFile(null);
+      setPreviewUrl(null);
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = {
-        role: 'assistant' as const, 
-        content: "Sorry, I'm having trouble connecting. Please try again." 
+        role: 'assistant' as const,
+        content: "Sorry, I'm having trouble connecting. Please try again."
       };
       setChatMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -299,7 +307,7 @@ export function ProjectSetupWizard({
         buildingSize,
         bundesland,
         renovationSpecification,    // <-- ADD THIS
-        renovationStandard, 
+        renovationStandard,
         heatingSystem: selectedGoals.includes("Heating System")
           ? heatingSystem
           : undefined,
@@ -364,16 +372,16 @@ export function ProjectSetupWizard({
   };
 
   const handleRemoveFile = () => {
-  if (previewUrl) {
-    URL.revokeObjectURL(previewUrl);
-  }
-  setPreviewUrl(null);
-  setSelectedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setSelectedFile(null);
 
-  if (fileInputRef.current) {
-    fileInputRef.current.value = "";
-  }
-};
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   /*   const handlePromptSubmit = () => {
     if (prompt.trim()) {
@@ -395,22 +403,20 @@ export function ProjectSetupWizard({
         <div className="flex border border-gray-200 rounded-lg p-1 mt-4 bg-gray-50">
           <Button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 justify-center py-2 px-3 text-sm font-medium transition-colors ${
-              inputMode === "manual"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-0 shadow-none"
-            }`}
+            className={`flex-1 justify-center py-2 px-3 text-sm font-medium transition-colors ${inputMode === "manual"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-0 shadow-none"
+              }`}
           >
             <Settings className="w-4 h-4" />
             Manual Setup
           </Button>
           <Button
             onClick={() => setInputMode("prompt")}
-            className={`flex-1 justify-center py-2 px-3 text-sm font-medium transition-colors ${
-              inputMode === "prompt"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-0 shadow-none"
-            }`}
+            className={`flex-1 justify-center py-2 px-3 text-sm font-medium transition-colors ${inputMode === "prompt"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-0 shadow-none"
+              }`}
           >
             <MessageSquare className="w-4 h-4" />
             AI Prompt
@@ -488,11 +494,10 @@ export function ProjectSetupWizard({
                 {RENOVATIONGOALS.map((goal) => (
                   <Badge
                     key={goal}
-                    className={`cursor-pointer ${
-                      selectedGoals.includes(goal)
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        : "border border-gray-300 hover:bg-gray-100 text-gray-900"
-                    }`}
+                    className={`cursor-pointer ${selectedGoals.includes(goal)
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "border border-gray-300 hover:bg-gray-100 text-gray-900"
+                      }`}
                     onClick={() => toggleGoal(goal)}
                   >
                     {goal}
@@ -666,11 +671,10 @@ export function ProjectSetupWizard({
                 {/* progress bar */}
                 <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
                   <div
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      questionCount >= MIN_QUESTIONS
-                        ? "bg-emerald-500 animate-pulse"
-                        : "bg-blue-500"
-                    }`}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${questionCount >= MIN_QUESTIONS
+                      ? "bg-emerald-500 animate-pulse"
+                      : "bg-blue-500"
+                      }`}
                     style={{
                       width: `${Math.min(
                         (questionCount / SAFETY_MAX_LIMIT) * 100,
@@ -746,17 +750,16 @@ export function ProjectSetupWizard({
 
                     <div className="mt-4">
                       {currentQuestion.input_type === "select" &&
-                      currentQuestion.options ? (
+                        currentQuestion.options ? (
                         <div className="grid grid-cols-1 gap-2">
                           {currentQuestion.options.map((opt) => (
                             <button
                               key={opt.value}
                               onClick={() => setCurrentAnswer(opt.value)}
-                              className={`w-full text-left px-4 py-2 rounded-lg border transition-all ${
-                                currentAnswer === opt.value
-                                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-1"
-                                  : "border-gray-200 hover:border-emerald-300 hover:bg-gray-50"
-                              }`}
+                              className={`w-full text-left px-4 py-2 rounded-lg border transition-all ${currentAnswer === opt.value
+                                ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-1"
+                                : "border-gray-200 hover:border-emerald-300 hover:bg-gray-50"
+                                }`}
                             >
                               {opt.label}
                             </button>
@@ -848,11 +851,10 @@ export function ProjectSetupWizard({
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                        msg.role === 'user'
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-white border border-gray-200 text-gray-800'
-                      }`}
+                      className={`max-w-[80%] rounded-lg px-4 py-2 ${msg.role === 'user'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-white border border-gray-200 text-gray-800'
+                        }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
@@ -864,8 +866,8 @@ export function ProjectSetupWizard({
                   <div className="bg-white border border-gray-200 rounded-lg px-4 py-2">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                     </div>
                   </div>
                 </div>
@@ -932,7 +934,7 @@ export function ProjectSetupWizard({
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Tip:</strong> Ask about costs, timelines, permits, KfW funding, 
+                <strong>Tip:</strong> Ask about costs, timelines, permits, KfW funding,
                 or any renovation-related questions specific to Germany.
               </p>
             </div>
