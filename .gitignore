@@ -61,6 +61,15 @@ out/
 .env.*
 !.env.example
 
+# --- Google Cloud Credentials (NEVER COMMIT!) ---
+credentials/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+vertex-ai-credentials.json
+*-credentials.json
+
 # --- IDE / OS ---
 .vscode/
 .idea/

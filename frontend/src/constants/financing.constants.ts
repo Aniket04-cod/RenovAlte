@@ -82,7 +82,7 @@ export const RENOVATION_GOAL_QUESTIONS: Question[] = [
   {
     id: 'renovationGoal',
     label: 'Renovation Goal',
-    type: 'multiselect',
+    type: 'radio',
     required: true,
     sectionTitle: 'Renovation Goal',
     description: 'What type of renovation are you planning?',
@@ -134,18 +134,48 @@ export const COMMON_FIELDS_QUESTIONS: Question[] = [
   {
     id: 'colorSchemeMain',
     label: 'Main Colors',
-    type: 'text',
+    type: 'select',
     required: false,
-    placeholder: 'e.g., White, Gray, Beige',
-    description: 'Enter your preferred main colors'
+    description: 'Select your preferred main color',
+    options: [
+      { value: 'white', label: 'White' },
+      { value: 'off_white', label: 'Off-White / Cream' },
+      { value: 'beige', label: 'Beige' },
+      { value: 'gray', label: 'Gray' },
+      { value: 'light_gray', label: 'Light Gray' },
+      { value: 'dark_gray', label: 'Dark Gray / Charcoal' },
+      { value: 'black', label: 'Black' },
+      { value: 'brown', label: 'Brown' },
+      { value: 'taupe', label: 'Taupe' },
+      { value: 'navy_blue', label: 'Navy Blue' },
+      { value: 'green', label: 'Green / Sage' },
+      { value: 'blue', label: 'Blue' }
+    ]
   },
   {
     id: 'colorSchemeAccent',
     label: 'Accent Colors',
-    type: 'text',
+    type: 'select',
     required: false,
-    placeholder: 'e.g., Blue, Gold, Black',
-    description: 'Enter your preferred accent colors'
+    description: 'Select your preferred accent color',
+    options: [
+      { value: 'gold', label: 'Gold' },
+      { value: 'brass', label: 'Brass' },
+      { value: 'copper', label: 'Copper' },
+      { value: 'black', label: 'Black' },
+      { value: 'white', label: 'White' },
+      { value: 'silver', label: 'Silver / Chrome' },
+      { value: 'navy', label: 'Navy' },
+      { value: 'blue', label: 'Blue' },
+      { value: 'teal', label: 'Teal' },
+      { value: 'green', label: 'Green' },
+      { value: 'red', label: 'Red / Burgundy' },
+      { value: 'pink', label: 'Pink / Rose' },
+      { value: 'purple', label: 'Purple / Violet' },
+      { value: 'orange', label: 'Orange / Terracotta' },
+      { value: 'yellow', label: 'Yellow / Mustard' },
+      { value: 'brown', label: 'Brown / Wood tones' }
+    ]
   },
   {
     id: 'metalFinish',
@@ -618,8 +648,7 @@ export const TILES_SURFACES_QUESTIONS: Question[] = [
     options: [
       { value: '300x300', label: '300x300 mm', description: 'Small format - traditional, more grout lines' },
       { value: '600x600', label: '600x600 mm', description: 'Large format - modern, fewer grout lines' },
-      { value: '800x800', label: '800x800 mm', description: 'Extra large - contemporary, minimal grout' },
-      { value: 'custom', label: 'Custom size', description: 'Specify custom dimensions' }
+      { value: '800x800', label: '800x800 mm', description: 'Extra large - contemporary, minimal grout' }
     ]
   },
   {
@@ -783,13 +812,14 @@ export const ELECTRICAL_LIGHTING_QUESTIONS: Question[] = [
   {
     id: 'mirrorLights',
     label: 'Mirror Lights',
-    type: 'multiselect',
+    type: 'radio',
     required: false,
-    description: 'Mirror lighting options (can select multiple)',
+    description: 'Select mirror lighting option',
     options: [
       { value: 'led_backlit', label: 'LED backlit mirror', description: 'Integrated LED lighting behind/around mirror, modern look' },
       { value: 'sconce', label: 'Wall sconce lights', description: 'Wall-mounted lights beside mirror, traditional elegance' },
-      { value: 'illuminated_mirror', label: 'Fully illuminated mirror', description: 'Mirror with integrated LED surround lighting' }
+      { value: 'illuminated_mirror', label: 'Fully illuminated mirror', description: 'Mirror with integrated LED surround lighting' },
+      { value: 'none', label: 'No mirror lights', description: 'Standard mirror without lighting' }
     ]
   },
   {

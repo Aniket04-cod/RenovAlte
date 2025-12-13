@@ -18,7 +18,7 @@ export interface FormData {
   bathroomRenovationAreas?: string[]; // Array of selected renovation areas
 
   // SECTION 1: Renovation Goal (Always shown) - Enhanced
-  renovationGoal?: string[];
+  renovationGoal?: string;
   renovationGoal_other?: string; // "Other" field for renovation goal
   bathroomSize?: number; // NEW: Bathroom size in m²
 
@@ -93,7 +93,7 @@ export interface FormData {
   // SECTION 8: Electrical & Lighting (Conditional)
   ceilingLights?: string[];
   lightingQuality?: string; // NEW: Quality level for lighting fixtures
-  mirrorLights?: string[];
+  mirrorLights?: string;
   mirrorQuality?: string; // NEW: Quality level for mirror
   smartFeatures?: string[];
 
