@@ -373,11 +373,11 @@ class ImageGenerationView(APIView):
 				form_data
 			)
 
-			print("\n>>> FULL PROMPT BEING SENT TO GEMINI API FOR IMAGE GENERATION <<<", flush=True)
+			print("\n>>> META-PROMPT FOR GEMINI TEXT API <<<", flush=True)
 			sys.stdout.flush()
 			print("="*80, flush=True)
 			sys.stdout.flush()
-			print(image_prompt, flush=True)
+			print(image_prompt[:500] + "...", flush=True)
 			sys.stdout.flush()
 			print("="*80 + "\n", flush=True)
 			sys.stdout.flush()
@@ -392,11 +392,63 @@ class ImageGenerationView(APIView):
 
 			print("\n" + "="*80, flush=True)
 			sys.stdout.flush()
-			print("IMAGE GENERATION - STEP 3: GENERATE HIGH-QUALITY IMAGE (FREE)", flush=True)
+			print("IMAGE GENERATION - STEP 2.5: CALL GEMINI TEXT API FOR IMAGE DESCRIPTION", flush=True)
 			sys.stdout.flush()
 			print("="*80, flush=True)
 			sys.stdout.flush()
-			print("Using Hugging Face Stable Diffusion XL (FREE)...", flush=True)
+
+			# Call Gemini TEXT API to generate the image description
+			import google.generativeai as genai
+			genai.configure(api_key=api_key)
+			text_model = genai.GenerativeModel('gemini-2.5-flash')
+
+			try:
+				print("Calling Gemini TEXT API to generate image description...", flush=True)
+				sys.stdout.flush()
+
+				response = text_model.generate_content(image_prompt)
+				description_json_text = response.text.strip()
+
+				# Remove markdown code blocks if present
+				if description_json_text.startswith('```json'):
+					description_json_text = description_json_text.replace('```json', '').replace('```', '').strip()
+				elif description_json_text.startswith('```'):
+					description_json_text = description_json_text.replace('```', '').strip()
+
+				# Parse JSON response
+				import json
+				image_description_data = json.loads(description_json_text)
+
+				# Extract the actual image prompt
+				actual_image_prompt = image_description_data.get('imagePrompt', '')
+
+				if not actual_image_prompt:
+					raise ValueError("No imagePrompt field in Gemini response")
+
+				print(f"[OK] Received image description from Gemini TEXT API", flush=True)
+				sys.stdout.flush()
+				print(f"Image Prompt Length: {len(actual_image_prompt)} characters", flush=True)
+				sys.stdout.flush()
+				print("="*80 + "\n", flush=True)
+				sys.stdout.flush()
+
+			except Exception as e:
+				print(f"[ERROR] Failed to generate image description: {str(e)}", flush=True)
+				sys.stdout.flush()
+				return Response(
+					{'error': f'Failed to generate image description: {str(e)}'},
+					status=status.HTTP_500_INTERNAL_SERVER_ERROR
+				)
+
+			print("\n" + "="*80, flush=True)
+			sys.stdout.flush()
+			print("IMAGE GENERATION - STEP 3: GENERATE HIGH-QUALITY IMAGE WITH VERTEX AI", flush=True)
+			sys.stdout.flush()
+			print("="*80, flush=True)
+			sys.stdout.flush()
+			print("Using Google Vertex AI Imagen 4.0 Ultra...", flush=True)
+			sys.stdout.flush()
+			print(f"Actual Image Prompt: {actual_image_prompt[:200]}...", flush=True)
 			sys.stdout.flush()
 			print("="*80 + "\n", flush=True)
 			sys.stdout.flush()
@@ -404,8 +456,8 @@ class ImageGenerationView(APIView):
 			# Initialize Image Service
 			image_service = GeminiImageService()
 
-			# Generate actual image
-			image_result = image_service.generate_image(image_prompt)
+			# Generate actual image with the REAL image prompt
+			image_result = image_service.generate_image(actual_image_prompt)
 
 			print("\n" + "="*80, flush=True)
 			sys.stdout.flush()
