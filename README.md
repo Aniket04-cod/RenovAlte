@@ -59,8 +59,9 @@ GOOGLE_CLOUD_PROJECT_ID=your_project_id_here
 # Google Cloud Location
 GOOGLE_CLOUD_LOCATION=us-central1
 
+
 # Imagen Model
-VERTEX_AI_IMAGEN_MODEL=imagen-4.0-ultra-generate
+VERTEX_AI_IMAGEN_MODEL=imagen-3.0-generate-001
 ```
 
 ** Detailed setup:** See [`backend/.env.example`](backend/.env.example) for all options

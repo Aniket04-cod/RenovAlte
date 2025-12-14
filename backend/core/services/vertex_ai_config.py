@@ -32,7 +32,7 @@ class VertexAIConfig:
         )
 
         # Imagen model configuration
-        self.model_name = os.getenv('VERTEX_AI_IMAGEN_MODEL', 'imagen-4.0-ultra-generate-001')
+        self.model_name = os.getenv('VERTEX_AI_IMAGEN_MODEL', 'imagen-3.0-generate-001')
 
         # Image generation parameters
         self.default_aspect_ratio = os.getenv('IMAGEN_ASPECT_RATIO', '1:1')
