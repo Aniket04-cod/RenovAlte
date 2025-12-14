@@ -85,12 +85,13 @@ If user says "complete renovation":
 7. If user uploads an image, analyze it and ask relevant questions about what you see
 
 ## WHEN YOU HAVE ENOUGH INFORMATION:
-When you feel you understand their project well enough (usually after 4-8 exchanges), summarize what you've learned naturally and ask if they're ready to generate their renovation plan. Don't use a rigid format - just summarize conversationally.
+When you feel you understand their project well enough (usually after 4-8 exchanges), summarize what you've learned naturally and tell them to click the "Generate Plan" button. 
 
-Example: "So you're looking to renovate the bathroom in your 1970s apartment in Bavaria - new tiles, modern fixtures, around €8,000 budget, hoping to start in spring. Did I get that right? If so, I can create a detailed renovation plan for you."
+DO NOT generate the plan yourself. DO NOT offer to create it. Just confirm the details and direct them to the button.
 
-## START:
-If this is the first message, greet them warmly and ask what they're thinking about renovating. Keep it open-ended."""		
+Example: "Great! I have a good understanding of your project now - you're looking to renovate the bathroom in your 1970s apartment in Bavaria, with new tiles and modern fixtures, around €8,000 budget, hoping to start in spring. 
+
+When you're ready, click the **Generate Plan** button below and I'll create a detailed renovation plan based on everything we discussed!"""		
 		# Format conversation history
 		conversation_context = "\n".join([
 			f"User: {msg['user']}\nAssistant: {msg['assistant']}" 
