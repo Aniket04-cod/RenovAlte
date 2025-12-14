@@ -134,6 +134,94 @@ Assistant:"""
 			"response": ai_response,
 			"session_id": session_id
 		}
+	
+	def extract_plan_data(self, session_id):
+		"""Extract structured renovation plan data from conversation history"""
+		
+		history = self.get_conversation_history(session_id)
+		print('Extracting from conversation history:', history)
+		if not history:
+			return {
+				"success": False,
+				"error": "No conversation history found",
+				"data": None
+			}
+		
+		# Format conversation for extraction
+		conversation_text = "\n".join([
+			f"User: {msg['user']}\nAssistant: {msg['assistant']}" 
+			for msg in history
+		])
+		
+		extraction_prompt = f"""Analyze this conversation and extract ALL renovation-related information the user provided.
+
+	CONVERSATION:
+	{conversation_text}
+
+	EXTRACT INTO THIS EXACT JSON STRUCTURE:
+	{{
+		"project_type": "string - brief description of what they want to do",
+		"building_type": "string - Single Family Home/Apartment/Multi-Family House/Commercial Building or Unknown",
+		"building_age": "string - year or decade if mentioned, otherwise Unknown",
+		"building_size": number or 0 if not mentioned,
+		"location": "string - German Bundesland if mentioned, otherwise Germany",
+		"budget": number or 0 if not mentioned,
+		"timeline": "string - when they want to start, or Flexible",
+		"current_condition": "string - Good/Moderate/Poor/Very Poor or Unknown",
+		"renovation_goals": ["array", "of", "specific", "goals"],
+		"specific_details": {{
+			"rooms_affected": ["list of rooms if mentioned"],
+			"materials_mentioned": ["any specific materials discussed"],
+			"fixtures_or_systems": ["specific items to change"],
+			"dimensions": "any size/dimension details",
+			"style_preferences": "any style or design preferences",
+			"priorities": "what matters most to them"
+		}},
+		"concerns": ["any concerns or constraints mentioned"],
+		"additional_context": "any other relevant information"
+	}}
+
+	RULES:
+	- Extract ONLY what the user explicitly stated
+	- DO NOT invent or assume values
+	- For budget and building_size, extract as numbers only (no symbols)
+	- renovation_goals should be specific to what they want to do
+	- Be thorough - capture everything useful for creating a plan
+	- Return ONLY the JSON object, no markdown, no explanation"""
+
+		try:
+			response = self.model.generate_content(extraction_prompt)
+			response_text = response.text.strip()
+			
+			# Clean up response - remove markdown code blocks if present
+			if response_text.startswith("```"):
+				lines = response_text.split("\n")
+				# Remove first and last lines (```json and ```)
+				response_text = "\n".join(lines[1:-1])
+			
+			import json
+			extracted_data = json.loads(response_text)
+			
+			return {
+				"success": True,
+				"error": None,
+				"data": extracted_data,
+				"session_id": session_id
+			}
+			
+		except json.JSONDecodeError as e:
+			return {
+				"success": False,
+				"error": f"Failed to parse extracted data: {str(e)}",
+				"raw_response": response_text,
+				"data": None
+			}
+		except Exception as e:
+			return {
+				"success": False,
+				"error": f"Extraction failed: {str(e)}",
+				"data": None
+			}
 
 
 # Mock service for testing without API key

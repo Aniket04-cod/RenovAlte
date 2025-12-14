@@ -296,7 +296,7 @@ export function ProjectSetupWizard({
 
   /** ================= ORIGINAL GENERATE PLAN ================= */
 
-  const handleGeneratePlan = () => {
+  const handleGeneratePlan = async () => {
     if (inputMode === "manual") {
       const basePlan: ProjectPlanData = {
         buildingType,
@@ -336,38 +336,39 @@ export function ProjectSetupWizard({
       onGeneratePlan(finalPlan);
     } else {
       // AI Prompt mode - for now just log the prompt and use default manual data
-      console.log("AI Prompt (not integrated yet):", prompt);
-
-      // For now, use the current manual data even in prompt mode
-      const planData: ProjectPlanData = {
-        buildingType,
-        budget,
-        startDate,
-        goals: selectedGoals,
-        buildingAge,
-        buildingSize,
-        bundesland,
-        renovationSpecification,    // <-- ADD THIS
-        renovationStandard,
-        heatingSystem: selectedGoals.includes("Heating System")
-          ? heatingSystem
-          : undefined,
-        insulationType: selectedGoals.includes("Insulation")
-          ? insulationType
-          : undefined,
-        windowsType: selectedGoals.includes("Windows & Doors")
-          ? windowsType
-          : undefined,
-        neighborImpact,
-        financingPreference,
-        incentiveIntent,
-        livingDuringRenovation,
-        energyCertificateRating,
-        knownMajorIssues,
-        surveysRequired,
-      };
-
-      onGeneratePlan(planData);
+      if (!chatSessionId) {
+        alert("Please have a conversation first before generating a plan.");
+        return;
+      }
+      
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/chatbot/generate-from-chat/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: chatSessionId })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Pass the generated plan to parent component
+          onGeneratePlan({
+            ...result.extracted_data,
+            generatedPlan: result.plan
+          });
+        } else {
+          console.error("Error:", result.error);
+          alert("Failed to generate plan: " + result.error);
+        }
+      } catch (error) {
+        console.error("Request failed:", error);
+        alert("Failed to connect to server. Please try again.");
+      }
+    
     }
   };
 
@@ -945,7 +946,7 @@ export function ProjectSetupWizard({
         <Button
           className="w-full mt-4"
           onClick={handleGeneratePlan}
-          disabled={isGenerating || (inputMode === "prompt" && !prompt.trim())}
+          disabled={isGenerating || (inputMode === "prompt" && chatMessages.length === 0)}
         >
           {isGenerating ? (
             <>
