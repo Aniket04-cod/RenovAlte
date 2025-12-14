@@ -173,6 +173,7 @@ export interface SendMessageResponse {
 	ai_message: Message;
 	action?: MessageAction;
 	type: 'normal' | 'action_request';
+	suggested_actions?: string[];
 }
 
 export interface ApproveActionResponse {

@@ -15,6 +15,3 @@ urlpatterns = [
 	path('status/', GmailStatusView.as_view(), name='status'),
 	path('revoke/', GmailRevokeView.as_view(), name='revoke'),
 ]
-
-
-

@@ -55,6 +55,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	const [isActionProcessing, setIsActionProcessing] = useState(false);
 	const [isAITyping, setIsAITyping] = useState(false);
 	const [attachments, setAttachments] = useState<File[]>([]);
+	const [suggestedActions, setSuggestedActions] = useState<string[]>([]);
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +109,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 		
 		setIsLoadingMessages(true);
 		setError(null);
+		setSuggestedActions([]); // Clear suggested actions when switching contractors
 		
 		try {
 			const response = await contractingPlanningApi.getConversationMessages(
@@ -115,6 +117,13 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 				contractorId
 			);
 			setMessages(response.messages);
+
+            // Default Suggested Actions
+            setSuggestedActions([
+                "Check e-mails from the contractor",
+                "Send an email to the contractor",
+                "What can you help me with?",
+            ])
 		} catch (err) {
 			console.error("Error loading messages:", err);
 			setError(err instanceof Error ? err.message : "Failed to load messages");
@@ -136,6 +145,12 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 
 	const handleRemoveAttachment = (index: number) => {
 		setAttachments((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const handleSuggestedActionClick = (action: string) => {
+		setInputMessage(action);
+		// Optionally focus the input
+		document.querySelector('textarea')?.focus();
 	};
 
 	const handleSendMessage = async (e: React.FormEvent) => {
@@ -163,6 +178,13 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			// Add user message and AI response
 			const newMessages = [response.user_message, response.ai_message];
 			setMessages((prev) => [...prev, ...newMessages]);
+			
+			// Update suggested actions if present
+			if (response.suggested_actions && response.suggested_actions.length > 0) {
+				setSuggestedActions(response.suggested_actions);
+			} else {
+				setSuggestedActions([]);
+			}
 			
 			// Update the last message in conversations list
 			setConversations((prev) =>
@@ -447,7 +469,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			)}
 			
 			{/* Chat Layout */}
-			<div className="flex gap-4 h-[600px] bg-white rounded-lg border border-gray-200 overflow-hidden">
+			<div className="flex gap-4 h-[800px] bg-white rounded-lg border border-gray-200 overflow-hidden">
 				{/* Left Panel - Conversations List */}
 				<div className="w-80 border-r border-gray-200 flex flex-col">
 					<div className="p-4 border-b border-gray-200 bg-gray-50">
@@ -1003,7 +1025,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 											<span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
 											<span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
 										</div>
-										<p className="text-sm">AI Agent is typing...</p>
+										<p className="text-sm">AI Agent is working on your request...</p>
 									</div>
 								)}
 								
@@ -1012,6 +1034,35 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 							
 							{/* Message Input - Enhanced */}
 							<div className="p-4 border-t border-gray-200 bg-white">
+								{/* Suggested Action Chips */}
+								{suggestedActions.length > 0 && (
+									<div className="mb-3 pb-3 border-b border-gray-100">
+										<div className="flex items-center gap-2 mb-2">
+											<span className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
+												<span className="text-emerald-500">💡</span>
+												Suggested Actions
+											</span>
+										</div>
+										<div className="flex flex-wrap gap-2">
+											{suggestedActions.map((action, index) => (
+												<button
+													key={index}
+													type="button"
+													onClick={() => handleSuggestedActionClick(action)}
+													className="group inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border-2 border-emerald-200 hover:border-emerald-400 rounded-lg text-sm font-medium text-emerald-700 hover:text-emerald-900 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 hover:-translate-y-0.5 cursor-pointer"
+													disabled={isSending}
+													style={{
+														animationDelay: `${index * 50}ms`
+													}}
+												>
+													<span className="mr-1.5 group-hover:scale-110 transition-transform">✨</span>
+													{action}
+												</button>
+											))}
+										</div>
+									</div>
+								)}
+								
 								<form onSubmit={handleSendMessage}>
 									{/* Attachments Preview */}
 									{attachments.length > 0 && (

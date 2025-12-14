@@ -66,7 +66,10 @@ const AnalysisReportPage: React.FC = () => {
 		scope: false,
 		terms: false,
 		quality: false,
-		risks: false
+		risks: false,
+		detailedComparisons: false,
+		marketContext: false,
+		additionalInsights: false
 	});
 	
 	const toggleSection = (section: string) => {
@@ -980,30 +983,62 @@ const AnalysisReportPage: React.FC = () => {
 
 		return (
 			<div className="space-y-4">
-				{/* Executive Summary */}
-				<div className="comparison-summary-card w-full">
-					<div className="comparison-summary-content">
-						<div className="comparison-summary-header">
-							<div className="comparison-summary-icon-wrapper">
-								<div className="comparison-summary-icon">
-									<BarChart className="w-8 h-8 text-white" />
-								</div>
+				{/* DECISION SUMMARY - NEW: Top-level recommendation */}
+				{data.decision_summary && (
+					<div className="bg-gradient-to-br from-emerald-50 to-green-50 border-3 border-emerald-300 rounded-2xl p-6 shadow-lg">
+						<div className="flex items-start gap-4 mb-4">
+							<div className="bg-emerald-600 p-3 rounded-xl">
+								<CheckCircle2 className="w-8 h-8 text-white" />
 							</div>
-							<div className="comparison-summary-text">
-								<h3 className="comparison-summary-title">Comparison Summary</h3>
-								<p className="comparison-summary-description">
-									{data.executive_summary}
+							<div className="flex-1">
+								<h2 className="text-2xl font-bold text-gray-900 mb-1">Recommended Choice</h2>
+								<p className="text-3xl font-extrabold text-emerald-700 mb-4">
+									{data.decision_summary.recommended_choice}
 								</p>
-								{data.recommendation_reasoning && (
-									<div className="comparison-summary-reasoning">
-										<p>{data.recommendation_reasoning}</p>
+								
+								{/* Three Key Reasons */}
+								<div className="space-y-2 mb-4">
+									{data.decision_summary.decision_reasons && data.decision_summary.decision_reasons.map((reason, idx) => (
+										<div key={idx} className="flex items-start gap-2">
+											<CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+											<span className="text-base font-medium text-gray-800">{reason}</span>
+										</div>
+									))}
+								</div>
+
+								{/* Trade-off */}
+								{data.decision_summary.main_tradeoff && (
+									<div className="bg-white/80 border-2 border-amber-200 rounded-lg p-3 mt-4">
+										<div className="flex items-start gap-2">
+											<AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+											<div>
+												<span className="text-sm font-bold text-amber-800">Trade-off: </span>
+												<span className="text-sm text-gray-700">{data.decision_summary.main_tradeoff}</span>
+											</div>
+										</div>
 									</div>
 								)}
 							</div>
 						</div>
-						
-						{/* Contractor Quick Cards */}
-						<div className="contractor-quick-cards">
+					</div>
+				)}
+
+				{/* Executive Summary - Condensed */}
+				<div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+					<div className="flex items-start gap-3 mb-4">
+						<div className="bg-blue-100 p-2 rounded-lg flex-shrink-0">
+							<BarChart className="w-5 h-5 text-blue-600" />
+						</div>
+						<div className="flex-1">
+							<h3 className="font-bold text-gray-900 text-base mb-2">Comparison Summary</h3>
+							<p className="text-sm text-gray-700 leading-relaxed">
+								{data.executive_summary}
+							</p>
+						</div>
+					</div>
+					
+					{/* Contractor Quick Cards */}
+					<div className="contractor-quick-cards">
 							<div className="contractor-quick-card recommended">
 								<div className="contractor-quick-label recommended">
 									<Award className="contractor-quick-icon" />
@@ -1051,7 +1086,7 @@ const AnalysisReportPage: React.FC = () => {
 
 						{/* Summary Stats with Download Button */}
 						{data.comparison_matrix && (
-							<div className="summary-stats">
+							<div className="summary-stats mt-4">
 								<div className="summary-stat-item">
 									<div className="summary-stat-icon contractors">
 										<Award className="w-4 h-4 text-white" />
@@ -1116,8 +1151,73 @@ const AnalysisReportPage: React.FC = () => {
 								</button>
 							</div>
 						)}
-					</div>
 				</div>
+
+				{/* Scope Comparison Table - NEW */}
+				{data.scope_comparison_table && data.scope_comparison_table.length > 0 && (
+					<div className="bg-white border-2 border-gray-200 rounded-lg p-5">
+						<h4 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+							<ClipboardCheck className="w-5 h-5 text-purple-600" />
+							Scope Coverage Comparison
+						</h4>
+						<div className="overflow-x-auto">
+							<table className="w-full text-sm">
+								<thead>
+									<tr className="border-b-2 border-gray-200">
+										<th className="text-left py-3 px-4 font-bold text-gray-700">Contractor</th>
+										<th className="text-center py-3 px-4 font-bold text-gray-700">Electrical</th>
+										<th className="text-center py-3 px-4 font-bold text-gray-700">Plumbing</th>
+										<th className="text-center py-3 px-4 font-bold text-gray-700">Appliances</th>
+										<th className="text-center py-3 px-4 font-bold text-gray-700">Timeline Detail</th>
+									</tr>
+								</thead>
+								<tbody>
+									{data.scope_comparison_table.map((contractor, idx) => {
+										const isRecommended = contractor.contractor_name === data.recommended_contractor;
+										const getScopeIcon = (value: string) => {
+											if (value === 'included') return <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />;
+											if (value === 'excluded') return <span className="text-red-600 text-xl mx-auto block">❌</span>;
+											if (value === 'partial') return <span className="text-amber-600 text-xl mx-auto block">⚠️</span>;
+											if (value === 'yes') return <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />;
+											if (value === 'no') return <span className="text-red-600 text-xl mx-auto block">❌</span>;
+											if (value === 'vague') return <span className="text-amber-600 text-xl mx-auto block">⚠️</span>;
+											return <HelpCircle className="w-5 h-5 text-gray-400 mx-auto" />;
+										};
+										
+										return (
+											<tr key={idx} className={`border-b border-gray-100 ${isRecommended ? 'bg-emerald-50' : 'hover:bg-gray-50'}`}>
+												<td className="py-3 px-4 font-semibold text-gray-900">
+													{contractor.contractor_name}
+													{isRecommended && (
+														<span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+															<Award className="w-3 h-3" />
+															Recommended
+														</span>
+													)}
+												</td>
+												<td className="py-3 px-4 text-center">{getScopeIcon(contractor.electrical_work)}</td>
+												<td className="py-3 px-4 text-center">{getScopeIcon(contractor.plumbing_work)}</td>
+												<td className="py-3 px-4 text-center">{getScopeIcon(contractor.appliances_included)}</td>
+												<td className="py-3 px-4 text-center">{getScopeIcon(contractor.detailed_timeline_provided)}</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+						<div className="mt-3 flex items-center gap-4 text-xs text-gray-600">
+							<span className="flex items-center gap-1">
+								<CheckCircle2 className="w-4 h-4 text-green-600" /> Included
+							</span>
+							<span className="flex items-center gap-1">
+								<span className="text-red-600">❌</span> Excluded
+							</span>
+							<span className="flex items-center gap-1">
+								<span className="text-amber-600">⚠️</span> Partial/Unclear
+							</span>
+						</div>
+					</div>
+				)}
 
 				{/* Key Differences */}
 				{data.key_differences && data.key_differences.length > 0 && (
@@ -1154,9 +1254,25 @@ const AnalysisReportPage: React.FC = () => {
 							<div className="contractor-comparison-icon">
 								<BarChart className="w-5 h-5 text-white" />
 							</div>
-							<div>
+							<div className="flex-1">
 								<h4 className="font-bold text-gray-900 text-lg">Contractor Comparison</h4>
 								<p className="text-sm text-gray-600">Detailed side-by-side analysis</p>
+								
+								{/* Rating Weights Context */}
+								{data.rating_weights_context && (
+									<div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2.5 inline-flex items-start gap-2">
+										<Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+										<div className="flex-1">
+											<p className="text-xs text-blue-800 font-medium">{data.rating_weights_context}</p>
+											<div className="flex flex-wrap gap-3 mt-1.5 text-xs text-blue-700">
+												<span className="font-semibold">Price: 40%</span>
+												<span className="font-semibold">Timeline: 30%</span>
+												<span className="font-semibold">Quality: 20%</span>
+												<span className="font-semibold">Terms: 10%</span>
+											</div>
+										</div>
+									</div>
+								)}
 							</div>
 						</div>
 						{data.comparison_matrix.map((contractor, index) => {
@@ -1167,6 +1283,11 @@ const AnalysisReportPage: React.FC = () => {
 								<div 
 									key={contractor.contractor_id} 
 									className={`contractor-card ${isRecommended ? 'recommended' : ''}`}
+									style={isRecommended ? { 
+										transform: 'scale(1.02)', 
+										boxShadow: '0 8px 30px rgba(5, 150, 105, 0.15)',
+										border: '3px solid rgb(5, 150, 105)'
+									} : {}}
 								>
 									{/* Header */}
 									<div className="contractor-header">
@@ -1292,15 +1413,97 @@ const AnalysisReportPage: React.FC = () => {
 										</div>
 									</div>
 
-									{/* Risk Level Footer */}
-									<div className="contractor-footer">
-										<div className="risk-indicator">
-											<Shield className="w-4 h-4 text-gray-600" />
-											<span className="text-gray-600">Risk Assessment:</span>
-											<div className={`risk-dot ${contractor.risk_level}`}></div>
-											<span className={riskConfig.color}>{riskConfig.label}</span>
+									{/* Risk Breakdown - Enhanced */}
+									{contractor.risk_breakdown ? (
+										<div className="border-t border-gray-200 pt-5 mt-5">
+											<h6 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2 px-1">
+												<Shield className="w-4 h-4" />
+												Risk Assessment
+											</h6>
+											<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+												{/* Cost Risk */}
+												<div className={`rounded-lg p-4 border-2 ${
+													contractor.risk_breakdown.cost_risk.level === 'low' ? 'bg-green-50 border-green-200' :
+													contractor.risk_breakdown.cost_risk.level === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+													'bg-red-50 border-red-200'
+												}`}>
+													<div className="flex items-center gap-2 mb-2">
+														<DollarSign className={`w-4 h-4 ${
+															contractor.risk_breakdown.cost_risk.level === 'low' ? 'text-green-600' :
+															contractor.risk_breakdown.cost_risk.level === 'medium' ? 'text-yellow-600' :
+															'text-red-600'
+														}`} />
+														<span className="text-xs font-bold text-gray-700 uppercase">Cost Risk</span>
+													</div>
+													<p className={`text-xs font-semibold mb-2 ${
+														contractor.risk_breakdown.cost_risk.level === 'low' ? 'text-green-700' :
+														contractor.risk_breakdown.cost_risk.level === 'medium' ? 'text-yellow-700' :
+														'text-red-700'
+													}`}>
+														{contractor.risk_breakdown.cost_risk.level.toUpperCase()}
+													</p>
+													<p className="text-xs text-gray-600">{contractor.risk_breakdown.cost_risk.explanation}</p>
+												</div>
+
+												{/* Timeline Risk */}
+												<div className={`rounded-lg p-4 border-2 ${
+													contractor.risk_breakdown.timeline_risk.level === 'low' ? 'bg-green-50 border-green-200' :
+													contractor.risk_breakdown.timeline_risk.level === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+													'bg-red-50 border-red-200'
+												}`}>
+													<div className="flex items-center gap-2 mb-2">
+														<Clock className={`w-4 h-4 ${
+															contractor.risk_breakdown.timeline_risk.level === 'low' ? 'text-green-600' :
+															contractor.risk_breakdown.timeline_risk.level === 'medium' ? 'text-yellow-600' :
+															'text-red-600'
+														}`} />
+														<span className="text-xs font-bold text-gray-700 uppercase">Timeline Risk</span>
+													</div>
+													<p className={`text-xs font-semibold mb-2 ${
+														contractor.risk_breakdown.timeline_risk.level === 'low' ? 'text-green-700' :
+														contractor.risk_breakdown.timeline_risk.level === 'medium' ? 'text-yellow-700' :
+														'text-red-700'
+													}`}>
+														{contractor.risk_breakdown.timeline_risk.level.toUpperCase()}
+													</p>
+													<p className="text-xs text-gray-600">{contractor.risk_breakdown.timeline_risk.explanation}</p>
+												</div>
+
+												{/* Scope Risk */}
+												<div className={`rounded-lg p-4 border-2 ${
+													contractor.risk_breakdown.scope_risk.level === 'low' ? 'bg-green-50 border-green-200' :
+													contractor.risk_breakdown.scope_risk.level === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+													'bg-red-50 border-red-200'
+												}`}>
+													<div className="flex items-center gap-2 mb-2">
+														<ClipboardCheck className={`w-4 h-4 ${
+															contractor.risk_breakdown.scope_risk.level === 'low' ? 'text-green-600' :
+															contractor.risk_breakdown.scope_risk.level === 'medium' ? 'text-yellow-600' :
+															'text-red-600'
+														}`} />
+														<span className="text-xs font-bold text-gray-700 uppercase">Scope Risk</span>
+													</div>
+													<p className={`text-xs font-semibold mb-2 ${
+														contractor.risk_breakdown.scope_risk.level === 'low' ? 'text-green-700' :
+														contractor.risk_breakdown.scope_risk.level === 'medium' ? 'text-yellow-700' :
+														'text-red-700'
+													}`}>
+														{contractor.risk_breakdown.scope_risk.level.toUpperCase()}
+													</p>
+													<p className="text-xs text-gray-600">{contractor.risk_breakdown.scope_risk.explanation}</p>
+												</div>
+											</div>
 										</div>
-									</div>
+									) : (
+										<div className="contractor-footer">
+											<div className="risk-indicator">
+												<Shield className="w-4 h-4 text-gray-600" />
+												<span className="text-gray-600">Risk Assessment:</span>
+												<div className={`risk-dot ${contractor.risk_level}`}></div>
+												<span className={riskConfig.color}>{riskConfig.label}</span>
+											</div>
+										</div>
+									)}
 								</div>
 							);
 						})}
@@ -1309,78 +1512,109 @@ const AnalysisReportPage: React.FC = () => {
 
 				{/* Scenario Recommendations */}
 				{data.scenario_recommendations && (
-					<div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-						<h4 className="font-bold text-gray-900 mb-3">📋 Recommendation by Priority</h4>
+					<div className="bg-white border-2 border-gray-200 rounded-lg p-5">
+						<h4 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+							<ClipboardCheck className="w-5 h-5 text-indigo-600" />
+							Recommendation by Priority
+						</h4>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-							<div className="bg-green-50 border border-green-200 rounded-lg p-3">
-								<span className="text-xs font-semibold text-green-700 uppercase">Lowest Cost</span>
-								<p className="font-bold text-gray-900 mt-1">{data.scenario_recommendations.lowest_cost}</p>
+							<div className="bg-green-50 border-2 border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+								<div className="flex items-center gap-2 mb-1.5">
+									<DollarSign className="w-4 h-4 text-green-600" />
+									<span className="text-xs font-bold text-green-700 uppercase tracking-wide">Lowest Cost</span>
+								</div>
+								<p className="font-bold text-gray-900 text-base">{data.scenario_recommendations.lowest_cost}</p>
 							</div>
-							<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-								<span className="text-xs font-semibold text-blue-700 uppercase">Fastest Completion</span>
-								<p className="font-bold text-gray-900 mt-1">{data.scenario_recommendations.fastest_completion}</p>
+							<div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+								<div className="flex items-center gap-2 mb-1.5">
+									<Clock className="w-4 h-4 text-blue-600" />
+									<span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Fastest Completion</span>
+								</div>
+								<p className="font-bold text-gray-900 text-base">{data.scenario_recommendations.fastest_completion}</p>
 							</div>
-							<div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-								<span className="text-xs font-semibold text-purple-700 uppercase">Highest Quality</span>
-								<p className="font-bold text-gray-900 mt-1">{data.scenario_recommendations.highest_quality}</p>
+							<div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+								<div className="flex items-center gap-2 mb-1.5">
+									<Award className="w-4 h-4 text-purple-600" />
+									<span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Highest Quality</span>
+								</div>
+								<p className="font-bold text-gray-900 text-base">{data.scenario_recommendations.highest_quality}</p>
 							</div>
-							<div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-								<span className="text-xs font-semibold text-emerald-700 uppercase">Best Overall Value</span>
-								<p className="font-bold text-gray-900 mt-1">{data.scenario_recommendations.best_overall_value}</p>
+							<div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+								<div className="flex items-center gap-2 mb-1.5">
+									<TrendingUp className="w-4 h-4 text-emerald-600" />
+									<span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Best Overall Value</span>
+								</div>
+								<p className="font-bold text-gray-900 text-base">{data.scenario_recommendations.best_overall_value}</p>
 							</div>
 						</div>
 					</div>
 				)}
 
-				{/* Detailed Comparisons */}
+				{/* Detailed Comparisons - Collapsible */}
 				{data.detailed_comparisons && (
-					<div className="detailed-comparison-card">
-						<div className="p-6">
-							<div className="section-header">
-								<div className="section-header-icon price">
-									<BarChart className="w-5 h-5 text-white" />
+					<div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+						<button 
+							onClick={() => toggleSection('detailedComparisons')}
+							className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+						>
+							<div className="flex items-center gap-3">
+								<div className="bg-indigo-100 p-2 rounded-lg">
+									<BarChart className="w-5 h-5 text-indigo-600" />
 								</div>
-								<div>
-									<h4 className="section-header-title">Detailed Comparisons</h4>
-									<p className="section-header-subtitle">In-depth analysis across key dimensions</p>
+								<div className="text-left">
+									<h4 className="font-bold text-gray-900">Detailed Comparisons</h4>
+									<p className="text-sm text-gray-600">In-depth analysis across key dimensions</p>
 								</div>
 							</div>
-							<div className="space-y-3">
+							{expandedSections.detailedComparisons ? (
+								<ChevronUp className="w-5 h-5 text-gray-400" />
+							) : (
+								<ChevronDown className="w-5 h-5 text-gray-400" />
+							)}
+						</button>
+						{expandedSections.detailedComparisons && (
+							<div className="px-4 pb-4 space-y-3 border-t border-gray-200 pt-3" data-collapsible>
 								{data.detailed_comparisons.price_analysis && (
-									<div className="comparison-item comparison-item-price">
-										<div className="comparison-item-icon bg-emerald-100">
-											<DollarSign className="w-4 h-4 text-emerald-600" />
-										</div>
-										<div>
-											<p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-1">Price Analysis</p>
-											<p className="text-sm text-gray-700 leading-relaxed">{data.detailed_comparisons.price_analysis}</p>
-										</div>
+									<div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+										<p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-1.5">Price Analysis</p>
+										<ul className="space-y-1 text-sm text-gray-700">
+											{data.detailed_comparisons.price_analysis.split('.').filter(s => s.trim()).map((sentence, idx) => (
+												<li key={idx} className="flex items-start gap-2">
+													<span className="text-emerald-600 mt-1">•</span>
+													<span>{sentence.trim()}.</span>
+												</li>
+											))}
+										</ul>
 									</div>
 								)}
 								{data.detailed_comparisons.timeline_analysis && (
-									<div className="comparison-item comparison-item-timeline">
-										<div className="comparison-item-icon bg-blue-100">
-											<Clock className="w-4 h-4 text-blue-600" />
-										</div>
-										<div>
-											<p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Timeline Analysis</p>
-											<p className="text-sm text-gray-700 leading-relaxed">{data.detailed_comparisons.timeline_analysis}</p>
-										</div>
+									<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+										<p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1.5">Timeline Analysis</p>
+										<ul className="space-y-1 text-sm text-gray-700">
+											{data.detailed_comparisons.timeline_analysis.split('.').filter(s => s.trim()).map((sentence, idx) => (
+												<li key={idx} className="flex items-start gap-2">
+													<span className="text-blue-600 mt-1">•</span>
+													<span>{sentence.trim()}.</span>
+												</li>
+											))}
+										</ul>
 									</div>
 								)}
 								{data.detailed_comparisons.quality_analysis && (
-									<div className="comparison-item comparison-item-quality">
-										<div className="comparison-item-icon bg-purple-100">
-											<Award className="w-4 h-4 text-purple-600" />
-										</div>
-										<div>
-											<p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1">Quality Analysis</p>
-											<p className="text-sm text-gray-700 leading-relaxed">{data.detailed_comparisons.quality_analysis}</p>
-										</div>
+									<div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+										<p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1.5">Quality Analysis</p>
+										<ul className="space-y-1 text-sm text-gray-700">
+											{data.detailed_comparisons.quality_analysis.split('.').filter(s => s.trim()).map((sentence, idx) => (
+												<li key={idx} className="flex items-start gap-2">
+													<span className="text-purple-600 mt-1">•</span>
+													<span>{sentence.trim()}.</span>
+												</li>
+											))}
+										</ul>
 									</div>
 								)}
 							</div>
-						</div>
+						)}
 					</div>
 				)}
 
@@ -1396,15 +1630,10 @@ const AnalysisReportPage: React.FC = () => {
 								<p className="section-header-subtitle">Key considerations when choosing between contractors</p>
 							</div>
 						</div>
-						<div className="flex flex-wrap gap-2 mb-4">
-							<span className="tradeoff-badge">
-								<AlertTriangle className="w-3 h-3" />
-								{data.trade_offs.length} Trade-off{data.trade_offs.length > 1 ? 's' : ''} Identified
-							</span>
-						</div>
 						<div className="space-y-2">
-							{data.trade_offs.map((tradeOff, index) => (
-								<div key={index} className="tradeoff-item">
+							{data.trade_offs.slice(0, 5).map((tradeOff, index) => (
+								<div key={index} className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+									<AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
 									<p className="text-sm text-gray-800 font-medium leading-relaxed">{tradeOff}</p>
 								</div>
 							))}
@@ -1424,15 +1653,10 @@ const AnalysisReportPage: React.FC = () => {
 								<p className="section-header-subtitle">Areas where you can potentially improve terms</p>
 							</div>
 						</div>
-						<div className="flex flex-wrap gap-2 mb-4">
-							<span className="negotiation-badge">
-								<CheckCircle2 className="w-3 h-3" />
-								{data.negotiation_opportunities.length} Opportunit{data.negotiation_opportunities.length > 1 ? 'ies' : 'y'} Found
-							</span>
-						</div>
 						<div className="space-y-2">
-							{data.negotiation_opportunities.map((opp, index) => (
-								<div key={index} className="negotiation-item">
+							{data.negotiation_opportunities.slice(0, 5).map((opp, index) => (
+								<div key={index} className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-3">
+									<CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
 									<p className="text-sm text-gray-800 font-medium leading-relaxed">{opp}</p>
 								</div>
 							))}
@@ -1452,58 +1676,67 @@ const AnalysisReportPage: React.FC = () => {
 								<p className="section-header-subtitle">Action plan to move forward with confidence</p>
 							</div>
 						</div>
-						<div className="space-y-3">
-							{data.next_steps.map((step, index) => (
-								<div key={index}>
-									<div className="step-item">
-										<div className="step-number">
-											{index + 1}
-										</div>
-										<p className="step-content">{step}</p>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+							{data.next_steps.slice(0, 6).map((step, index) => (
+								<div key={index} className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+									<div className="bg-blue-600 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm">
+										{index + 1}
 									</div>
-									{index < data.next_steps.length - 1 && (
-										<div className="step-divider"></div>
-									)}
+									<p className="text-sm text-gray-800 font-medium leading-relaxed flex-1">{step}</p>
 								</div>
 							))}
 						</div>
 					</div>
 				)}
 
-				{/* Additional Insights */}
+				{/* Additional Insights - Collapsible */}
 				{data.additional_insights && (
-					<div className="insights-card">
-						<div className="section-header">
-							<div className="section-header-icon insights">
-								<Info className="w-5 h-5 text-white" />
-							</div>
-							<div>
-								<h4 className="section-header-title">Additional Insights</h4>
-								<p className="section-header-subtitle">Expert observations and market context</p>
-							</div>
-						</div>
-						<div className="insight-grid">
-							{data.additional_insights.market_context && (
-								<div className="insight-section">
-									<p className="insight-label">Market Context</p>
-									<p className="insight-content">{data.additional_insights.market_context}</p>
+					<div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+						<button 
+							onClick={() => toggleSection('additionalInsights')}
+							className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+						>
+							<div className="flex items-center gap-3">
+								<div className="bg-purple-100 p-2 rounded-lg">
+									<Info className="w-5 h-5 text-purple-600" />
 								</div>
+								<div className="text-left">
+									<h4 className="font-bold text-gray-900">Additional Insights</h4>
+									<p className="text-sm text-gray-600">Expert observations and market context</p>
+								</div>
+							</div>
+							{expandedSections.additionalInsights ? (
+								<ChevronUp className="w-5 h-5 text-gray-400" />
+							) : (
+								<ChevronDown className="w-5 h-5 text-gray-400" />
 							)}
-							{data.additional_insights.standout_observations && data.additional_insights.standout_observations.length > 0 && (
-								<div className="insight-section">
-									<p className="insight-label">Key Observations</p>
-									<div className="space-y-1 pl-6">
-										{data.additional_insights.standout_observations.map((obs, idx) => (
-											<div key={idx} className="insight-list-item">
-												<span>{obs}</span>
-											</div>
-										))}
+						</button>
+						{expandedSections.additionalInsights && (
+							<div className="px-4 pb-4 space-y-3 border-t border-gray-200 pt-3" data-collapsible>
+								{data.additional_insights.market_context && (
+									<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+										<p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1.5">Market Context</p>
+										<p className="text-sm text-gray-700">{data.additional_insights.market_context}</p>
 									</div>
-								</div>
-							)}
-						</div>
+								)}
+								{data.additional_insights.standout_observations && data.additional_insights.standout_observations.length > 0 && (
+									<div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+										<p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1.5">Key Observations</p>
+										<ul className="space-y-1.5">
+											{data.additional_insights.standout_observations.map((obs, idx) => (
+												<li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+													<span className="text-amber-600 mt-1">•</span>
+													<span>{obs}</span>
+												</li>
+											))}
+										</ul>
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 				)}
+
 			</div>
 		);
 	};

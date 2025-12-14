@@ -80,6 +80,3 @@ class GmailOAuthCallbackView(APIView):
 			return Response({
 				'detail': f"Failed to complete OAuth authentication: {str(e)}"
 			}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-

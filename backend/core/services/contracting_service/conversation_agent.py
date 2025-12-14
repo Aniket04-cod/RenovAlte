@@ -54,9 +54,14 @@ class ConversationAgent:
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="One-sentence summary for future conversation context"
-                )
+                ),
+                "suggested_actions": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="2-4 short, actionable suggestions for the user's next steps (e.g., 'Check their reply', 'Modify the draft')",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                ),
             },
-            required=["subject", "body_html", "reasoning", "action_summary"]
+            required=["subject", "body_html", "reasoning", "action_summary", "suggested_actions"]
         )
     )
     
@@ -77,9 +82,14 @@ class ConversationAgent:
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="One-sentence summary for future conversation context"
-                )
+                ),
+                "suggested_actions": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="2-4 short, actionable suggestions for the user's next steps (e.g., 'Reply to them', 'Ask follow-up')",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                ),
             },
-            required=["reasoning", "action_summary"]
+            required=["reasoning", "action_summary", "suggested_actions"]
         )
     )
     
@@ -116,9 +126,14 @@ class ConversationAgent:
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="One-sentence summary for future conversation context (e.g., 'Analyzed BauMeister GmbH offer for €25,000')"
-                )
+                ),
+                "suggested_actions": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="2-4 short, actionable suggestions for the user's next steps (e.g., 'Compare all offers', 'Negotiate price')",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                ),
             },
-            required=["offer_id", "contractor_name", "offer_title", "reasoning", "action_summary"]
+            required=["offer_id", "contractor_name", "offer_title", "reasoning", "action_summary", "suggested_actions"]
         )
     )
     
@@ -153,9 +168,14 @@ class ConversationAgent:
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="One-sentence summary for future conversation context (e.g., 'Compared BauMeister GmbH offer with 2 other offers')"
-                )
+                ),
+                "suggested_actions": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="2-4 short, actionable suggestions for the user's next steps (e.g., 'Analyze top offer', 'Negotiate price')",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                ),
             },
-            required=["primary_offer_id", "primary_offer_title", "reasoning", "action_summary"]
+            required=["primary_offer_id", "primary_offer_title", "reasoning", "action_summary", "suggested_actions"]
         )
     )
     
@@ -176,9 +196,14 @@ class ConversationAgent:
                 "action_summary": genai.protos.Schema(
                     type=genai.protos.Type.STRING,
                     description="One-sentence summary describing what analysis is being queried (e.g., 'Retrieving offer analysis for email drafting')"
-                )
+                ),
+                "suggested_actions": genai.protos.Schema(
+                    type=genai.protos.Type.ARRAY,
+                    description="2-4 short, actionable suggestions for the user's next steps",
+                    items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                ),
             },
-            required=["analysis_type", "reasoning", "action_summary"]
+            required=["analysis_type", "reasoning", "action_summary", "suggested_actions"]
         )
     )
     
@@ -205,6 +230,67 @@ class ConversationAgent:
         except FileNotFoundError:
             logger.error(f"Prompt template not found at {prompt_path}")
             raise
+    
+    def _parse_model_response(self, response_text: str) -> Dict:
+        """
+        Parse model response from JSON format with fallback to text.
+        
+        Args:
+            response_text: Raw response text from the model
+            
+        Returns:
+            Dictionary with 'response' and 'suggested_actions' keys
+        """
+        try:
+            # Try to parse as JSON
+            response_text = response_text.strip()
+            
+            # Remove markdown code blocks if present
+            if response_text.startswith('```'):
+                lines = response_text.split('\n')
+                # Remove first line (```json or ```)
+                if lines[0].strip().startswith('```'):
+                    lines = lines[1:]
+                # Remove last line (```)
+                if lines and lines[-1].strip() == '```':
+                    lines = lines[:-1]
+                response_text = '\n'.join(lines).strip()
+            
+            parsed = json.loads(response_text)
+            
+            # Validate required fields
+            if 'response' not in parsed:
+                logger.warning("JSON response missing 'response' field, using raw text")
+                return {
+                    'response': response_text,
+                    'suggested_actions': parsed.get('suggested_actions', [])
+                }
+            
+            return {
+                'response': parsed.get('response', ''),
+                'suggested_actions': parsed.get('suggested_actions', [])
+            }
+            
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse JSON response: {str(e)}, falling back to text parsing")
+            
+            # Fallback: Try to extract suggestions from old format (---SUGGESTIONS---)
+            suggested_actions = []
+            clean_response = response_text
+            
+            if '---SUGGESTIONS---' in response_text and '---END---' in response_text:
+                try:
+                    parts = response_text.split('---SUGGESTIONS---')
+                    clean_response = parts[0].strip()
+                    suggestions_part = parts[1].split('---END---')[0].strip()
+                    suggested_actions = [s.strip() for s in suggestions_part.split('\n') if s.strip()]
+                except Exception as ex:
+                    logger.warning(f"Error parsing suggestions from old format: {str(ex)}")
+            
+            return {
+                'response': clean_response,
+                'suggested_actions': suggested_actions
+            }
     
     def _build_context(
         self,
@@ -521,27 +607,34 @@ class ConversationAgent:
             if response.candidates and response.candidates[0].content.parts:
                 for part in response.candidates[0].content.parts:
                     if hasattr(part, 'function_call') and part.function_call:
-                        # Function call detected
+                        # Function call detected - extract suggested_actions from function call args
+                        function_args = convert_to_serializable(dict(part.function_call.args))
+                        suggested_actions = function_args.get('suggested_actions', [])
+                        
                         return self._handle_function_call(
                             part.function_call,
                             planning,
                             contractor_id,
-                            attachment_ids=attachment_ids
+                            attachment_ids=attachment_ids,
+                            suggested_actions=suggested_actions
                         )
             
-            # No function call, return normal text response
+            # No function call, parse JSON response
             if response.text:
+                parsed_data = self._parse_model_response(response.text)
                 return self._create_normal_response(
-                    response.text,
+                    parsed_data['response'],
                     planning,
-                    contractor_id
+                    contractor_id,
+                    suggested_actions=parsed_data.get('suggested_actions', [])
                 )
             else:
                 # Fallback response
                 return self._create_normal_response(
                     "I'm here to help with your contractor communication. How can I assist you?",
                     planning,
-                    contractor_id
+                    contractor_id,
+                    suggested_actions=["Send introduction", "Ask about availability", "Request site visit"]
                 )
         
         except Exception as e:
@@ -550,7 +643,8 @@ class ConversationAgent:
             return self._create_normal_response(
                 f"I apologize, but I encountered an error processing your message. Please try again.",
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=["Try again", "Ask a question", "Send email", "Check for reply"]
             )
     
     def _handle_function_call(
@@ -558,7 +652,8 @@ class ConversationAgent:
         function_call,
         planning: ContractingPlanning,
         contractor_id: int,
-        attachment_ids: List[int] = None
+        attachment_ids: List[int] = None,
+        suggested_actions: List[str] = None
     ) -> Dict:
         """
         Handle a function call from Gemini.
@@ -568,6 +663,7 @@ class ConversationAgent:
             planning: ContractingPlanning instance
             contractor_id: ID of the contractor
             attachment_ids: Optional list of MessageAttachment IDs
+            suggested_actions: Optional list of suggested action strings from model response
             
         Returns:
             Dictionary with action request data
@@ -581,28 +677,32 @@ class ConversationAgent:
                 args,
                 planning,
                 contractor_id,
-                attachment_ids=attachment_ids
+                attachment_ids=attachment_ids,
+                suggested_actions=suggested_actions
             )
         elif function_name == 'fetch_email':
             return self._create_action_request(
                 'fetch_email',
                 args,
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=suggested_actions
             )
         elif function_name == 'analyze_offer':
             return self._create_action_request(
                 'analyze_offer',
                 args,
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=suggested_actions
             )
         elif function_name == 'compare_offers':
             return self._create_action_request(
                 'compare_offers',
                 args,
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=suggested_actions
             )
         elif function_name == 'query_offer_analysis':
             # This triggers the multi-step flow
@@ -617,14 +717,16 @@ class ConversationAgent:
             return self._create_normal_response(
                 "I'm here to help. What would you like to know?",
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=suggested_actions or ["Ask a question", "Send email", "Check for reply"]
             )
     
     def _create_normal_response(
         self,
         content: str,
         planning: ContractingPlanning,
-        contractor_id: int
+        contractor_id: int,
+        suggested_actions: List[str] = None
     ) -> Dict:
         """
         Create a normal AI response message.
@@ -633,21 +735,45 @@ class ConversationAgent:
             content: Response content
             planning: ContractingPlanning instance
             contractor_id: ID of the contractor
+            suggested_actions: Optional list of suggested action strings
             
         Returns:
             Dictionary with message data
         """
+        # Use provided suggested_actions or extract from old format if present
+        if suggested_actions is None:
+            suggested_actions = []
+            clean_content = content
+            
+            if '---SUGGESTIONS---' in content and '---END---' in content:
+                try:
+                    # Split content to extract suggestions
+                    parts = content.split('---SUGGESTIONS---')
+                    clean_content = parts[0].strip()
+                    
+                    suggestions_part = parts[1].split('---END---')[0].strip()
+                    suggested_actions = [s.strip() for s in suggestions_part.split('\n') if s.strip()]
+                except Exception as e:
+                    logger.warning(f"Error parsing suggestions: {str(e)}")
+                    # If parsing fails, keep the original content
+                    clean_content = content
+            else:
+                clean_content = content
+        else:
+            clean_content = content
+        
         message = Message.objects.create(
             contracting_planning=planning,
             contractor_id=contractor_id,
             sender='ai',
             message_type='ai',
-            content=content
+            content=clean_content
         )
         
         return {
             'type': 'normal',
-            'message': message
+            'message': message,
+            'suggested_actions': suggested_actions
         }
     
     def _create_action_request(
@@ -656,7 +782,8 @@ class ConversationAgent:
         args: Dict,
         planning: ContractingPlanning,
         contractor_id: int,
-        attachment_ids: List[int] = None
+        attachment_ids: List[int] = None,
+        suggested_actions: List[str] = None
     ) -> Dict:
         """
         Create an action request message.
@@ -667,6 +794,7 @@ class ConversationAgent:
             planning: ContractingPlanning instance
             contractor_id: ID of the contractor
             attachment_ids: Optional list of MessageAttachment IDs to include
+            suggested_actions: Optional list of suggested action strings
             
         Returns:
             Dictionary with action request data
@@ -677,6 +805,18 @@ class ConversationAgent:
         # Get contractor info
         contractor = Contractor.objects.filter(id=contractor_id).first()
         contractor_name = contractor.name if contractor else "the contractor"
+        
+        # Default suggested actions based on action type
+        default_suggestions = {
+            'send_email': ["Check their reply", "Modify the draft", "Ask about pricing", "Discuss project scope"],
+            'fetch_email': ["Reply to them", "Ask follow-up", "Analyze their offer", "Schedule a call"],
+            'analyze_offer': ["Compare all offers", "Ask about pricing", "Negotiate price", "Schedule meeting"],
+            'compare_offers': ["Analyze top offer", "Ask about differences", "Negotiate price", "Schedule meetings"]
+        }
+        
+        # Use provided suggestions or defaults
+        if suggested_actions is None or not suggested_actions:
+            suggested_actions = default_suggestions.get(action_type, ["Continue conversation", "Ask a question"])
         
         # Create action data and message content based on action type
         if action_type == 'send_email':
@@ -771,7 +911,8 @@ class ConversationAgent:
         return {
             'type': 'action_request',
             'message': message,
-            'action': action
+            'action': action,
+            'suggested_actions': suggested_actions
         }
     
     def _get_contractor_email(self, contractor_id: int) -> str:
@@ -850,10 +991,13 @@ class ConversationAgent:
             message.content = f"✓ {action.action_summary}"
             message.save()
             
-            # Create confirmation message based on action type
+            # Create confirmation message based on action type with suggested actions
+            suggested_actions = []
+            
             if action.action_type == 'send_email':
                 confirmation_content = f"Email successfully sent to {action.action_data.get('recipient_email', 'contractor')}."
                 detected_offer = None
+                suggested_actions = ["Check for reply", "Send follow-up", "Ask about timeline", "Review project"]
             elif action.action_type == 'fetch_email':
                 emails_fetched = result.get('emails_count', 0)
                 
@@ -866,19 +1010,28 @@ class ConversationAgent:
                         user
                     )
                     confirmation_content = email_summary
+                    # Prioritize offer-related actions if an offer was detected
+                    if detected_offer:
+                        suggested_actions = ["Analyze this offer", "Compare all offers", "Ask about pricing", "Negotiate terms"]
+                    else:
+                        suggested_actions = ["Reply to them", "Ask follow-up", "Analyze their offer", "Schedule a call"]
                 else:
                     confirmation_content = "I couldn't find any recent emails from this contractor in your inbox. They may not have sent anything yet, or the emails might be in a different folder."
                     detected_offer = None
+                    suggested_actions = ["Send introduction", "Ask about availability", "Request quote", "Check again later"]
             elif action.action_type == 'analyze_offer':
                 confirmation_content = "I've generated a detailed analysis of this offer! 📊 Check it out to understand the strengths, weaknesses, and key considerations."
                 detected_offer = None
+                suggested_actions = ["Compare all offers", "Negotiate price", "Ask about timeline", "Schedule meeting"]
             elif action.action_type == 'compare_offers':
                 offer_count = len(result.get('compared_offer_ids', [])) + 1
                 confirmation_content = f"I've compared {offer_count} offers side-by-side! 📈 The comparison includes pricing, timelines, quality, and recommendations."
                 detected_offer = None
+                suggested_actions = ["Analyze top offer", "Negotiate with winner", "Ask about differences", "Schedule meetings"]
             else:
                 confirmation_content = "Action completed successfully."
                 detected_offer = None
+                suggested_actions = ["Continue conversation", "Ask a question"]
 
 
             
@@ -889,18 +1042,26 @@ class ConversationAgent:
                 message_type='ai',
                 content=confirmation_content
             )
-            
+
             # If an offer was detected, create an analyze_offer action
             offer_analysis_action = None
             if action.action_type == 'fetch_email' and 'detected_offer' in locals() and detected_offer:
                 try:
+                    # Get contractor information for better message
+                    contractor = Contractor.objects.filter(id=message.contractor_id).first()
+                    contractor_name = contractor.name if contractor else 'the contractor'
+                    
+                    # Build informative message with key offer details
+                    price_str = f"€{detected_offer.total_price:,.0f}" if detected_offer.total_price else "pricing details"
+                    timeline_str = f"{detected_offer.timeline_duration_days} days" if detected_offer.timeline_duration_days else "timeline information"
+                    
                     # Create action request message for offer analysis
                     offer_action_message = Message.objects.create(
                         contracting_planning=planning,
                         contractor_id=message.contractor_id,
                         sender='ai',
                         message_type='ai_action_request',
-                        content=f"I found an offer! Would you like me to analyze it?"
+                        content=f"📄 Great news! I've found an offer from {contractor_name}. Would you like me to analyze this offer in detail?"
                     )
                     
                     # Create the analyze_offer action
@@ -912,7 +1073,7 @@ class ConversationAgent:
                             'offer_id': detected_offer.id,
                             'reasoning': 'Detected an offer in the fetched emails'
                         }),
-                        action_summary=f"Analyze offer from contractor"
+                        action_summary=f"Analyze offer from {contractor_name}"
                     )
                     logger.info(f"Created analyze_offer action {offer_analysis_action.id} for offer {detected_offer.id}")
                 except Exception as e:
@@ -922,7 +1083,8 @@ class ConversationAgent:
                 'success': True,
                 'action': action,
                 'confirmation_message': confirmation_message,
-                'result': result
+                'result': result,
+                'suggested_actions': suggested_actions
             }
             
             # Add offer analysis action if created
@@ -1158,6 +1320,22 @@ class ConversationAgent:
         # Build context for analysis
         context = self._build_context(planning, contractor_id, user)
         
+        # Build offer detection context if offer was found
+        offer_context = ""
+        if detected_offer:
+            offer_context = f"""
+
+**IMPORTANT: Offer Detected!**
+- Acknowledge clearly that an offer has been received from the contractor
+- State that the offer has already been processed by the system
+- Ask the user if they want the offer analyzed
+- Use a professional, calm, non-chatty tone
+- Do NOT use greetings like “Hey there”
+- Do NOT use emojis
+- Do NOT mention opening emails or attachments
+- Keep the message concise and decision-focused
+"""
+        
         # Format emails for the prompt (emails are already sorted by date, most recent first)
         emails_text = ""
         for i, email in enumerate(emails, 1):
@@ -1189,7 +1367,7 @@ class ConversationAgent:
 
 **Fetched Emails from Contractor (sorted by date, most recent first):**
 {emails_text}
-
+{offer_context}
 **Your Task:**
 Analyze these emails and provide a helpful, conversational summary for the user. Focus on:
 1. Key information or responses from the contractor (especially from the most recent email)
@@ -1203,14 +1381,10 @@ Analyze these emails and provide a helpful, conversational summary for the user.
 - DO NOT use markdown formatting (no asterisks, no bold, no bullet points)
 - DO NOT use lists or bullet points - write in complete sentences and paragraphs
 - Be warm and friendly (use 1-2 emojis max, placed naturally in the text)
-- Start with: "I found {len(emails)} email(s) from {{contractor_name}}..."
 - Focus primarily on the MOST RECENT email, mentioning key points naturally
 - If there are multiple points, connect them with words like "They also mentioned..." or "Additionally..."
 - Keep it conversational and easy to read (2-4 short paragraphs maximum)
 - End with a helpful suggestion for next steps if appropriate
-
-Example of good style:
-"I found 2 emails from BauMeister GmbH. In their most recent message from yesterday, they said they can start next Monday and asked about your flooring preference. They also mentioned the project will take about 3 weeks. Sounds like they're ready to move forward! Would you like me to reply about the flooring?"
 
 Provide your summary now:"""
         
@@ -1587,7 +1761,8 @@ Provide your summary now:"""
             return self._create_normal_response(
                 f"I encountered an error retrieving the analysis: {str(e)}",
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=["Try again", "Ask a question", "Analyze offer", "Compare offers"]
             )
     
     def _process_with_analysis_context(
@@ -1671,26 +1846,33 @@ Generated: {analysis.created_at.strftime('%Y-%m-%d %H:%M')}
             if response.candidates and response.candidates[0].content.parts:
                 for part in response.candidates[0].content.parts:
                     if hasattr(part, 'function_call') and part.function_call:
-                        # Function call detected
+                        # Function call detected - extract suggested_actions from function call args
+                        function_args = convert_to_serializable(dict(part.function_call.args))
+                        suggested_actions = function_args.get('suggested_actions', [])
+                        
                         return self._handle_function_call(
                             part.function_call,
                             planning,
                             contractor_id,
-                            attachment_ids=attachment_ids
+                            attachment_ids=attachment_ids,
+                            suggested_actions=suggested_actions
                         )
             
-            # No function call, return normal text response
+            # No function call, parse JSON response
             if response.text:
+                parsed_data = self._parse_model_response(response.text)
                 return self._create_normal_response(
-                    response.text,
+                    parsed_data['response'],
                     planning,
-                    contractor_id
+                    contractor_id,
+                    suggested_actions=parsed_data.get('suggested_actions', [])
                 )
             else:
                 return self._create_normal_response(
                     "I've reviewed the analysis. How can I help you with this contractor?",
                     planning,
-                    contractor_id
+                    contractor_id,
+                    suggested_actions=["Ask about pricing", "Negotiate terms", "Schedule meeting", "Compare offers"]
                 )
             
         except Exception as e:
@@ -1698,7 +1880,8 @@ Generated: {analysis.created_at.strftime('%Y-%m-%d %H:%M')}
             return self._create_normal_response(
                 f"I encountered an error processing the analysis: {str(e)}",
                 planning,
-                contractor_id
+                contractor_id,
+                suggested_actions=["Try again", "Ask a question", "Analyze offer", "Compare offers"]
             )
     
     def _load_prompt_template_by_name(self, filename: str) -> str:

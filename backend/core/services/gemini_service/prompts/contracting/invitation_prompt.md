@@ -12,7 +12,7 @@ All writing must reflect REAL communication preferences of German contractors:
 - Only ask practical questions contractors expect
 - Avoid robotic or templated wording
 - Avoid unnecessary jargon and technical over-specification
-- Use “ich” to speak from the user’s perspective (not “wir” unless provided)
+- Use appropriate first-person perspective (see section-specific guidance below)
 
 ==================================================
 INPUTS
@@ -36,103 +36,252 @@ USER INFORMATION:
 PART 1 — CONTRACTOR INVITATION EMAIL (HTML)
 ==================================================
 
-Create a concise, warm, professional invitation email in correct German.
+You are writing a polite, professional invitation email from a private homeowner in Germany to a renovation contractor.
+The email must sound human-written, calm, and trustworthy — not automated or legalistic.
 
-STRUCTURE:
+----------------------------------------------------
+1. GREETING
+----------------------------------------------------
+- If the contractor’s name is known:
+  - Use “Sehr geehrter Herr <Name>,” or “Sehr geehrte Frau <Name>,”
+- Otherwise:
+  - Use “Sehr geehrte Damen und Herren,”
 
-1. **Greeting**
-   - If contractor name available → “Sehr geehrter Herr …” / “Sehr geehrte Frau …”
-   - Otherwise → “Sehr geehrte Damen und Herren,”
+----------------------------------------------------
+2. INTRODUCTION (natural prose, 1–2 sentences)
+----------------------------------------------------
+Write flowing text (not checklist-style).
 
-2. **Introduction (1–2 sentences)**
-   - State that the user is planning a renovation (project type)
-   - State the address
-   - Mention that a detailed Renovation Plan PDF is attached
-   - Keep tone human, e.g.:
-     “ich plane eine … und möchte Sie um ein Angebot bitten.”
+Naturally include:
+- The renovation type
+- The full address
+- A polite request for an offer using:
+  “möchte Sie um ein Angebot bitten”
+- Mention that a detailed project description / renovation plan is attached as a PDF
 
-3. **Kurzüberblick (bullet list)**
-   Provide 2–4 bullet points using <ul><li>:
-   - Project type
-   - Location
-   - Preferred start date (if provided)
-   - Attachment: “Sanierungsplan (PDF)”
+Tone:
+- Calm, respectful, homeowner-like
+- Slight variation in sentence rhythm is encouraged
+- Do NOT sound like a template or authority letter
 
-4. **Practical Contractor Questions**
-   Ask ONLY the following neutral questions (DO NOT assume an appointment is required):
-   - “Haben Sie Kapazitäten für dieses Projekt?”
-   - “Benötigen Sie vorab weitere Informationen oder Unterlagen?”
-   - “Falls ein Vor-Ort-Termin erforderlich ist, teilen Sie mir bitte mögliche Termine mit.”
+----------------------------------------------------
+3. KURZÜBERBLICK (MANDATORY)
+----------------------------------------------------
+Render this as a real HTML bullet list using <ul><li>.
 
-   (IMPORTANT: You are **not** stating that a site visit is required. You are **asking whether** it’s required.)
+Rules:
+- 2–4 bullets only
+- Short, factual, no verbs
+- No introductory sentence before the list
 
-5. **Closing**
-   - Polite and warm tone
-   - Example:
-     “Bei Rückfragen melden Sie sich gerne. Ich freue mich auf Ihre Rückmeldung.”
-   - Signature with user’s name, phone, and email
+Allowed bullets:
+- <strong>Projekt:</strong> <Renovation type>
+- <strong>Ort:</strong> <Address>
+- <strong>Geplanter Beginn:</strong> <Only if provided>
+- <strong>Unterlage:</strong> Projektbeschreibung / Sanierungsplan (PDF)
 
-STYLE RULES:
-- Use <p>, <ul>, <li>, <strong>, minimal inline CSS
-- Length: 120–180 words
-- Human and natural, not robotic or overly formal
-- No unnecessary technical terminology unless provided by user context
-- Never include attachment list in the body (just mention plan is attached)
-- Do not reference DIN unless explicitly stated in user context
+----------------------------------------------------
+4. PRACTICAL QUESTIONS
+----------------------------------------------------
+Ask ONLY these points, phrased as standalone sentences.
+Light paraphrasing is allowed so the text does not sound robotic.
+
+- Capacity for the project
+- Whether additional information or documents are needed
+- Whether a site visit is required (do NOT request one)
+
+----------------------------------------------------
+5. EXPECTATION SETTING (ONE sentence)
+----------------------------------------------------
+Add exactly ONE short sentence that politely indicates the next step is receiving an offer or a brief response.
+
+Examples (vary wording, do not copy verbatim):
+- “Über ein Angebot oder eine kurze Rückmeldung zum weiteren Vorgehen würde ich mich freuen.”
+- “Gerne erhalte ich zunächst Ihr Angebot oder eine kurze Einschätzung.”
+
+Do NOT mention AI, automation, or the app.
+
+----------------------------------------------------
+6. CLOSING
+----------------------------------------------------
+Short, warm, professional.
+Match pronoun usage (“ich” or “wir”) consistently.
+
+----------------------------------------------------
+7. SIGNATURE
+----------------------------------------------------
+Include:
+- Full name
+- Email address
+- Phone number (if provided)
+
+----------------------------------------------------
+STYLE RULES
+----------------------------------------------------
+- Output HTML using only: <p>, <ul>, <li>, <strong>, <br/>
+- No empty spacing or visual gaps
+- No marketing language
+- No legal, DIN, or norm references
+- Do NOT explicitly list attachments
+- Length: 110–160 words
+- Final check: This must read like a real homeowner wrote it
 
 ==================================================
 PART 2 — RENOVATION PLAN DOCUMENT (HTML)
 ==================================================
 
-Create a professional, detailed Renovation Plan suitable for PDF rendering.
-Use clean HTML with embedded <style> tag. Make it A4-friendly.
+Create a realistic, client-written Renovation Plan suitable for PDF rendering.
+This document should feel like a REAL homeowner carefully describing their project to German contractors.
 
-STRUCTURE:
+CRITICAL DOCUMENT POSITIONING:
+This is a "Projektbeschreibung zur Angebotserstellung" — a basis for quotation preparation,
+NOT a final technical specification or contract document.
 
-1. **Project Overview**
-   - Project name (if given)
-   - Project type
+The goal is to enable contractors to prepare a serious, comparable offer,
+while leaving room for clarification during offer preparation or a site visit.
+
+TONE & VOICE:
+- Write in first-person plural ("wir planen...", "uns ist wichtig...", "wir möchten...")
+- Sound like a careful, thoughtful homeowner explaining their project
+- Mix short paragraphs with structured sections (avoid rigid bullet-only format)
+- Use natural, professional German client language
+- AVOID phrases like: "Scope Item", "Requirement", "Specification", "Deliverable"
+- AVOID form-filling language and rigid templates
+- This should read like a well-prepared client brief, not an AI-generated checklist
+
+MEASUREMENT & PRECISION RULES:
+- Always use correct units: m (meters), m² (square meters) — NEVER mm for room dimensions
+- Use "ca." (circa) for all approximate measurements
+- Format examples: "ca. 3,5 m", "ca. 12–14 m²"
+- If exact dimensions are unknown, provide reasonable approximations or ranges
+- Double-check all dimension formatting before output
+
+LEVEL OF DETAIL GUIDANCE:
+- Be concrete and specific where information exists (room size, renovation type, known preferences)
+- Stay deliberately high-level where information is missing or unclear
+- NEVER use vague phrases like "Standardqualität" alone
+- Instead use: "Standardqualität, genaue Auswahl nach Abstimmung"
+- Use softening phrases: "nach Abstimmung", "sofern technisch möglich", "in Rücksprache"
+- DO NOT invent technical details not provided by the user
+- Prefer stating assumptions over leaving gaps
+- DO NOT assume anything on behalf of the user
+
+LEGAL & PRACTICAL SIGNALS (LIGHT TOUCH):
+- Lightly reference German expectations such as:
+  "fachgerechte Ausführung", "gesetzliche Gewährleistung"
+- ONLY mention DIN standards if explicitly provided in the user context
+- Avoid sounding like a lawyer, inspector, or bureaucrat
+- Keep the tone professional, cooperative, and approachable
+
+REQUIRED STRUCTURE:
+
+1. Document Title & Disclaimer
+   - Title: "Projektbeschreibung zur Angebotserstellung"
+   - Include a SHORT disclaimer (2–3 sentences) near the top, e.g.:
+     "Dieses Dokument dient als Grundlage für die Angebotserstellung.
+      Bestimmte technische Details können im Rahmen der Angebotsphase oder bei einem Vor-Ort-Termin geklärt werden.
+      Wir freuen uns auf Ihre fachliche Einschätzung und Vorschläge."
+
+2. Projektüberblick
+   - Project name (if provided)
+   - Renovation type (written in natural language)
    - Full address
-   - Budget range (if provided)
-   - Preferred start date and timeline expectations
+   - Preferred start window and rough timeline (use "geplanter Beginn", not hard deadlines)
+   - Write as flowing text with light structure, not just bullet points
 
-2. **Project Description**
-   - Current state (from context, user answers, attachments)
-   - Desired outcome
-   - Any specific user preferences
+3. Beschreibung des Vorhabens
+   - Current state, written honestly from the homeowner’s perspective ("Aktuell ist...")
+   - Desired outcome ("Wir möchten...", "Geplant ist...")
+   - Priorities and expectations ("Uns ist wichtig, dass...")
+   - Combine short paragraphs with occasional lists where helpful
 
-3. **Scope of Work**
-   - Breakdown of tasks required
-   - Material preferences (if given)
-   - Quality expectations
-   - Regulatory/DIN references ONLY if provided by user
+4. Geplanter Leistungsumfang
+   - Describe the main renovation tasks in clear, client language
+   - Use subheadings for different trades (e.g. Demontage, Montage, Elektro, Sanitär)
+   - For each major area, clarify where possible:
+     * What should be done
+     * Whether materials/appliances are expected to be supplied by the contractor or homeowner
+       (use high-level wording, no brands)
+     * Quality expectations if known (always with context)
+   - Avoid rigid tables unless information clearly benefits from tabular format
 
-4. **User Responses to Clarifying Questions**
-   - Present in a structured list or table
-   - Group logically by topic
+5. Rahmenbedingungen & Organisation
+   - Access conditions (elevator, parking, stairs, building access)
+   - Hausverwaltung status (known / pending / to be clarified)
+   - Whether the apartment is occupied during renovation (if relevant)
+   - Any known constraints (noise rules, working hours, coordination needs)
+   - Write this as practical, helpful information in natural prose
 
-5. **Technical Requirements**
-   - Measurements (room size, ceiling height, etc.) if available
-   - Demolition scope
-   - Material sourcing (who provides materials)
-   - Access constraints (elevator, parking, quiet hours)
-   - Hausverwaltung permission status
+6. Annahmen und offene Punkte zur Angebotserstellung (ALWAYS INCLUDE THIS)
+   - Explicitly list what is not yet decided or verified
+   - Frame positively and professionally:
+     "Folgende Punkte können im Rahmen der Angebotsphase oder bei einem Ortstermin geklärt werden:"
+   - Use bullet points here for clarity
+   - Include realistic, concrete unknowns (no empty bullets)
+   - Examples:
+     * "Genaue Auswahl von Fronten, Arbeitsplatte und Geräten erfolgt nach Abstimmung"
+     * "Zustand bestehender Elektro- und Wasseranschlüsse ist vorab nicht vollständig bekannt"
+     * "Freigabe durch die Hausverwaltung ist beantragt bzw. noch zu klären"
 
-6. **Photos & Documents**
-   - List referenced files
-   - Describe what each file shows (without embedding images)
+7. Ergänzende Klarstellungen (NATURALLY INTEGRATED)
 
-7. **Next Steps**
-   - How contractors should submit their quotation
-   - Expected response timeline
-   - Contact info
+IMPORTANT:
+Do NOT create a separate, checklist-style section titled "Ergänzende Informationen aus Rückfragen"
+unless absolutely necessary.
 
-STYLE RULES:
-- Use headings (<h1>, <h2>, <h3>)
-- Include inline CSS for spacing, margins, font styling
-- Use soft accent color (emerald/teal)
-- Clear section structure
-- Include page breaks where helpful (page-break-after)
+If the user answered follow-up questions:
+
+- Integrate those clarifications naturally into the relevant sections above
+  (e.g. Leistungsumfang, Rahmenbedingungen, Annahmen und offene Punkte)
+- Write them in natural homeowner language, not as system statements
+- Avoid phrases like "Der Auftragnehmer soll..." in isolation
+
+If a short clarification block is truly necessary, use a natural heading such as:
+"Ergänzende Hinweise"
+
+Write in flowing sentences, for example:
+"Nach Rücksprache haben wir uns entschieden, dass die Demontage sowie die Lieferung der neuen Küche durch den
+Auftragnehmer erfolgen sollen. Die Genehmigung der Hausverwaltung ist noch einzuholen."
+
+NEVER:
+- List clarifications as dry bullet points without context
+- Repeat information already clearly stated elsewhere
+
+8. Fotos und Unterlagen
+
+- Do NOT reference file names mechanically
+- Describe attachments from a homeowner’s perspective and explain WHY they are included
+- Use natural, explanatory language
+
+Examples:
+"Zur besseren Einschätzung des aktuellen Zustands haben wir Fotos der bestehenden Küche beigefügt."
+"Die beigefügten Bilder zeigen die derzeitige Aufteilung sowie den Zustand der Schränke und Anschlüsse."
+
+Avoid:
+"Kitchen_Photo.jpg: Foto der aktuellen Küche"
+
+9. Nächste Schritte
+   - Explain how contractors should submit their quotation
+   - Suggest a realistic, non-demanding response timeframe
+   - Invite questions or alternative proposals
+   - End with a warm, open, collaborative tone
+
+STYLE & FORMATTING RULES:
+- Use semantic HTML: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
+- Include an embedded <style> tag with clean, restrained, professional CSS
+- Use a soft accent color (e.g. emerald/teal #10b981)
+- A4-friendly layout with proper margins
+- Clear visual hierarchy
+- Page breaks between major sections if helpful
+- Design should feel like a well-prepared client document, not a marketing brochure or legal form
+
+FINAL CHECK BEFORE GENERATING:
+- Does this genuinely sound like a careful homeowner wrote it?
+- Would a German contractor find it credible and sufficient for a quotation?
+- Are approximate dimensions included where possible?
+- Are unknowns explicitly acknowledged instead of hidden?
+- Is the tone inviting collaboration, not demanding precision?
+- Does it avoid generic AI phrasing and form language?
 
 ==================================================
 PART 3 — RELEVANT FILE IDENTIFICATION

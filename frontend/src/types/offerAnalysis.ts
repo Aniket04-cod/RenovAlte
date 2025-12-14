@@ -91,7 +91,33 @@ export interface StructuredAnalysis {
 	additional_insights: AdditionalInsights;
 }
 
-// For comparison view
+// For comparison view - NEW types
+export interface DecisionSummary {
+	recommended_choice: string;
+	decision_reasons: string[];
+	main_tradeoff: string;
+}
+
+export interface ScopeComparisonItem {
+	contractor_name: string;
+	contractor_id: number;
+	electrical_work: 'included' | 'excluded' | 'partial' | 'unclear';
+	plumbing_work: 'included' | 'excluded' | 'partial' | 'unclear';
+	appliances_included: 'included' | 'excluded' | 'partial' | 'unclear';
+	detailed_timeline_provided: 'yes' | 'no' | 'vague';
+}
+
+export interface RiskBreakdownItem {
+	level: RiskLevel;
+	explanation: string;
+}
+
+export interface RiskBreakdown {
+	cost_risk: RiskBreakdownItem;
+	timeline_risk: RiskBreakdownItem;
+	scope_risk: RiskBreakdownItem;
+}
+
 export interface ContractorComparison {
 	contractor_name: string;
 	contractor_id: number;
@@ -108,6 +134,7 @@ export interface ContractorComparison {
 	strengths: string[];
 	weaknesses: string[];
 	risk_level: RiskLevel;
+	risk_breakdown?: RiskBreakdown;
 	notable_features: string[];
 }
 
@@ -181,6 +208,9 @@ export interface StructuredComparison {
 	runner_up_contractor: string;
 	runner_up_reasoning: string;
 	best_value_contractor: string;
+	decision_summary?: DecisionSummary;
+	scope_comparison_table?: ScopeComparisonItem[];
+	rating_weights_context?: string;
 	comparison_matrix: ContractorComparison[];
 	key_differences: string[];
 	detailed_comparisons: DetailedComparisons;

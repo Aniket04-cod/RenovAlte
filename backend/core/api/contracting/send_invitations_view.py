@@ -294,8 +294,8 @@ class SendInvitationsView(generics.GenericAPIView):
 					contracting_planning=planning,
 					contractor_id=contractor_id,
 					sender='ai',
-					content=welcome_message
-				)
+					content=welcome_message,
+                )
 				logger.info(f"Created initial welcome message for contractor {contractor_id}")
 		
 		# Update current step to 4 (Communicate) after successful invitation sending

@@ -153,23 +153,35 @@ class ConversationMessagesView(APIView):
 			if result['type'] == 'normal':
 				# Normal AI response
 				ai_serializer = MessageSerializer(result['message'])
-				return Response({
+				response_data = {
 					'user_message': user_serializer.data,
 					'ai_message': ai_serializer.data,
 					'type': 'normal'
-				}, status=status.HTTP_201_CREATED)
+				}
+				
+				# Add suggested actions if present
+				if 'suggested_actions' in result:
+					response_data['suggested_actions'] = result['suggested_actions']
+				
+				return Response(response_data, status=status.HTTP_201_CREATED)
 			
 			elif result['type'] == 'action_request':
 				# AI wants to perform an action
 				ai_serializer = MessageSerializer(result['message'])
 				action_serializer = MessageActionSerializer(result['action'])
 				
-				return Response({
+				response_data = {
 					'user_message': user_serializer.data,
 					'ai_message': ai_serializer.data,
 					'action': action_serializer.data,
 					'type': 'action_request'
-				}, status=status.HTTP_201_CREATED)
+				}
+				
+				# Add suggested actions if present
+				if 'suggested_actions' in result:
+					response_data['suggested_actions'] = result['suggested_actions']
+				
+				return Response(response_data, status=status.HTTP_201_CREATED)
 			
 			else:
 				# Unknown type, return error

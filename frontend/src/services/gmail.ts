@@ -83,6 +83,3 @@ export const revokeGmailAuth = async (): Promise<void> => {
 		throw new Error(errorData.detail || `Failed to revoke Gmail authentication: ${response.status}`);
 	}
 };
-
-
-

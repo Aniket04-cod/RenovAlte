@@ -43,6 +43,3 @@ class GmailOAuthInitiateView(APIView):
 			return Response({
 				'detail': f"Failed to generate authorization URL: {str(e)}"
 			}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-

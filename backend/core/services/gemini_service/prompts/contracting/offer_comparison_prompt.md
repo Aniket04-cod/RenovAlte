@@ -168,6 +168,29 @@ Consider these factors with appropriate weight:
     "runner_up_reasoning": "Brief explanation of why it's second choice",
     "best_value_contractor": "Contractor Name",
     
+    "decision_summary": {
+      "recommended_choice": "Contractor Name",
+      "decision_reasons": [
+        "Short reason about budget fit (max 10 words)",
+        "Short reason about timeline (max 10 words)",
+        "Short reason about risk level (max 10 words)"
+      ],
+      "main_tradeoff": "One clear sentence explaining the main trade-off of choosing this contractor"
+    },
+    
+    "scope_comparison_table": [
+      {
+        "contractor_name": "Contractor Name",
+        "contractor_id": 1,
+        "electrical_work": "included",
+        "plumbing_work": "included",
+        "appliances_included": "partial",
+        "detailed_timeline_provided": "yes"
+      }
+    ],
+    
+    "rating_weights_context": "Brief explanation of why certain factors are weighted higher based on project constraints (e.g., 'Price and timeline weighted higher due to strict budget')",
+    
     "comparison_matrix": [
       {
         "contractor_name": "ABC Bau",
@@ -190,6 +213,20 @@ Consider these factors with appropriate weight:
           "Specific weakness 1 with details"
         ],
         "risk_level": "low",
+        "risk_breakdown": {
+          "cost_risk": {
+            "level": "low",
+            "explanation": "One-line explanation of cost overrun risk"
+          },
+          "timeline_risk": {
+            "level": "medium",
+            "explanation": "One-line explanation of timeline delay risk"
+          },
+          "scope_risk": {
+            "level": "low",
+            "explanation": "One-line explanation of scope gap risk"
+          }
+        },
         "notable_features": [
           "Unique or notable feature of this offer"
         ]
@@ -299,6 +336,23 @@ Consider these factors with appropriate weight:
 - `runner_up_reasoning`: Brief explanation (string)
 - `best_value_contractor`: Contractor offering best value (string)
 
+**Decision Summary (NEW - for quick scanning):**
+- `decision_summary.recommended_choice`: Contractor name (string)
+- `decision_summary.decision_reasons`: Array of exactly 3 short bullets about budget, timeline, risk (array of strings, max 10 words each)
+- `decision_summary.main_tradeoff`: One clear sentence about the main trade-off (string)
+
+**Scope Comparison Table (NEW - for quick visual comparison):**
+- Array of objects, one per contractor
+- `contractor_name`: Name (string)
+- `contractor_id`: ID (number)
+- `electrical_work`: "included", "excluded", "partial", or "unclear" (string)
+- `plumbing_work`: "included", "excluded", "partial", or "unclear" (string)
+- `appliances_included`: "included", "excluded", "partial", or "unclear" (string)
+- `detailed_timeline_provided`: "yes", "no", or "vague" (string)
+
+**Rating Weights Context (NEW):**
+- `rating_weights_context`: Brief explanation of why certain criteria are weighted higher (string)
+
 **Comparison Matrix (one object per contractor):**
 - `contractor_name`: Contractor name (string)
 - `contractor_id`: ID number (number)
@@ -312,13 +366,20 @@ Consider these factors with appropriate weight:
 - `timeline_rating`: Timeline rating 1-5 (number)
 - `quality_rating`: Quality rating 1-5 (number)
 - `terms_rating`: Terms rating 1-5 (number)
-- `strengths`: Specific strengths with details (array of strings)
-- `weaknesses`: Specific weaknesses with details (array of strings)
+- `strengths`: Top 3-4 specific strengths, ONE LINE each (array of strings, max 15 words per strength)
+- `weaknesses`: Top 3-4 specific weaknesses, ONE LINE each (array of strings, max 15 words per weakness)
 - `risk_level`: "low", "medium", or "high" (string)
+- `risk_breakdown`: Object with three risk types (object)
+  - `cost_risk.level`: "low", "medium", or "high" (string)
+  - `cost_risk.explanation`: One-line explanation (string, max 15 words)
+  - `timeline_risk.level`: "low", "medium", or "high" (string)
+  - `timeline_risk.explanation`: One-line explanation (string, max 15 words)
+  - `scope_risk.level`: "low", "medium", or "high" (string)
+  - `scope_risk.explanation`: One-line explanation (string, max 15 words)
 - `notable_features`: Unique features (array of strings)
 
 **Key Differences:**
-- Array of 4-6 major differences with specific details (array of strings)
+- Array of 4-6 major differences, ONE LINE each with specific details (array of strings, max 20 words per difference)
 
 **Detailed Comparisons:**
 - `price_analysis`: Comprehensive price comparison analysis (string)
@@ -360,9 +421,9 @@ Consider these factors with appropriate weight:
 - Map of scenarios to contractor names for different priorities
 
 **Additional Analysis:**
-- `trade_offs`: Important trade-offs to consider (array of strings)
-- `negotiation_opportunities`: Specific negotiation points (array of strings)
-- `next_steps`: 4-7 actionable next steps (array of strings)
+- `trade_offs`: Important trade-offs to consider, ONE LINE each (array of strings, max 25 words per trade-off)
+- `negotiation_opportunities`: Specific negotiation points, ONE LINE each (array of strings, max 20 words per opportunity)
+- `next_steps`: 4-7 actionable next steps, ONE LINE each (array of strings, max 20 words per step)
 
 **Additional Insights:**
 - `market_context`: Market condition context (string)
@@ -379,5 +440,14 @@ Consider these factors with appropriate weight:
 6. Include specific details and examples
 7. Ensure valid JSON formatting
 8. No additional text before or after JSON
+
+### CRITICAL: Text Density Guidelines
+- **Keep everything SCANNABLE**: Use short, single-line statements
+- **decision_reasons**: Maximum 10 words each
+- **strengths/weaknesses**: Maximum 15 words each, top 3-4 only
+- **key_differences**: Maximum 20 words each
+- **risk explanations**: Maximum 15 words each
+- **Avoid repetition**: Don't say the same thing in multiple sections
+- **Break paragraphs into bullets**: When breaking text into sentences, ensure each sentence is a complete, standalone statement
 
 Begin your comparison analysis now:
