@@ -47,7 +47,7 @@ You help users with:
 - Energy efficiency improvements
 
 Provide practical, accurate advice specific to German regulations and market conditions.
-Keep responses concise and helpful."""
+Keep responses concise and helpful.**MUST BE IN ENGLISH**"""
 		
 		# Format conversation history
 		conversation_context = "\n".join([
