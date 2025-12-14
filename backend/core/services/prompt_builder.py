@@ -758,7 +758,7 @@ Generate the recommendations now:"""
 		color_main = form_data.get('colorSchemeMain', 'neutral')
 		color_accent = form_data.get('colorSchemeAccent', '')
 
-		prompt = f"""As a renovation visualization expert, create a detailed description for an AI image generator based on this renovation project.
+		prompt = f"""You are a renovation visualization expert. Create a detailed image description for AI image generation based on this renovation project.
 
 PROJECT TYPE: {renovation_type.upper()} Renovation
 BUDGET: €{total_cost:,}
@@ -769,32 +769,34 @@ PROJECT DETAILS:
 {original_prompt[:1000]}
 
 ===================================================================================
-YOUR TASK: Generate a detailed image description for AI image generation
+CRITICAL: You MUST respond with ONLY a valid JSON object. No explanations, no markdown, no code blocks.
 ===================================================================================
 
 Create a vivid, detailed description that could be used with AI image generators (like DALL-E, Midjourney, Stable Diffusion) to visualize this renovation.
 
-RESPONSE FORMAT (JSON):
+REQUIRED JSON FORMAT - Copy this structure EXACTLY:
 {{
-  "imagePrompt": "Detailed prompt for AI image generator (100-150 words) - use photorealistic, architectural visualization style",
-  "style": "Photorealistic | Modern | Contemporary | Traditional",
+  "imagePrompt": "Your detailed prompt for AI image generator (100-150 words) using photorealistic, architectural visualization style",
+  "style": "Photorealistic",
   "keyFeatures": ["feature 1", "feature 2", "feature 3", "feature 4", "feature 5"],
   "colorPalette": ["color 1", "color 2", "color 3"],
   "materials": ["material 1", "material 2", "material 3"],
-  "lighting": "Description of lighting (natural/artificial)",
-  "mood": "Overall atmosphere and feeling",
-  "viewpoint": "Camera angle and perspective",
-  "technicalNote": "Image quality specifications (4K, architectural photography, etc.)"
+  "lighting": "Description of lighting",
+  "mood": "Overall atmosphere",
+  "viewpoint": "Camera angle",
+  "technicalNote": "Image quality specifications"
 }}
 
-CRITICAL INSTRUCTIONS:
-1. Create a prompt that captures the SPECIFIC details from the project
-2. Include exact materials and finishes mentioned in the form
-3. Specify lighting, colors, and atmosphere
-4. Make it suitable for professional architectural visualization
-5. Return ONLY valid JSON (no markdown, no code blocks)
+MANDATORY REQUIREMENTS:
+1. The "imagePrompt" field is REQUIRED and must contain a detailed 100-150 word description
+2. Include SPECIFIC details from the project (materials, finishes, colors)
+3. Make the imagePrompt suitable for professional architectural visualization
+4. Respond with ONLY the JSON object - NO additional text, NO markdown code blocks, NO explanations
+5. The JSON must be valid and parseable
 
-Generate the image description now:"""
+Your response must start with {{ and end with }}
+
+Generate the JSON now:"""
 
 		return prompt
 

@@ -409,6 +409,13 @@ class ImageGenerationView(APIView):
 				response = text_model.generate_content(image_prompt)
 				description_json_text = response.text.strip()
 
+				print(f"\n>>> RAW GEMINI RESPONSE (first 1000 chars) <<<", flush=True)
+				sys.stdout.flush()
+				print(description_json_text[:1000], flush=True)
+				sys.stdout.flush()
+				print("="*80 + "\n", flush=True)
+				sys.stdout.flush()
+
 				# Remove markdown code blocks if present
 				if description_json_text.startswith('```json'):
 					description_json_text = description_json_text.replace('```json', '').replace('```', '').strip()
@@ -417,13 +424,22 @@ class ImageGenerationView(APIView):
 
 				# Parse JSON response
 				import json
-				image_description_data = json.loads(description_json_text)
+				try:
+					image_description_data = json.loads(description_json_text)
+				except json.JSONDecodeError as json_err:
+					print(f"[ERROR] Failed to parse Gemini response as JSON: {json_err}", flush=True)
+					print(f"Response text: {description_json_text}", flush=True)
+					raise ValueError(f"Gemini did not return valid JSON: {json_err}")
 
 				# Extract the actual image prompt
 				actual_image_prompt = image_description_data.get('imagePrompt', '')
 
 				if not actual_image_prompt:
-					raise ValueError("No imagePrompt field in Gemini response")
+					print(f"[ERROR] Missing imagePrompt field. Received fields: {list(image_description_data.keys())}", flush=True)
+					sys.stdout.flush()
+					print(f"Full response data: {image_description_data}", flush=True)
+					sys.stdout.flush()
+					raise ValueError(f"No imagePrompt field in Gemini response. Received fields: {list(image_description_data.keys())}")
 
 				print(f"[OK] Received image description from Gemini TEXT API", flush=True)
 				sys.stdout.flush()
