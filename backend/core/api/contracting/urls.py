@@ -9,6 +9,7 @@ from .send_invitations_view import SendInvitationsView
 from .contractor_list_view import ContractorListView
 from .conversation_list_view import ConversationListView
 from .conversation_messages_view import ConversationMessagesView
+from .mark_messages_read_view import MarkMessagesReadView
 from .update_step_view import UpdateStepView
 from .action_views import ApproveActionView, RejectActionView, ModifyActionView
 from .offer_views import (
@@ -40,6 +41,7 @@ urlpatterns = [
 	# Conversation endpoints
 	path('planning/<int:project_id>/conversations/', ConversationListView.as_view(), name='conversation-list'),
 	path('planning/<int:project_id>/conversations/<int:contractor_id>/messages/', ConversationMessagesView.as_view(), name='conversation-messages'),
+	path('planning/<int:project_id>/conversations/<int:contractor_id>/mark-read/', MarkMessagesReadView.as_view(), name='conversation-mark-read'),
 	
 	# Action endpoints
 	path('planning/<int:project_id>/conversations/<int:contractor_id>/actions/<int:action_id>/approve/', ApproveActionView.as_view(), name='action-approve'),

@@ -200,6 +200,17 @@ class Message(models.Model):
 		auto_now_add=True,
 		help_text="When the message was sent"
 	)
+	is_read = models.BooleanField(
+		"Is Read",
+		default=False,
+		help_text="Whether the message has been read by the user"
+	)
+	read_at = models.DateTimeField(
+		"Read At",
+		null=True,
+		blank=True,
+		help_text="When the message was marked as read"
+	)
 	
 	class Meta:
 		verbose_name = "Message"
@@ -567,4 +578,74 @@ class OfferAnalysis(models.Model):
 	
 	def __str__(self):
 		return f"{self.get_analysis_type_display()} for {self.offer}"
+
+
+class ProcessedEmail(models.Model):
+	"""
+	Track emails that have been processed by the background monitoring task.
+	Helps prevent duplicate processing and provides audit trail.
+	"""
+	gmail_message_id = models.CharField(
+		"Gmail Message ID",
+		max_length=255,
+		unique=True,
+		db_index=True,
+		help_text="Unique Gmail message ID to prevent reprocessing"
+	)
+	contractor_id = models.IntegerField(
+		"Contractor ID",
+		help_text="ID of the contractor who sent the email"
+	)
+	contracting_planning = models.ForeignKey(
+		ContractingPlanning,
+		on_delete=models.CASCADE,
+		related_name='processed_emails',
+		help_text="The contracting planning this email belongs to"
+	)
+	email_subject = models.CharField(
+		"Email Subject",
+		max_length=500,
+		blank=True,
+		help_text="Subject line of the email"
+	)
+	email_received_at = models.DateTimeField(
+		"Email Received At",
+		null=True,
+		blank=True,
+		help_text="When the email was received in Gmail"
+	)
+	processed_at = models.DateTimeField(
+		"Processed At",
+		auto_now_add=True,
+		help_text="When the email was processed by our system"
+	)
+	created_offer = models.ForeignKey(
+		ContractorOffer,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='source_processed_email',
+		help_text="The offer created from this email (if any)"
+	)
+	created_message = models.ForeignKey(
+		Message,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='source_processed_email',
+		help_text="The system message created for this email"
+	)
+	
+	class Meta:
+		verbose_name = "Processed Email"
+		verbose_name_plural = "Processed Emails"
+		ordering = ['-processed_at']
+		indexes = [
+			models.Index(fields=['contracting_planning', 'contractor_id']),
+			models.Index(fields=['gmail_message_id']),
+			models.Index(fields=['processed_at']),
+		]
+	
+	def __str__(self):
+		return f"Email from contractor {self.contractor_id} processed at {self.processed_at}"
 

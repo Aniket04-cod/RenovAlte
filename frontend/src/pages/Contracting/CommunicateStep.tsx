@@ -28,6 +28,7 @@ import {
 	FileText,
 	BarChart
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface CommunicateStepProps {
 	selectedProject: Project;
@@ -56,13 +57,30 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 	const [isAITyping, setIsAITyping] = useState(false);
 	const [attachments, setAttachments] = useState<File[]>([]);
 	const [suggestedActions, setSuggestedActions] = useState<string[]>([]);
+	const [previousMessageCount, setPreviousMessageCount] = useState<Record<number, number>>({});
+	const [previousUnreadCounts, setPreviousUnreadCounts] = useState<Record<number, number>>({});
+	const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+	const [forceScrollOnLoad, setForceScrollOnLoad] = useState(false);
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const messagesContainerRef = useRef<HTMLDivElement>(null);
+	const justSentMessageRef = useRef<boolean>(false);
 	
 	// Scroll to bottom of messages
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	};
+	
+	// Check if user is scrolled near the bottom
+	const isScrolledNearBottom = () => {
+		const container = messagesContainerRef.current;
+		if (!container) return true;
+		
+		const threshold = 100; // pixels from bottom
+		const position = container.scrollHeight - container.scrollTop - container.clientHeight;
+		return position < threshold;
 	};
 	
 	// Load conversations on mount
@@ -70,17 +88,66 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 		loadConversations();
 	}, [selectedProject.id]);
 	
-	// Scroll to bottom when messages change
+	// Scroll to bottom when messages change, but only if user is already at bottom or it's a new message
 	useEffect(() => {
-		scrollToBottom();
+		// Skip if no messages loaded yet
+		if (messages.length === 0) {
+			return;
+		}
+		
+		if (forceScrollOnLoad) {
+			// Force scroll when conversation is first loaded - use timeout to ensure DOM is updated
+			setTimeout(() => {
+				scrollToBottom();
+				setForceScrollOnLoad(false);
+			}, 100); // Give a bit more time for DOM to fully render
+		} else if (shouldAutoScroll && isScrolledNearBottom()) {
+			setTimeout(() => {
+				scrollToBottom();
+			}, 0);
+		}
 	}, [messages]);
 	
 	// Load messages when active contractor changes
 	useEffect(() => {
-		if (activeContractorId !== null) {
+		if (activeContractorId !== null && selectedProject.id) {
+			setShouldAutoScroll(true); // Enable auto-scroll when switching conversations
+			setForceScrollOnLoad(true); // Force scroll to bottom on initial load
 			loadMessages(activeContractorId);
+			// Mark messages as read when conversation is opened
+			contractingPlanningApi.markMessagesAsRead(
+				selectedProject.id,
+				activeContractorId
+			).then(() => {
+				// Immediately update the local conversations state to reflect read status
+				setConversations(prev => 
+					prev.map(conv => 
+						conv.contractor_id === activeContractorId 
+							? { ...conv, unread_count: 0 }
+							: conv
+					)
+				);
+			}).catch(err => console.error("Error marking messages as read:", err));
 		}
 	}, [activeContractorId]);
+	
+	// Polling effect for auto-refresh
+	useEffect(() => {
+		// Start polling when component mounts
+		pollingIntervalRef.current = setInterval(() => {
+			if (activeContractorId !== null) {
+				loadMessagesQuietly(activeContractorId);
+			}
+			// Also refresh conversation list for unread counts
+			loadConversationsQuietly();
+		}, 5000); // 5 seconds
+		
+		return () => {
+			if (pollingIntervalRef.current) {
+				clearInterval(pollingIntervalRef.current);
+			}
+		};
+	}, [activeContractorId, selectedProject.id]);
 	
 	const loadConversations = async () => {
 		if (!selectedProject.id) return;
@@ -117,6 +184,8 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 				contractorId
 			);
 			setMessages(response.messages);
+			// Initialize message count for polling
+			setPreviousMessageCount(prev => ({ ...prev, [contractorId]: response.messages.length }));
 
             // Default Suggested Actions
             setSuggestedActions([
@@ -129,6 +198,96 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			setError(err instanceof Error ? err.message : "Failed to load messages");
 		} finally {
 			setIsLoadingMessages(false);
+		}
+	};
+	
+	const loadMessagesQuietly = async (contractorId: number) => {
+		// Don't poll while loading, sending, or right after sending
+		if (!selectedProject.id || isLoadingMessages || isSending || justSentMessageRef.current) return;
+		
+		try {
+			const response = await contractingPlanningApi.getConversationMessages(
+				selectedProject.id,
+				contractorId
+			);
+			
+			const previousCount = previousMessageCount[contractorId] || 0;
+			const hasNewMessages = response.messages.length > previousCount;
+			
+			// Only update if there are actually new messages or this is first poll
+			if (hasNewMessages || previousCount === 0) {
+				setPreviousMessageCount(prev => ({ ...prev, [contractorId]: response.messages.length }));
+				
+				// Use message IDs to prevent duplicates
+				setMessages(prevMessages => {
+					// Create a map of existing message IDs
+					const existingIds = new Set(prevMessages.map(m => m.id));
+					const newMessages = response.messages.filter(m => !existingIds.has(m.id));
+					
+					// If all messages from response are already present, don't update
+					if (newMessages.length === 0 && prevMessages.length === response.messages.length) {
+						return prevMessages;
+					}
+					
+					// Otherwise return the full response (server is source of truth)
+					return response.messages;
+				});
+				
+				// Enable auto-scroll if there are new messages
+				if (hasNewMessages && previousCount > 0) {
+					setShouldAutoScroll(true);
+				}
+			}
+		} catch (err) {
+			console.error("Error polling messages:", err);
+			// Don't show error to user during polling
+		}
+	};
+	
+	const loadConversationsQuietly = async () => {
+		if (!selectedProject.id) return;
+		
+		try {
+			const response = await contractingPlanningApi.getConversations(selectedProject.id);
+			
+			// Check for new unread messages in OTHER conversations (not the active one)
+			response.conversations.forEach(conv => {
+				const previousUnread = previousUnreadCounts[conv.contractor_id] || 0;
+				const currentUnread = conv.unread_count;
+				
+				// Show notification only if:
+				// 1. Unread count increased
+				// 2. This is NOT the currently active conversation
+				// 3. We have a previous count (not initial load)
+				if (currentUnread > previousUnread && 
+					conv.contractor_id !== activeContractorId && 
+					previousUnread !== undefined) {
+					
+					const newMessageCount = currentUnread - previousUnread;
+					toast.info(
+						`${newMessageCount} new message${newMessageCount > 1 ? 's' : ''} from ${conv.contractor_name}`,
+						{
+							duration: 4000,
+							style: {
+								background: 'linear-gradient(to right, #f0fdf4, #dcfce7)',
+								border: '2px solid #86efac',
+							},
+						}
+					);
+				}
+			});
+			
+			// Update previous unread counts
+			const newUnreadCounts: Record<number, number> = {};
+			response.conversations.forEach(conv => {
+				newUnreadCounts[conv.contractor_id] = conv.unread_count;
+			});
+			setPreviousUnreadCounts(newUnreadCounts);
+			
+			setConversations(response.conversations);
+		} catch (err) {
+			console.error("Error polling conversations:", err);
+			// Don't show error to user during polling
 		}
 	};
 	
@@ -168,6 +327,9 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 		setAttachments([]); // Clear attachments
 		
 		try {
+			// Set flag to prevent polling during and right after sending
+			justSentMessageRef.current = true;
+			
 			const response = await contractingPlanningApi.sendMessage(
 				selectedProject.id,
 				activeContractorId,
@@ -177,7 +339,19 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 			
 			// Add user message and AI response
 			const newMessages = [response.user_message, response.ai_message];
-			setMessages((prev) => [...prev, ...newMessages]);
+			setMessages((prev) => {
+				const updatedMessages = [...prev, ...newMessages];
+				// Update message count immediately to prevent polling from fetching duplicates
+				setPreviousMessageCount(prevCount => ({ 
+					...prevCount, 
+					[activeContractorId]: updatedMessages.length 
+				}));
+				return updatedMessages;
+			});
+			
+			// Force scroll after sending message
+			setForceScrollOnLoad(true);
+			setShouldAutoScroll(true);
 			
 			// Update suggested actions if present
 			if (response.suggested_actions && response.suggested_actions.length > 0) {
@@ -198,11 +372,17 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 						: conv
 				)
 			);
+			
+			// Allow polling again after a short delay
+			setTimeout(() => {
+				justSentMessageRef.current = false;
+			}, 1000);
 		} catch (err) {
 			console.error("Error sending message:", err);
 			setError(err instanceof Error ? err.message : "Failed to send message");
 			setInputMessage(messageContent); // Restore message on error
 			setAttachments(messagesToSend || []); // Restore attachments on error
+			justSentMessageRef.current = false; // Reset flag on error
 		} finally {
 			setIsSending(false);
 			setIsAITyping(false);
@@ -484,12 +664,19 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 							<button
 								key={conversation.contractor_id}
 								onClick={() => setActiveContractorId(conversation.contractor_id)}
-								className={`w-full text-left p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+								className={`relative w-full text-left p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors ${
 									activeContractorId === conversation.contractor_id
 										? "bg-emerald-50 border-l-4 border-l-emerald-600"
 										: ""
 								}`}
 							>
+								{/* Unread indicator dot */}
+								{conversation.unread_count > 0 && (
+									<div className="absolute top-4 right-4">
+										<div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+									</div>
+								)}
+								
 								<div className="flex items-start gap-3">
 									<div className="bg-emerald-100 p-2 rounded-full flex-shrink-0">
 										<User className="w-5 h-5 text-emerald-700" />
@@ -546,7 +733,7 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 							</div>
 							
 							{/* Messages Area */}
-							<div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+							<div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
 								{isLoadingMessages ? (
 									<div className="flex items-center justify-center py-8">
 										<Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />

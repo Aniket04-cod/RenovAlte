@@ -9,7 +9,8 @@ from .contracting_planning import (
 	MessageAction, 
 	MessageAttachment,
 	ContractorOffer,
-	OfferAnalysis
+	OfferAnalysis,
+	ProcessedEmail
 )
 from .email_credential import EmailCredential
 

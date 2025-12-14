@@ -1000,6 +1000,8 @@ class ConversationAgent:
                 suggested_actions = ["Check for reply", "Send follow-up", "Ask about timeline", "Review project"]
             elif action.action_type == 'fetch_email':
                 emails_fetched = result.get('emails_count', 0)
+                total_fetched = result.get('total_fetched', 0)
+                filtered_count = result.get('filtered_count', 0)
                 
                 if emails_fetched > 0:
                     # Analyze the fetched emails and provide a summary (also detects offers)
@@ -1015,7 +1017,13 @@ class ConversationAgent:
                         suggested_actions = ["Analyze this offer", "Compare all offers", "Ask about pricing", "Negotiate terms"]
                     else:
                         suggested_actions = ["Reply to them", "Ask follow-up", "Analyze their offer", "Schedule a call"]
+                elif filtered_count > 0:
+                    # All emails were previously fetched
+                    confirmation_content = f"I checked for new emails and found {total_fetched} email(s) from this contractor, but I've already read all of them. There are no new messages since the last time I checked."
+                    detected_offer = None
+                    suggested_actions = ["Send a message", "Ask about progress", "Request update", "Check back later"]
                 else:
+                    # No emails found at all
                     confirmation_content = "I couldn't find any recent emails from this contractor in your inbox. They may not have sent anything yet, or the emails might be in a different folder."
                     detected_offer = None
                     suggested_actions = ["Send introduction", "Ask about availability", "Request quote", "Check again later"]
@@ -1455,6 +1463,27 @@ Provide your summary now:"""
         if not contractor_email:
             raise ValueError("Contractor email not found")
         
+        # Get planning and contractor_id from the action's message
+        planning = action.message.contracting_planning
+        contractor_id = action.message.contractor_id
+        
+        # Collect previously fetched email message IDs to avoid re-processing
+        previously_fetched_ids = set()
+        previous_fetch_actions = MessageAction.objects.filter(
+            message__contracting_planning=planning,
+            message__contractor_id=contractor_id,
+            action_type='fetch_email',
+            action_status='executed'
+        ).order_by('-created_at')
+        
+        for prev_action in previous_fetch_actions:
+            if prev_action.execution_result and 'emails' in prev_action.execution_result:
+                for email in prev_action.execution_result['emails']:
+                    if 'message_id' in email:
+                        previously_fetched_ids.add(email['message_id'])
+        
+        logger.info(f"Found {len(previously_fetched_ids)} previously fetched emails for contractor {contractor_id}")
+        
         # Search for emails from the contractor
         message_list = GmailService.search_messages(
             access_token=email_cred.access_token,
@@ -1490,14 +1519,24 @@ Provide your summary now:"""
             reverse=True
         )
         
+        # Filter out previously fetched emails
+        total_fetched = len(fetched_emails)
+        new_emails = [e for e in fetched_emails if e['message_id'] not in previously_fetched_ids]
+        filtered_count = total_fetched - len(new_emails)
+        
+        if filtered_count > 0:
+            logger.info(f"Filtered out {filtered_count} previously fetched emails, {len(new_emails)} new emails remain")
+        
         # Remove the temporary datetime field before returning
-        for email in fetched_emails:
+        for email in new_emails:
             email.pop('received_at_datetime', None)
         
         return {
-            'emails_count': len(fetched_emails),
+            'emails_count': len(new_emails),
+            'total_fetched': total_fetched,
+            'filtered_count': filtered_count,
             'contractor_email': contractor_email,
-            'emails': fetched_emails
+            'emails': new_emails
         }
     
     def _execute_analyze_offer(self, action: MessageAction, user) -> Dict:
@@ -1883,6 +1922,106 @@ Generated: {analysis.created_at.strftime('%Y-%m-%d %H:%M')}
                 contractor_id,
                 suggested_actions=["Try again", "Ask a question", "Analyze offer", "Compare offers"]
             )
+    
+    def post_system_email_notification(
+        self,
+        planning: ContractingPlanning,
+        contractor_id: int,
+        email_data: Dict,
+        detected_offer: Optional[ContractorOffer] = None,
+        user = None
+    ) -> Message:
+        """
+        Post a system-generated notification message about a new contractor email.
+        This is called by the background email monitoring task.
+        
+        Args:
+            planning: ContractingPlanning instance
+            contractor_id: ID of the contractor
+            email_data: Dictionary with email details (subject, body, etc.)
+            detected_offer: Optional ContractorOffer if an offer was detected
+            user: User instance
+            
+        Returns:
+            Created Message instance
+        """
+        from core.services.contracting_service.system_message_generator import SystemMessageGenerator
+        
+        try:
+            # Get contractor info
+            contractor = Contractor.objects.filter(id=contractor_id).first()
+            if not contractor:
+                raise ValueError(f"Contractor {contractor_id} not found")
+            
+            # Generate natural language notification
+            message_generator = SystemMessageGenerator()
+            notification_data = message_generator.generate_email_notification(
+                email_data=email_data,
+                contractor=contractor,
+                detected_offer=detected_offer
+            )
+            
+            message_content = notification_data.get('message', f"I've received a new email from {contractor.name}.")
+
+            # Create system message in the chat timeline
+            message = Message.objects.create(
+                contracting_planning=planning,
+                contractor_id=contractor_id,
+                sender='ai',
+                message_type='ai',
+                content=message_content
+            )
+
+            logger.info(f"Posted system email notification for contractor {contractor_id}: {message.id}")
+            
+            # If an offer was detected, optionally create a pending analyze_offer action
+            if detected_offer:
+                try:
+                    # Build informative message with key offer details
+                    price_str = f"€{detected_offer.total_price:,.0f}" if detected_offer.total_price else "pricing details"
+                    timeline_str = f"{detected_offer.timeline_duration_days} days" if detected_offer.timeline_duration_days else "timeline information"
+                    
+                    # Create action request message for offer analysis
+                    offer_action_message = Message.objects.create(
+                        contracting_planning=planning,
+                        contractor_id=contractor_id,
+                        sender='ai',
+                        message_type='ai_action_request',
+                        content=f"Would you like me to analyze this offer in detail?."
+                    )
+                    
+                    # Create the analyze_offer action
+                    MessageAction.objects.create(
+                        message=offer_action_message,
+                        action_type='analyze_offer',
+                        action_status='pending',
+                        action_data=convert_to_serializable({
+                            'offer_id': detected_offer.id,
+                            'reasoning': 'Detected an offer in the automatically fetched email'
+                        }),
+                        action_summary=f"Analyze offer from {contractor.name}"
+                    )
+                    
+                    logger.info(f"Created analyze_offer action for offer {detected_offer.id}")
+                except Exception as e:
+                    logger.error(f"Error creating offer analysis action: {str(e)}", exc_info=True)
+            
+            return message
+            
+        except Exception as e:
+            logger.error(f"Error posting system email notification: {str(e)}", exc_info=True)
+            # Create fallback message
+            contractor = Contractor.objects.filter(id=contractor_id).first()
+            contractor_name = contractor.name if contractor else "the contractor"
+            
+            message = Message.objects.create(
+                contracting_planning=planning,
+                contractor_id=contractor_id,
+                sender='ai',
+                message_type='ai',
+                content=f"I've received a new email from {contractor_name}."
+            )
+            return message
     
     def _load_prompt_template_by_name(self, filename: str) -> str:
         """Load a specific prompt template by filename."""

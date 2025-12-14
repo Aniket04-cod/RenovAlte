@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import LandingPage from "./pages/Landing/Landing";
 import AnalysisReportPage from "./pages/Contracting/AnalysisReportPage";
+import { Toaster } from "./pages/Landing/ui/sonner";
 
 const Layout: React.FC = () => {
   const { selectedProject } = useProject();
@@ -99,6 +100,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppRoutes />
+      <Toaster />
     </AuthProvider>
   );
 };

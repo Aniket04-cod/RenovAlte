@@ -135,7 +135,7 @@ class GmailService:
 		if credentials.expiry:
 			# Make timezone-aware if naive
 			if timezone.is_naive(credentials.expiry):
-				expiry = timezone.make_aware(credentials.expiry, timezone=dt_timezone.utc)
+				expiry = timezone.make_aware(credentials.expiry, timezone=timezone.get_current_timezone())
 			else:
 				expiry = credentials.expiry
 		

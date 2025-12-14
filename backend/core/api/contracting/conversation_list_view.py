@@ -62,13 +62,21 @@ class ConversationListView(APIView):
 					contractor_id=contractor_id
 				).order_by('-timestamp').first()
 				
+				# Count unread messages (only from AI and contractor, not user's own messages)
+				unread_count = Message.objects.filter(
+					contracting_planning=planning,
+					contractor_id=contractor_id,
+					is_read=False,
+					sender__in=['ai', 'contractor']
+				).count()
+				
 				conversation_data = {
 					'contractor_id': contractor.id,
 					'contractor_name': contractor.name,
 					'contractor_email': contractor.email or '',
 					'last_message': last_message.content if last_message else '',
 					'last_message_timestamp': last_message.timestamp if last_message else None,
-					'unread_count': 0  # For future implementation
+					'unread_count': unread_count
 				}
 				conversations.append(conversation_data)
 			

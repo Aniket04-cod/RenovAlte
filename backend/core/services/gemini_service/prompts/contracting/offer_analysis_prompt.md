@@ -333,5 +333,6 @@ You must analyze the following aspects and include them in your JSON response:
 5. If a field doesn't apply, use empty arrays [] or appropriate null/false values
 6. Ensure valid JSON formatting
 7. No additional text before or after the JSON
+8. Timeline analysis should be consistent and accurate as mentioned in the offer.
 
 Begin your analysis now:

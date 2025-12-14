@@ -734,6 +734,41 @@ export const contractingPlanningApi = {
 	},
 
 	/**
+	 * Mark messages as read in a conversation
+	 */
+	async markMessagesAsRead(
+		projectId: number,
+		contractorId: number
+	): Promise<{ marked_read: number; contractor_id: number }> {
+		const csrfToken = await ensureCsrfToken();
+
+		const response = await fetch(
+			`${API_BASE_URL}/contracting/planning/${projectId}/conversations/${contractorId}/mark-read/`,
+			{
+				method: "POST",
+				credentials: "include",
+				headers: {
+					"X-CSRFToken": csrfToken,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!response.ok) {
+			let message = `HTTP error! status: ${response.status}`;
+			try {
+				const data = await response.json();
+				message = data.detail || data.message || message;
+			} catch {
+				// Keep default message
+			}
+			throw new Error(message);
+		}
+
+		return response.json();
+	},
+
+	/**
 	 * Update the current step in the contracting workflow
 	 */
 	async updateStep(projectId: number, step: number): Promise<{ current_step: number; message: string }> {

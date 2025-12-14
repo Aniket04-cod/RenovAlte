@@ -27,29 +27,39 @@ logger = logging.getLogger(__name__)
 def convert_to_serializable(obj: Any) -> Any:
     """
     Convert protobuf and non-JSON-serializable objects to native Python types.
-    
+
     Args:
         obj: Object to convert
-        
+
     Returns:
         JSON-serializable Python object
     """
+    from datetime import datetime, date
+    
+    # Handle datetime objects
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    
+    # Handle date objects
+    if isinstance(obj, date):
+        return obj.isoformat()
+    
     # Handle protobuf repeated fields (RepeatedComposite, RepeatedScalar)
     if hasattr(obj, '__class__') and 'Repeated' in obj.__class__.__name__:
         return [convert_to_serializable(item) for item in obj]
-    
+
     # Handle protobuf messages
     if hasattr(obj, 'DESCRIPTOR'):
         return MessageToDict(obj, preserving_proto_field_name=True)
-    
+
     # Handle dictionaries
     if isinstance(obj, dict):
         return {key: convert_to_serializable(value) for key, value in obj.items()}
-    
+
     # Handle lists
     if isinstance(obj, (list, tuple)):
         return [convert_to_serializable(item) for item in obj]
-    
+
     # Handle other types (str, int, float, bool, None)
     return obj
 
@@ -216,12 +226,25 @@ Email Body:
                 except:
                     return None
             
+            # Parse datetime safely (handles ISO format strings)
+            def parse_datetime(dt_value):
+                if not dt_value:
+                    return None
+                if isinstance(dt_value, datetime):
+                    return dt_value
+                if isinstance(dt_value, str):
+                    try:
+                        return datetime.fromisoformat(dt_value.replace('Z', '+00:00'))
+                    except:
+                        return None
+                return None
+            
             # Create the offer
             offer = ContractorOffer.objects.create(
                 contracting_planning=planning,
                 contractor_id=extracted_data.get('contractor_id'),
                 gmail_message_id=extracted_data.get('gmail_message_id'),
-                email_received_at=extracted_data.get('email_received_at'),
+                email_received_at=parse_datetime(extracted_data.get('email_received_at')),
                 
                 # Financial data
                 total_price=Decimal(str(extracted_data.get('total_price', 0))) if extracted_data.get('total_price') else None,

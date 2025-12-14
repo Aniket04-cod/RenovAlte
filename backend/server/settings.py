@@ -60,6 +60,7 @@ INSTALLED_APPS = [
 	"django.contrib.staticfiles",
 	"rest_framework",
 	"corsheaders",
+	"django_q",  # django-q2 uses the same app name
 	"core",
 ]
 
@@ -189,5 +190,24 @@ GMAIL_OAUTH_SCOPES = ["https://www.googleapis.com/auth/gmail.send",
 # Media files configuration for file uploads
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Django-Q Configuration for Background Tasks
+Q_CLUSTER = {
+	'name': 'RenovAlte',
+	'workers': 1,
+	'timeout': 300,
+	'retry': 360,
+	'queue_limit': 50,
+	'save_limit': 250,
+	'orm': 'default',
+	'schedule': [
+		{
+			'func': 'core.tasks.email_monitoring.poll_contractor_emails',
+			'schedule_type': 'I',  # Interval
+			'seconds': 10,
+			'repeats': -1,  # Run indefinitely
+		}
+	]
+}
 
 
