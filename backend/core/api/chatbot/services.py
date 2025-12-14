@@ -140,7 +140,10 @@ Assistant:"""
 		"""Extract structured renovation plan data from conversation history"""
 		
 		history = self.get_conversation_history(session_id)
+		print('===========================================')
 		print('Extracting from conversation history:', history)
+		print('===========================================')
+
 		if not history:
 			return {
 				"success": False,

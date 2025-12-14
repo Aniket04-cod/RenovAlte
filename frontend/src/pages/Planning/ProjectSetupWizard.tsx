@@ -19,8 +19,10 @@ import {
   ArrowRight,
   Check,
   AlertCircle,
+  Upload,
+  X
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   RENOVATIONGOALS,
   HEATING_SYSTEM_OPTIONS,
@@ -126,6 +128,8 @@ export function ProjectSetupWizard({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
 
   const handleFileButtonClick = () => {
     fileInputRef.current?.click();
@@ -143,6 +147,10 @@ export function ProjectSetupWizard({
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
   };
+  useEffect(() => {
+  chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [chatMessages]);
+
 
   const handleStartDynamicFlow = async () => {
     // you can re-use selectedGoals from manual as "goals" here
@@ -247,6 +255,9 @@ export function ProjectSetupWizard({
     setChatMessages(prev => [...prev, userMessage]);
     setIsChatLoading(true);
 
+    setPrompt("");
+    setSelectedFile(null);
+    setPreviewUrl(null);
     try {
       const formData = new FormData();
       formData.append('message', prompt);
@@ -278,10 +289,6 @@ export function ProjectSetupWizard({
       const assistantMessage = { role: 'assistant' as const, content: data.response };
       setChatMessages(prev => [...prev, assistantMessage]);
 
-      // Clear input
-      setPrompt("");
-      setSelectedFile(null);
-      setPreviewUrl(null);
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = {
@@ -857,6 +864,7 @@ export function ProjectSetupWizard({
                         : 'bg-white border border-gray-200 text-gray-800'
                         }`}
                     >
+                      <div ref={chatEndRef} />
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   </div>
@@ -883,14 +891,22 @@ export function ProjectSetupWizard({
                     src={previewUrl}
                     alt={selectedFile?.name || "Uploaded image"}
                     className="h-16 w-16 rounded-md object-cover border border-gray-200"
-                  />
+                  />        
                   <Button
                     type="button"
                     onClick={handleRemoveFile}
-                    className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow hover:bg-red-600"
+                    style={{backgroundColor: 'rgb(5 150 105 / var(--tw-bg-opacity))'}}
+                    className="
+                      absolute -top-2 -right-2
+                      h-5 w-5
+                      rounded-full                     
+                      p-0
+                    "
                   >
-                    ×
+                    <X className="h-3 w-3 stroke-white" />
                   </Button>
+
+ 
                   <div className="text-xs text-gray-600 ml-2">
                     <Text className="font-medium">{selectedFile?.name}</Text>
                     <Text>{(selectedFile!.size / 1024).toFixed(1)} KB</Text>
@@ -922,7 +938,7 @@ export function ProjectSetupWizard({
                 onClick={handleFileButtonClick}
                 className="text-sm"
               >
-                Upload Image
+                <Upload />
               </Button>
               <Button
                 onClick={handleSendChatMessage}
