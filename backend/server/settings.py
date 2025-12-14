@@ -14,7 +14,7 @@ SECRET_KEY = "dev-secret-key"
 QDRANT_URL = 'https://46936dac-34c2-4404-b20c-9df508c3b44a.europe-west3-0.gcp.cloud.qdrant.io'
 QDRANT_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.9qQIERr0mpAriT8M8PS86VjYgHEHY71FRbdwH73C5So'
 DEBUG = True
-GEMINI_API_KEY = "AIzaSyDw0_oTd7jc0-ukSROdeMjA9E3x9tVB5VI"
+GEMINI_API_KEY = "AIzaSyBixKKkZ7Kvk2nyQIgPSSUHp1Of5Zwm-cw"
 ALLOWED_HOSTS: list[str] = ["*"]
 
 
