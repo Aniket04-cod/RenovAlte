@@ -17,7 +17,6 @@ class ChatbotMessageView(APIView):
 	permission_classes = [AllowAny]
 	parser_classes = [MultiPartParser, FormParser]
 	def post(self, request):
-		# Validate incoming data
 		print('Request data:', request.data)
 		serializer = ChatMessageSerializer(data=request.data)
 		print('data', serializer)
@@ -27,19 +26,14 @@ class ChatbotMessageView(APIView):
 				status=status.HTTP_400_BAD_REQUEST
 			)
 		
-		# Extract validated data
 		message = serializer.validated_data.get("message")
 		session_id = serializer.validated_data.get("session_id", None)
 		image = serializer.validated_data.get("image", None)
-		# Use Mock or Real service based on your preference
-		# Change to ChatbotService() when you have API key configured
 		service = ChatbotService()
 		
 		try:
-			# Generate response
 			result = service.generate_response(message, session_id, image) 
 			
-			# Serialize response
 			response_serializer = ChatResponseSerializer(result)
 			
 			return Response(
@@ -68,7 +62,6 @@ class ExtractAndGeneratePlanView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Step 1: Extract data from conversation
         chatbot_service = ChatbotService()
         extraction_result = chatbot_service.extract_plan_data(session_id)
         
@@ -84,7 +77,6 @@ class ExtractAndGeneratePlanView(APIView):
         
         extracted_data = extraction_result["data"]
         
-        # Step 2: Map extracted data to plan generation format
         plan_input = {
             "building_type": extracted_data.get("building_type", "Unknown"),
             "budget": float(extracted_data.get("budget", 0)),
@@ -100,7 +92,6 @@ class ExtractAndGeneratePlanView(APIView):
             "additional_context": extracted_data.get("additional_context", "")
         }
         
-        # Step 3: Generate renovation plan
         try:
             gemini_service = GeminiService()
             
@@ -110,7 +101,7 @@ class ExtractAndGeneratePlanView(APIView):
                 location=plan_input["location"],
                 building_size=plan_input["building_size"],
                 renovation_goals=plan_input["goals"],
-                dynamic_context=plan_input  # Pass all data as context
+                dynamic_context=plan_input
             )
             
             return Response(

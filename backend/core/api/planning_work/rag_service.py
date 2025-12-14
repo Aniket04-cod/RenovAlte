@@ -9,7 +9,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Try to import dependencies
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, VectorParams, PointStruct
@@ -43,26 +42,22 @@ class QdrantRAGService:
         self.pdf_directory = Path(pdf_directory)
         self.collection_name = collection_name
         
-        # Initialize embedding model
         logger.info(f"Loading embedding model: {embedding_model}")
         self.embedder = SentenceTransformer(embedding_model)
         self.embedding_dim = self.embedder.get_sentence_embedding_dimension()
         
-        # Initialize Qdrant client (Cloud or Local)
         if qdrant_url and qdrant_api_key:
-            # Use Qdrant Cloud
+            print(f"[RAG] Connecting to Qdrant Cloud at {qdrant_url}")
             logger.info(f"Initializing Qdrant Cloud at {qdrant_url}")
             self.client = QdrantClient(
                 url=qdrant_url,
                 api_key=qdrant_api_key
             )
         else:
-            # Use local storage
             qdrant_path = str(self.pdf_directory.parent / "qdrant_storage")
             logger.info(f"Initializing Qdrant Local at {qdrant_path}")
             self.client = QdrantClient(path=qdrant_path)
         
-        # Setup collection
         self._setup_collection()
         
     def _setup_collection(self):
@@ -103,7 +98,6 @@ class QdrantRAGService:
         pdf_files = list(self.pdf_directory.glob("*.pdf"))
         metadata = {}
         for pdf_file in pdf_files:
-            # Use modification time as version indicator
             mod_time = pdf_file.stat().st_mtime
             metadata[pdf_file.name] = mod_time
         return metadata
@@ -116,10 +110,8 @@ class QdrantRAGService:
             True if reindexing needed, False otherwise
         """
         try:
-            # Get current PDF metadata
             current_metadata = self.get_pdf_metadata()
             
-            # Try to get stored metadata from collection
             scroll_result = self.client.scroll(
                 collection_name=self.collection_name,
                 limit=1
@@ -129,11 +121,9 @@ class QdrantRAGService:
                 print("[RAG] No existing data found")
                 return True
             
-            # Get stored metadata from first point
             first_point = scroll_result[0][0]
             stored_metadata = first_point.payload.get('pdf_metadata', {})
             
-            # Compare metadata
             if stored_metadata != current_metadata:
                 print("[RAG] PDF files have changed, re-indexing required")
                 print(f"[RAG] Stored PDFs: {list(stored_metadata.keys())}")
@@ -151,7 +141,6 @@ class QdrantRAGService:
         """Clear all data from the collection"""
         try:
             print("[RAG] Clearing existing collection data")
-            # Delete and recreate collection
             self.client.delete_collection(collection_name=self.collection_name)
             self.client.create_collection(
                 collection_name=self.collection_name,
@@ -176,21 +165,18 @@ class QdrantRAGService:
         if not pdf_files:
             raise ValueError(f"No PDF files found in {self.pdf_directory}")
         
-        # Check if we need to reindex
         if not force_reindex and self.is_indexed():
             needs_reindex = self.check_needs_reindex()
             if not needs_reindex:
                 print("[RAG] Skipping indexing, PDFs already indexed")
                 return
         
-        # Clear existing data if reindexing
         if self.is_indexed():
             self.clear_collection()
         
         print(f"\n[RAG] Found {len(pdf_files)} PDF files to process")
         logger.info(f"Found {len(pdf_files)} PDF files to process")
         
-        # Get current PDF metadata
         pdf_metadata = self.get_pdf_metadata()
         
         all_points = []
@@ -300,12 +286,9 @@ class QdrantRAGService:
         
         print(f"[RAG] Searching for top {top_k} relevant chunks")
         
-        # Generate query embedding
         query_vector = self.embedder.encode(query).tolist()
         
-        # Search Qdrant - using the correct method
         try:
-            # Try new API first (Qdrant >= 1.7)
             search_results = self.client.query_points(
                 collection_name=self.collection_name,
                 query=query_vector,
@@ -313,7 +296,6 @@ class QdrantRAGService:
             ).points
             print(f"[RAG] Found {len(search_results)} relevant chunks")
         except AttributeError:
-            # Fallback to old API
             from qdrant_client.models import SearchRequest
             search_results = self.client.search(
                 collection_name=self.collection_name,
@@ -322,7 +304,6 @@ class QdrantRAGService:
             )
             print(f"[RAG] Found {len(search_results)} relevant chunks (using legacy API)")
         
-        # Format results
         results = []
         for idx, hit in enumerate(search_results, 1):
             source = hit.payload['source_file']
@@ -359,7 +340,6 @@ class QdrantRAGService:
         Returns:
             Formatted context string for LLM
         """
-        # Build rich query
         query = f"""
         Building type: {building_type}
         Location: {location}
@@ -370,10 +350,8 @@ class QdrantRAGService:
         materials planning, cost estimation, energy efficiency requirements, GEG standards.
         """
         
-        # Search
         results = self.search(query, top_k=top_k)
         
-        # Format context
         context = "=== RELEVANT KNOWLEDGE FROM GERMAN RENOVATION STANDARDS ===\n\n"
         
         for i, result in enumerate(results, 1):
@@ -401,7 +379,6 @@ class QdrantRAGService:
             }
 
 
-# Singleton instance
 _rag_instance = None
 
 def get_rag_service(
@@ -440,7 +417,6 @@ def get_rag_service(
             qdrant_api_key=qdrant_api_key
         )
         
-        # Smart indexing - only if needed
         _rag_instance.index_pdfs(force_reindex=False)
         
         print("="*60 + "\n")

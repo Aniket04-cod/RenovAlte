@@ -6,7 +6,6 @@ from django.conf import settings
 
 class ChatbotService:
 	def __init__(self):
-		# Configure Gemini API
 		genai.configure(api_key=settings.GEMINI_API_KEY)
 		self.model = genai.GenerativeModel('gemini-2.5-pro')
 	
@@ -23,21 +22,17 @@ class ChatbotService:
 	def save_conversation_history(self, session_id, history):
 		"""Save conversation history to cache (expires in 1 hour)"""
 		cache_key = self.get_session_key(session_id)
-		# Keep only last 10 messages
 		history = history[-10:]
-		cache.set(cache_key, history, 3600)  # 1 hour timeout
+		cache.set(cache_key, history, 3600)
 	
 	def generate_response(self, message, session_id=None, image=None):
 		"""Generate AI response for user message"""
-		# Generate session_id if not provided
 		if not session_id:
 			session_id = str(uuid.uuid4())
 		
-		# Get conversation history
 		history = self.get_conversation_history(session_id)
 		print('Conversation history:', history)
 		
-		# Build prompt with context
 		system_prompt = """You are a friendly renovation planning assistant for buildings in Germany. Your goal is to have a natural conversation to understand what the user wants to renovate and gather enough details to create a useful renovation plan.
 
 ## YOUR APPROACH:
@@ -92,13 +87,12 @@ DO NOT generate the plan yourself. DO NOT offer to create it. Just confirm the d
 Example: "Great! I have a good understanding of your project now - you're looking to renovate the bathroom in your 1970s apartment in Bavaria, with new tiles and modern fixtures, around €8,000 budget, hoping to start in spring. 
 
 When you're ready, click the **Generate Plan** button below and I'll create a detailed renovation plan based on everything we discussed!"""		
-		# Format conversation history
+		
 		conversation_context = "\n".join([
 			f"User: {msg['user']}\nAssistant: {msg['assistant']}" 
 			for msg in history
 		])
 		
-		# Create full prompt
 		full_prompt = f"""{system_prompt}
 
 Previous conversation:
@@ -109,22 +103,15 @@ Assistant:"""
 		
 		try:
 			if image:
-			# Read image bytes
 				image_bytes = image.read()
-				# Create image part for Gemini
 				image_part = {"mime_type": image.content_type, "data": image_bytes}
-				# Send both text and image
 				response = self.model.generate_content([full_prompt, image_part])
 			else:
 				response = self.model.generate_content(full_prompt)
-			# Generate response using Gemini
-			# response = self.model.generate_content(full_prompt)
 			ai_response = response.text
 		except Exception as e:
-			# Fallback response if API fails
 			ai_response = f"I'm sorry, I'm having trouble processing your request right now. Error: {str(e)}"
 		
-		# Update conversation history
 		history.append({
 			"user": message,
 			"assistant": ai_response
@@ -151,7 +138,6 @@ Assistant:"""
 				"data": None
 			}
 		
-		# Format conversation for extraction
 		conversation_text = "\n".join([
 			f"User: {msg['user']}\nAssistant: {msg['assistant']}" 
 			for msg in history
@@ -197,10 +183,8 @@ Assistant:"""
 			response = self.model.generate_content(extraction_prompt)
 			response_text = response.text.strip()
 			
-			# Clean up response - remove markdown code blocks if present
 			if response_text.startswith("```"):
 				lines = response_text.split("\n")
-				# Remove first and last lines (```json and ```)
 				response_text = "\n".join(lines[1:-1])
 			
 			import json
@@ -228,14 +212,12 @@ Assistant:"""
 			}
 
 
-# Mock service for testing without API key
 class MockChatbotService:
 	def generate_response(self, message, session_id=None):
 		"""Mock response for testing"""
 		if not session_id:
 			session_id = str(uuid.uuid4())
 		
-		# Simple mock responses based on keywords
 		message_lower = message.lower()
 		
 		if "kfw" in message_lower or "funding" in message_lower:
