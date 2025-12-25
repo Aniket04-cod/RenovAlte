@@ -1,14 +1,8 @@
 from rest_framework import serializers
-
-# --- EXISTING SERIALIZERS (Keep these) ---
 class RenovationPlanRequestSerializer(serializers.Serializer):
-    # ... (Keep existing fields for backward compatibility/initial validation) ...
-    # We can reuse the existing logic or make fields optional if we move fully dynamic
-    # For now, let's keep the core ones required for the initial step.
     building_type = serializers.CharField(required=False)
     budget = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     location = serializers.CharField(required=False)
-    # Allow arbitrary dict for the dynamic flow
     dynamic_answers = serializers.DictField(required=False)
 
 class RenovationPlanResponseSerializer(serializers.Serializer):
@@ -20,7 +14,6 @@ class RenovationPlanResponseSerializer(serializers.Serializer):
     error = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     generated_at = serializers.DateTimeField()
 
-# --- NEW SERIALIZERS FOR DYNAMIC FLOW ---
 
 class NextQuestionRequestSerializer(serializers.Serializer):
     """

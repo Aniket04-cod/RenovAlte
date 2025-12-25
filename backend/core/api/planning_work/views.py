@@ -34,8 +34,6 @@ def generate_next_question(request):
             current_answers=serializer.validated_data['current_answers']
         )
         
-        # We don't strictly validate the AI response against a serializer here 
-        # to allow for flexibility, but we could.
         return Response(result, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -53,7 +51,6 @@ def generate_renovation_plan(request):
     Supports both legacy arguments and the new 'dynamic_answers' dict.
     Endpoint: POST /api/renovation/generate-plan/
     """
-    # Use standard serializer for validation, but allow partial/dynamic data
     serializer = RenovationPlanRequestSerializer(data=request.data)
     
     if not serializer.is_valid():
@@ -67,24 +64,19 @@ def generate_renovation_plan(request):
     try:
         service = GeminiService()
         
-        # Check if we have dynamic answers, otherwise use legacy fields
         dynamic_answers = validated_data.get('dynamic_answers')
         
         if dynamic_answers:
-            # New Flow: Pass the whole context dict
             result = service.generate_renovation_plan(
                 building_type=dynamic_answers.get('building_type', 'unknown'),
                 budget=float(dynamic_answers.get('budget', 0)),
                 location=dynamic_answers.get('location', 'Germany'),
                 building_size=int(dynamic_answers.get('building_size', 0)),
                 renovation_goals=dynamic_answers.get('goals', []),
-                # Core fields passed as fallback, but 'dynamic_context' holds the real juice
                 dynamic_context=dynamic_answers,
-                # Pass any other keys as kwargs
                 **{k:v for k,v in dynamic_answers.items() if k not in ['building_type', 'budget', 'location']}
             )
         else:
-            # Legacy Flow (Keep this working for existing tests/frontend parts)
             result = service.generate_renovation_plan(
                 building_type=validated_data.get('building_type'),
                 budget=float(validated_data.get('budget', 0)),
@@ -111,18 +103,14 @@ def generate_renovation_plan(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_building_types(request):
-    # (Keep existing implementation)
     return Response({'success': True, 'building_types': []}) 
-    # Placeholder for brevity, assume previous code exists
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_renovation_types(request):
-    # (Keep existing implementation)
     return Response({'success': True, 'renovation_types': []})
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_health_check(request):
-    # (Keep existing implementation)
     return Response({'success': True, 'message': 'Renovation API is running'})

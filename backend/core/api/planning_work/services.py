@@ -13,13 +13,9 @@ class GeminiService:
     
     def __init__(self):
         """Initialize the Gemini service with API key"""
-        # SECURITY UPDATE: Prefer environment variable, fallback only for dev/testing
         api_key = os.getenv('GEMINI_API_KEY')
         
         if not api_key:
-            # Fallback for local dev if env var not set (Note: In production, always use env var)
-            # This key should be revoked if exposed publicly
-            print('static api')
             api_key = settings.GEMINI_API_KEY
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
@@ -35,7 +31,6 @@ class GeminiService:
             response = self.model.generate_content(prompt)
             return self._parse_json_response(response.text)
         except Exception as e:
-            # Fallback if AI fails
             print(f"Question generation failed: {e}")
             return {
                 "question_text": "Are there any other specific details about the property you would like to add?",
@@ -51,8 +46,6 @@ class GeminiService:
         location: str,
         building_size: int,
         renovation_goals: list,
-        # ... keep existing args for backward compatibility if needed ...
-        # New argument for dynamic flow:
         dynamic_context: Dict[str, Any] = None,
         **kwargs
     ) -> dict:
@@ -61,25 +54,21 @@ class GeminiService:
         incorporating both static and dynamic context.
         """
         try:
-            # Merge standard args with dynamic context if provided
             context = dynamic_context if dynamic_context else {}
             
-            # Ensure core fields are present in context (override if passed explicitly)
             context.update({
                 "building_type": building_type,
                 "budget": budget,
                 "location": location,
                 "building_size": building_size,
                 "renovation_goals": renovation_goals,
-                **kwargs # specific fields like building_age, etc.
+                **kwargs
             })
 
             prompt = self._build_renovation_prompt_dynamic(context)
             
-            # Generate content using Gemini
             response = self.model.generate_content(prompt)
             
-            # Parse the response
             plan_data = self._parse_json_response(response.text)
             print('Plan data parsed successfully.', plan_data)
             
@@ -133,7 +122,7 @@ Return EXACT JSON format:
 
     def _build_renovation_prompt_dynamic(self, context: Dict[str, Any]) -> str:
         """Build a prompt using the full dynamic context"""
-        # Get RAG context from PDFs
+        
         rag_context = ""
         try:
             rag = get_rag_service(
