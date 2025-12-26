@@ -55,7 +55,7 @@ You must analyze the following aspects and include them in your JSON response:
 - Include specific details about pricing concerns or positives
 
 ### 4. Timeline Assessment
-- Evaluate if the proposed timeline is realistic
+- Evaluate if the proposed timeline is realistic and use the EXACT days from the offer
 - Identify scheduling risks and potential delays
 - Consider typical project durations
 - Note seasonal or external factors
@@ -118,7 +118,7 @@ You must analyze the following aspects and include them in your JSON response:
 {
   "structured_data": {
     "executive_summary": "2-3 sentence overview of the offer highlighting most critical points",
-    "overall_score": 7.5,
+    "overall_score": 3.5,
     "recommendation": "acceptable",
     "recommendation_reasoning": "2-3 sentences explaining the recommendation",
     
@@ -258,7 +258,7 @@ You must analyze the following aspects and include them in your JSON response:
 
 **Core Assessment:**
 - `executive_summary`: 2-3 sentence overview (string)
-- `overall_score`: Score from 1-10 rating the offer quality (number, decimal allowed)
+- `overall_score`: Score from 1-5 rating the offer quality (number, decimal allowed)
 - `recommendation`: One of: "recommended", "acceptable", "caution", "not_recommended" (string)
 - `recommendation_reasoning`: 2-3 sentences explaining the recommendation (string)
 
@@ -274,7 +274,7 @@ You must analyze the following aspects and include them in your JSON response:
 **Timeline Assessment (comprehensive):**
 - `summary`: Detailed timeline evaluation (string)
 - `duration_realistic`: true/false (boolean)
-- `estimated_duration_days`: Realistic duration estimate (number)
+- `estimated_duration_days`: Timeline duration in days (number)
 - `start_date_assessment`: Assessment of start date (string)
 - `scheduling_risks`: Specific risks (array of strings)
 - `seasonal_factors`: Seasonal considerations (string)
@@ -333,6 +333,5 @@ You must analyze the following aspects and include them in your JSON response:
 5. If a field doesn't apply, use empty arrays [] or appropriate null/false values
 6. Ensure valid JSON formatting
 7. No additional text before or after the JSON
-8. Timeline analysis should be consistent and accurate as mentioned in the offer.
 
 Begin your analysis now:

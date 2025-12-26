@@ -189,8 +189,8 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 
             // Default Suggested Actions
             setSuggestedActions([
-                "Check e-mails from the contractor",
                 "Send an email to the contractor",
+                "Compare Offers",
                 "What can you help me with?",
             ])
 		} catch (err) {
@@ -264,25 +264,25 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 					previousUnread !== undefined) {
 					
 					const newMessageCount = currentUnread - previousUnread;
-					toast.info(
-						`${newMessageCount} new message${newMessageCount > 1 ? 's' : ''} from ${conv.contractor_name}`,
-						{
-							duration: 4000,
-							style: {
-								background: 'linear-gradient(to right, #f0fdf4, #dcfce7)',
-								border: '2px solid #86efac',
-							},
-						}
-					);
+					// toast.info(
+					// 	`${newMessageCount} new message${newMessageCount > 1 ? 's' : ''} from ${conv.contractor_name}`,
+					// 	{
+					// 		duration: 4000,
+					// 		style: {
+					// 			background: 'linear-gradient(to right, #f0fdf4, #dcfce7)',
+					// 			border: '2px solid #86efac',
+					// 		},
+					// 	}
+					// );
 				}
 			});
 			
-			// Update previous unread counts
-			const newUnreadCounts: Record<number, number> = {};
-			response.conversations.forEach(conv => {
-				newUnreadCounts[conv.contractor_id] = conv.unread_count;
-			});
-			setPreviousUnreadCounts(newUnreadCounts);
+			// // Update previous unread counts
+			// const newUnreadCounts: Record<number, number> = {};
+			// response.conversations.forEach(conv => {
+			// 	newUnreadCounts[conv.contractor_id] = conv.unread_count;
+			// });
+			// setPreviousUnreadCounts(newUnreadCounts);
 			
 			setConversations(response.conversations);
 		} catch (err) {
@@ -671,11 +671,11 @@ const CommunicateStep: React.FC<CommunicateStepProps> = ({
 								}`}
 							>
 								{/* Unread indicator dot */}
-								{conversation.unread_count > 0 && (
-									<div className="absolute top-4 right-4">
-										<div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
-									</div>
-								)}
+								{/*{conversation.unread_count > 0 && (*/}
+								{/*	<div className="absolute top-4 right-4">*/}
+								{/*		<div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />*/}
+								{/*	</div>*/}
+								{/*)}*/}
 								
 								<div className="flex items-start gap-3">
 									<div className="bg-emerald-100 p-2 rounded-full flex-shrink-0">

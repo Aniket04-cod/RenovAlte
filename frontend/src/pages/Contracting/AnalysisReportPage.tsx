@@ -341,7 +341,7 @@ const AnalysisReportPage: React.FC = () => {
 									{recommendationConfig.label}
 								</h3>
 								<span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${recommendationConfig.badgeColor}`}>
-									Score: {data.overall_score}/10
+									Score: {data.overall_score}/5
 								</span>
 							</div>
 							<p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
@@ -1795,7 +1795,7 @@ const AnalysisReportPage: React.FC = () => {
 									{recommendationConfig.label}
 								</span>
 								<span className="text-xs sm:text-sm font-semibold opacity-90">
-									· Score {data.overall_score}/10
+									· Score {data.overall_score}/5
 								</span>
 							</div>
 						</div>
