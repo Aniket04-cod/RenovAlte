@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 import logging
 import os
+from core.models import RenovationPlan
 
 from .serializers import (
     RenovationPlanRequestSerializer, 
@@ -13,6 +14,7 @@ from .serializers import (
     NextQuestionResponseSerializer
 )
 from .services import GeminiService
+from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,9 @@ def generate_renovation_plan(request):
         )
     
     validated_data = serializer.validated_data
+    print(f"User: {request.user}")
+    print(f"Is Authenticated: {request.user.is_authenticated}")
+    print(f"Auth Header: {request.headers.get('Authorization')}")
     
     try:
         service = GeminiService()
@@ -90,7 +95,34 @@ def generate_renovation_plan(request):
                 living_during_renovation=validated_data.get('living_during_renovation', ''),
                 heritage_protection=validated_data.get('heritage_protection', '')
             )
-            
+        # Save the plan to database if generation was successful
+        if result.get('success') and result.get('plan'):
+            # Get user (if authenticated) or None
+            user = request.user if request.user.is_authenticated else None
+            print('User:', user)
+            if user:
+                # Prepare input data to save
+                input_data = validated_data.get('dynamic_answers') or {
+                    'building_type': validated_data.get('building_type'),
+                    'budget': validated_data.get('budget'),
+                    'location': validated_data.get('location'),
+                    'building_size': validated_data.get('building_size'),
+                    'renovation_goals': validated_data.get('renovation_goals'),
+                }
+                
+                # Create the renovation plan record
+                saved_plan = RenovationPlan.objects.create(
+                    user=request.user if request.user.is_authenticated else User.objects.first(),
+                    plan_name=f"Renovation Plan - {input_data.get('building_type', 'Unknown')}",
+                    plan_data=result.get('plan'),
+                    input_data=input_data,
+                    status='generated'
+                )
+                
+                # Add the saved plan ID to the response
+                result['saved_plan_id'] = saved_plan.id
+                logger.info(f"Plan saved with ID: {saved_plan.id}")
+
         return Response(result, status=status.HTTP_200_OK)
             
     except Exception as e:
