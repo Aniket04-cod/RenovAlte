@@ -104,12 +104,14 @@ def generate_renovation_plan(request):
                 # Prepare input data to save
                 input_data = validated_data.get('dynamic_answers') or {
                     'building_type': validated_data.get('building_type'),
-                    'budget': validated_data.get('budget'),
+                    'budget': float(validated_data.get('budget', 0)),
                     'location': validated_data.get('location'),
                     'building_size': validated_data.get('building_size'),
                     'renovation_goals': validated_data.get('renovation_goals'),
                 }
                 
+                if 'budget' in input_data:
+                    input_data['budget'] = float(input_data['budget'])  
                 # Create the renovation plan record
                 saved_plan = RenovationPlan.objects.create(
                     user=request.user if request.user.is_authenticated else User.objects.first(),

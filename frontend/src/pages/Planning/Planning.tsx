@@ -12,7 +12,7 @@ import { Button } from "../../components/Button/Button";
 import { PermitChecklist } from "./PermitChecklist";
 /* import { BudgetPreview } from "./BudgetPreview"; */
 import { CollaborationArea } from "./CollaborationArea";
-
+import { apiRequest } from "../../services/http";
 // Define the project data interface
 export interface ProjectPlanData {
   buildingType: string;
@@ -58,48 +58,42 @@ export function Planning() {
   
   // Function to handle plan generation
   const handleGeneratePlan = async (planData: ProjectPlanData) => {
-    setIsGeneratingPlan(true);
-    setProjectPlan(planData);
-    console.log(planData)
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/renovation/generate-plan/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          building_type: planData.buildingType,
-          budget: planData.budget,
-          location: planData.bundesland,
-          building_size: planData.buildingSize,
-          renovation_goals: planData.goals,
-          renovation_specification: planData.renovationSpecification,
-          renovation_standard: planData.renovationStandard,
-          building_age: planData.buildingAge,
-          target_start_date: planData.startDate,
-          financing_preference: planData.financingPreference,
-          incentive_intent: planData.incentiveIntent,
-          living_during_renovation: planData.livingDuringRenovation,
-          heritage_protection: planData.neighborImpact,
-          energy_certificate_available: planData.energyCertificateRating,
-          heating_system_type: planData.heatingSystem,
-          window_type: planData.windowsType,
-          current_insulation_status: planData.insulationType,
-        }),
-      });
+  setIsGeneratingPlan(true);
+  setProjectPlan(planData);
+  console.log(planData)
+  try {
+    const result = await apiRequest<ApiPlanResponse>("/renovation/generate-plan/", {
+      method: "POST",
+      body: JSON.stringify({
+        building_type: planData.buildingType,
+        budget: planData.budget,
+        location: planData.bundesland,
+        building_size: planData.buildingSize,
+        renovation_goals: planData.goals,
+        renovation_specification: planData.renovationSpecification,
+        renovation_standard: planData.renovationStandard,
+        building_age: planData.buildingAge,
+        target_start_date: planData.startDate,
+        financing_preference: planData.financingPreference,
+        incentive_intent: planData.incentiveIntent,
+        living_during_renovation: planData.livingDuringRenovation,
+        heritage_protection: planData.neighborImpact,
+        energy_certificate_available: planData.energyCertificateRating,
+        heating_system_type: planData.heatingSystem,
+        window_type: planData.windowsType,
+        current_insulation_status: planData.insulationType,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate plan");
-      }
+    console.log("Plan generated successfully:", result);
+    setApiPlanData(result);
 
-      const result: ApiPlanResponse = await response.json();
-      console.log("Plan generated successfully:", result);
-      setApiPlanData(result);
-
-    } catch (error) {
-      console.error("Error generating plan:", error);
-    } finally {
-      setIsGeneratingPlan(false);
-    }
-  };
+  } catch (error) {
+    console.error("Error generating plan:", error);
+  } finally {
+    setIsGeneratingPlan(false);
+  }
+};
 
   // Function to save draft
   const handleSaveDraft = async () => {
