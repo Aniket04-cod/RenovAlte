@@ -14,4 +14,5 @@ from .contracting_planning import (
 )
 from .email_credential import EmailCredential
 
+from .renovation_plan import RenovationPlan, PlanStatus
 

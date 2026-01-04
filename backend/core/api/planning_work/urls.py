@@ -4,14 +4,18 @@ from . import views
 app_name = 'renovation'
 
 urlpatterns = [
-    # Main renovation plan generation endpoint
     path(
         'generate-plan/',
         views.generate_renovation_plan,
         name='generate_plan'
     ),
     
-    # Helper endpoints for dropdowns/selects
+    path(
+        'next-question/',
+        views.generate_next_question,
+        name='generate_next_question'
+    ),
+
     path(
         'building-types/',
         views.get_building_types,
@@ -24,10 +28,10 @@ urlpatterns = [
         name='renovation_types'
     ),
     
-    # Health check
     path(
         'health/',
         views.api_health_check,
         name='health_check'
     ),
+    
 ]

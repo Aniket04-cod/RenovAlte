@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Contractor, ContractingPlanning, ContractingPlanningFile, Message, MessageAction, MessageAttachment
+from .models import Project, Contractor, ContractingPlanning, ContractingPlanningFile, Message, MessageAction, MessageAttachment, RenovationPlan
 
 
 @admin.register(Project)
@@ -64,3 +64,8 @@ class MessageAttachmentAdmin(admin.ModelAdmin):
 	ordering = ("-uploaded_at",)
 
 
+@admin.register(RenovationPlan)
+class RenovationPlanAdmin(admin.ModelAdmin):
+    list_display = ['id', 'plan_name', 'user', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    readonly_fields = ['created_at', 'updated_at']

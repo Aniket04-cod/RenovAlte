@@ -127,3 +127,18 @@ export const SURVEYS_REQUIRED_OPTIONS = [
   { value: "fire-protection", label: "Fire protection concept" },
   { value: "noise-thermal", label: "Noise/thermal calculations (EnEV/GEG)" },
 ];
+
+export const ROOM_OPTIONS = [
+  { value: "kitchen", label: "Kitchen" },
+  { value: "bathroom", label: "Bathroom" },
+  { value: "living-room", label: "Living room" },
+  { value: "parking", label: "Parking" },
+  { value: "bedroom", label: "Bedroom" },
+];
+
+export const STANDARD_OPTIONS = [
+  { value: "luxary", label: "Luxary" },
+  { value: "elevated", label: "Elevated" },
+  { value: "normal", label: "Normal" },
+];
+

@@ -1,5 +1,5 @@
 import Heading from "../../components/Heading/Heading";
-import React from "react";
+import React, { useState } from "react";
 import Text from "../../components/Text/Text";
 import { ProjectSetupWizard } from "./ProjectSetupWizard";
 import { RenovationPhases } from "./RenovationPhases";
@@ -10,12 +10,157 @@ import { ArrowLeft, ArrowRight, Download, Save } from "lucide-react";
 import { TimelineGantt } from "./TimelineGantt";
 import { Button } from "../../components/Button/Button";
 import { PermitChecklist } from "./PermitChecklist";
-import { BudgetPreview } from "./BudgetPreview";
+/* import { BudgetPreview } from "./BudgetPreview"; */
 import { CollaborationArea } from "./CollaborationArea";
+import { apiRequest } from "../../services/http";
+// Define the project data interface
+export interface ProjectPlanData {
+  buildingType: string;
+  budget: number;
+  startDate: string;
+  goals: string[];
+  renovationSpecification: string;
+  renovationStandard: string;
+  buildingAge: string;
+  buildingSize: number;
+  bundesland: string;
+  heatingSystem?: string;
+  insulationType?: string;
+  windowsType?: string;
+  neighborImpact: string;
+  financingPreference: string;
+  incentiveIntent: string;
+  livingDuringRenovation: string;
+  energyCertificateRating: string;
+  knownMajorIssues: string;
+  surveysRequired: string;
+}
 
-const Planning: React.FC = () => {
+// API Response interfaces
+interface ApiPlanResponse {
+  success: boolean;
+  plan: {
+    phases: any[];
+    gantt_chart: any[];
+    permits: any[];
+    stakeholders: any[];
+    // ... other fields
+  };
+  // ... other fields
+}
+
+export function Planning() {
   const { selectedProject } = useProject();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const [projectPlan, setProjectPlan] = useState<ProjectPlanData | null>(null);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [apiPlanData, setApiPlanData] = useState<ApiPlanResponse | null>(null);
+  
+  // Function to handle plan generation
+  const handleGeneratePlan = async (planData: ProjectPlanData) => {
+  setIsGeneratingPlan(true);
+  setProjectPlan(planData);
+  console.log(planData)
+  try {
+    const result = await apiRequest<ApiPlanResponse>("/renovation/generate-plan/", {
+      method: "POST",
+      body: JSON.stringify({
+        building_type: planData.buildingType,
+        budget: planData.budget,
+        location: planData.bundesland,
+        building_size: planData.buildingSize,
+        renovation_goals: planData.goals,
+        renovation_specification: planData.renovationSpecification,
+        renovation_standard: planData.renovationStandard,
+        building_age: planData.buildingAge,
+        target_start_date: planData.startDate,
+        financing_preference: planData.financingPreference,
+        incentive_intent: planData.incentiveIntent,
+        living_during_renovation: planData.livingDuringRenovation,
+        heritage_protection: planData.neighborImpact,
+        energy_certificate_available: planData.energyCertificateRating,
+        heating_system_type: planData.heatingSystem,
+        window_type: planData.windowsType,
+        current_insulation_status: planData.insulationType,
+      }),
+    });
+
+    console.log("Plan generated successfully:", result);
+    setApiPlanData(result);
+
+  } catch (error) {
+    console.error("Error generating plan:", error);
+  } finally {
+    setIsGeneratingPlan(false);
+  }
+};
+
+  // Function to save draft
+  const handleSaveDraft = async () => {
+    if (!projectPlan) return;
+
+    try {
+      const response = await fetch('/api/projects/save-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: selectedProject?.id,
+          planData: projectPlan,
+          status: 'draft'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save draft');
+      }
+
+      console.log('Draft saved successfully');
+      // Show success message to user
+      
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      // Handle error
+    }
+  };
+
+  // Function to export plan
+  const handleExportPlan = async () => {
+    if (!projectPlan) return;
+
+    try {
+      const response = await fetch('/api/projects/export-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: selectedProject?.id,
+          planData: projectPlan
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export plan');
+      }
+
+      const blob = await response.blob();
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `renovation-plan-${selectedProject?.id || 'project'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error exporting plan:', error);
+      // Handle error
+    }
+  };
 
   if (!selectedProject) {
     return (
@@ -37,53 +182,72 @@ const Planning: React.FC = () => {
 
   return (
     <div>
-    <div className="mb-8">
-              <h1 className="mb-2">Planning the Work</h1>
-              <p className="text-gray-600">
-                Set up your renovation plan, timeline, and
-                permits step by step.
-              </p>
-            </div>
+      <div className="mb-8">
+        <h1 className="mb-2">Planning the Work</h1>
+        <p className="text-gray-600">
+          Set up your renovation plan, timeline, and permits step by step.
+        </p>
+      </div>
 
-            <div className="grid grid-cols-3 gap-6">
-              {/* Main Content */}
-              <div className="col-span-2 space-y-6">
-                <ProjectSetupWizard />
-                <RenovationPhases />
-                <TimelineGantt />
+      <div className="grid grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="col-span-2 space-y-6">
+          <ProjectSetupWizard 
+            onGeneratePlan={handleGeneratePlan}
+            isGenerating={isGeneratingPlan}
+          />
+          
+          {/* Show components only when API data is available */}
+          {apiPlanData && (
+            <>
+              <RenovationPhases phases={apiPlanData.plan.phases} />
+              <TimelineGantt tasks={apiPlanData.plan.gantt_chart} />
 
-                <div className="grid grid-cols-2 gap-6">
-                  <PermitChecklist />
-                  <div className="space-y-6">
-                    <BudgetPreview />
-                    <CollaborationArea />
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex items-center gap-3 pt-6 border-t">
-                  <Button variant="primary">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Plan
-                  </Button>
-                  <Button variant="primary">
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Draft
-                  </Button>
-                  <Button className="ml-auto bg-emerald-600 hover:bg-emerald-700">
-                    Continue to Financing
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+              <div className="grid grid-cols-2 gap-6">
+                <PermitChecklist permits={apiPlanData.plan.permits} />
+                <div className="space-y-6">
+                 {/*  <BudgetPreview /> */}
+                  <CollaborationArea stakeholders={apiPlanData.plan.stakeholders} />
                 </div>
               </div>
+            </>
+          )}
 
-              {/* Right Sidebar */}
-              <div>
-                <AISuggestions />
-              </div>
-            </div>
-            </div>
+          {/* Footer Buttons */}
+          <div className="flex items-center gap-3 pt-6 border-t">
+            <Button 
+              variant="primary" 
+              onClick={handleExportPlan}
+              disabled={!projectPlan}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Plan
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={handleSaveDraft}
+              disabled={!projectPlan}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+            <Button 
+              className="ml-auto bg-emerald-600 hover:bg-emerald-700"
+              disabled={!projectPlan}
+            >
+              Continue to Financing
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Sidebar */}
+        <div>
+          <AISuggestions />
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
 export default Planning;
