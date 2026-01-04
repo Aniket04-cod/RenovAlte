@@ -21,6 +21,7 @@ from .offer_views import (
 	StructuredComparisonView,
 	AnalysisDetailView
 )
+from .import_from_planning_view import ImportFromPlanningView
 
 app_name = "contracting"
 
@@ -34,6 +35,8 @@ urlpatterns = [
 	path('planning/<int:project_id>/invitation/modify/', ContractingPlanningModifyEmailView.as_view(), name='contracting-planning-modify-email'),
 	path('planning/<int:project_id>/invitation/send/', SendInvitationsView.as_view(), name='contracting-planning-send-invitations'),
 	path('planning/<int:project_id>/pdf/', ContractingPlanningPDFView.as_view(), name='contracting-planning-pdf'),
+	# Import planning data (Planning -> Contracting)
+	path('planning/<int:project_id>/import-from-planning/', ImportFromPlanningView.as_view(), name='contracting-planning-import'),
 	
 	# Contractor endpoints
 	path('contractors/', ContractorListView.as_view(), name='contractor-list'),

@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Project } from "../../services/projects";
 import Heading from "../../components/Heading/Heading";
 import Text from "../../components/Text/Text";
-import { FileText, Upload, ArrowRight, ArrowLeft, Clock, Loader2, CheckCircle2 } from "lucide-react";
-import { 
-	contractingPlanningApi, 
+import { FileText, Upload, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import {
+	contractingPlanningApi,
 	ContractingPlanningResponse,
-	AIQuestion,
-	UserAnswers 
+	UserAnswers,
 } from "../../services/contractingPlanning";
 
 interface PlanningSourceStepProps {
@@ -29,6 +28,7 @@ const PlanningSourceStep: React.FC<PlanningSourceStepProps> = ({
 	const [error, setError] = useState<string | null>(null);
 	const [existingPlanning, setExistingPlanning] = useState<ContractingPlanningResponse | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isImporting, setIsImporting] = useState(false);
 	const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
 
 	// Load existing planning requirements on mount or when project changes
@@ -171,6 +171,37 @@ const PlanningSourceStep: React.FC<PlanningSourceStepProps> = ({
 		);
 	}
 
+	const handleImportFromPlanning = async () => {
+		if (!selectedProject.id) return;
+
+		setIsImporting(true);
+		setError(null);
+
+		try {
+			const planning = await contractingPlanningApi.importFromPlanning(selectedProject.id);
+
+			if (planning) {
+				setExistingPlanning(planning);
+				setDescription(planning.description || "");
+				setUserAnswers(planning.user_answers || {});
+
+				if (planning.ai_questions && planning.ai_questions.length > 0) {
+					setShowSubStage(true);
+					setShowQuestionsStage(true);
+				} else if (planning.description) {
+					setShowSubStage(true);
+				} else {
+					onStepChange(2);
+				}
+			}
+		} catch (err) {
+			console.error("Failed to import planning:", err);
+			setError(err instanceof Error ? err.message : "Failed to import planning. Please try again.");
+		} finally {
+			setIsImporting(false);
+		}
+	};
+
 	return (
 		<div className="space-y-3">
 			{/* Main Question */}
@@ -194,23 +225,32 @@ const PlanningSourceStep: React.FC<PlanningSourceStepProps> = ({
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 					{/* Option 1: Import from Planning Module */}
 					<div
-						className="relative border-2 border-gray-300 bg-gray-50 rounded-lg p-6 sm:p-8 cursor-not-allowed opacity-60"
-						title="Coming soon"
+						onClick={handleImportFromPlanning}
+						className={`relative border-2 rounded-lg p-6 sm:p-8 cursor-pointer transition-all ${isImporting ? 'opacity-70 pointer-events-none' : 'hover:shadow-lg'}`}
 					>
-						{/* Coming Soon Badge */}
-						<div className="absolute top-3 right-3 bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-							<Clock className="w-3 h-3" />
-							<span>Coming Soon</span>
+						{/* Importing Badge / Action */}
+						<div className="absolute top-3 right-3 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2">
+							{isImporting ? (
+								<>
+									<Loader2 className="w-3 h-3 animate-spin" />
+									<span>Importing</span>
+								</>
+							) : (
+								<>
+									<FileText className="w-3 h-3" />
+									<span>Import</span>
+								</>
+							)}
 						</div>
 
 						<div className="flex flex-col items-center text-center">
 							<div className="bg-gray-200 p-4 rounded-full mb-4">
 								<FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
 							</div>
-							<Heading level={3} className="text-lg sm:text-xl mb-2 text-gray-500">
+							<Heading level={3} className="text-lg sm:text-xl mb-2 text-gray-900">
 								Import from Planning the Work Module
 							</Heading>
-							<Text className="text-gray-500 text-sm sm:text-base">
+							<Text className="text-gray-600 text-sm sm:text-base">
 								Use your existing renovation plan to find matching contractors
 							</Text>
 						</div>
