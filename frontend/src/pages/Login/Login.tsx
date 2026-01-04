@@ -39,9 +39,8 @@ const LoginPage: React.FC = () => {
 				<div className="bg-white rounded-lg shadow-lg p-8">
 					<div className="text-center mb-8">
 						<Heading level={1} className="text-emerald-600 mb-2">
-							RenovAlte
+							Login
 						</Heading>
-						<Text className="text-gray-600">Home Renovation Assistant</Text>
 					</div>
 
 					<form onSubmit={handleSubmit} className="space-y-4">

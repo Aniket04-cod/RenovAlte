@@ -2,12 +2,13 @@ import { Button } from '../ui/button';
 
 interface LandingNavigationProps {
   onLogin?: () => void;
+  onGetStarted?: () => void;
 }
 
 const menuItems = ['Home', 'Features', 'How It Works', 'About', 'Contact'];
 
-export function LandingNavigation({ onLogin }: LandingNavigationProps) {
-  return (
+export function LandingNavigation({ onLogin, onGetStarted }: LandingNavigationProps) {
+    return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-8 py-4">
         <div className="flex items-center justify-between">
@@ -27,7 +28,7 @@ export function LandingNavigation({ onLogin }: LandingNavigationProps) {
 
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={onLogin}>Login</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={onGetStarted}>
               Get Started
             </Button>
           </div>
