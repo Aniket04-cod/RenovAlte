@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from core.models import Project, ContractingPlanning
+from core.services.contracting_service.contracting_service import ContractingService
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +25,39 @@ class ImportFromPlanningView(APIView):
         except Project.DoesNotExist:
             return Response({'detail': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Import planning_work generator
+        # Import planning_work generator (only GeminiService expected)
         try:
-            from core.api.planning_work.services import GeminiService, MockGeminiService
+            from core.api.planning_work.services import GeminiService
         except Exception as e:
             logger.error(f"Failed to import planning service: {e}", exc_info=True)
             return Response({'detail': 'Planning service unavailable'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Choose service (use GeminiService when available, otherwise Mock)
+        # Choose service: try to instantiate GeminiService; if it fails, use a light-weight local Mock
         try:
             planning_service = GeminiService()
         except Exception:
-            planning_service = MockGeminiService()
+            # Minimal local mock used only when Gemini isn't available/initialization fails.
+            class MockGeminiServiceLocal:
+                def generate_renovation_plan(self, *args, **kwargs):
+                    # Provide a conservative fallback plan structure so contracting can continue
+                    project_summary = {
+                        'total_estimated_cost': '€0 - €0',
+                        'total_duration': '0-0 months',
+                        'funding_readiness': 'Needs Review',
+                        'complexity_level': 'Low',
+                        'key_considerations': [
+                            kwargs.get('dynamic_context', {}).get('note', '') or 'No additional information provided.'
+                        ]
+                    }
+                    return {
+                        'success': True,
+                        'plan': {
+                            'project_summary': project_summary,
+                            'ai_questions': [],
+                        }
+                    }
+
+            planning_service = MockGeminiServiceLocal()
 
         # Map project fields to planning service inputs
         project_type_map = {
@@ -108,6 +130,20 @@ class ImportFromPlanningView(APIView):
 
             planning_obj.save()
 
+            # Post-process with ContractingService to generate AI summary/questions
+            try:
+                contracting_service = ContractingService()
+                ai_result = contracting_service.process_planning_with_ai(planning_obj)
+
+                # If the service returned a better summary/questions, persist them
+                if ai_result.get('summary'):
+                    planning_obj.ai_summary = ai_result.get('summary')
+                if ai_result.get('questions') is not None:
+                    planning_obj.ai_questions = ai_result.get('questions')
+
+                planning_obj.save()
+            except Exception as e:
+                logger.warning(f"ContractingService post-processing failed: {e}")
             # Serialize response using existing serializer
             from .contracting_planning_serializer import ContractingPlanningSerializer
             serializer = ContractingPlanningSerializer(planning_obj)
