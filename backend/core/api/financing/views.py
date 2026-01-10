@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 import os
-from core.services.gemini_service import GeminiService
+from core.services.gemini_service_finance import GeminiService
 from core.services.prompt_builder import PromptBuilder
 from core.services.gemini_image_service import GeminiImageService
 

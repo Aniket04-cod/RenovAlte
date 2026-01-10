@@ -21,7 +21,7 @@ except Exception:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR / '.env.example')
 print(f"\n{'='*80}")
 print("LOADING ENVIRONMENT VARIABLES")
 print(f"{'='*80}")
