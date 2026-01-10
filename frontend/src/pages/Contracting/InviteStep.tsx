@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -48,7 +48,6 @@ const InviteStep: React.FC<InviteStepProps> = ({
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [invitationData, setInvitationData] = useState<InvitationResponse | null>(null);
-	const [existingPlanning, setExistingPlanning] = useState<ContractingPlanningResponse | null>(null);
 	const [aiPrompt, setAiPrompt] = useState("");
 	const [isModifyingEmail, setIsModifyingEmail] = useState(false);
 	const [modifyError, setModifyError] = useState<string | null>(null);
@@ -94,10 +93,6 @@ const InviteStep: React.FC<InviteStepProps> = ({
 			setError(null);
 
 			try {
-				// First, check if planning exists and load it
-				const planning = await contractingPlanningApi.getRequirements(selectedProject.id);
-				setExistingPlanning(planning);
-
 				// Generate invitation content
 				const contractorIds = Array.from(selectedContractors);
 				const response = await contractingPlanningApi.generateInvitation(

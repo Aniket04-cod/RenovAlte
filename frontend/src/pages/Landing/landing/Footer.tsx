@@ -34,7 +34,7 @@ export function Footer() {
                 {links.map((link) => (
                   <li key={link}>
                     <a href="/" onClick={(e) => e.preventDefault()} className="text-sm hover:text-emerald-400 transition-colors">
-                    <a href="#" className="text-sm hover:text-emerald-400 transition-colors">
+                    
                       {link}
                     </a>
                   </li>

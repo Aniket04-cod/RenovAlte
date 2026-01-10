@@ -47,8 +47,6 @@ interface ApiPlanResponse {
     // ... other fields
   } | null;
   error?: string;
-  };
-  // ... other fields
 }
 
 export function Planning() {
@@ -109,10 +107,6 @@ export function Planning() {
       plan: null as any,
       error: error instanceof Error ? error.message : "An unexpected error occurred"
     });
-    setApiPlanData(result);
-
-  } catch (error) {
-    console.error("Error generating plan:", error);
   } finally {
     setIsGeneratingPlan(false);
   }
@@ -222,7 +216,6 @@ export function Planning() {
           
           {/* Show components only when API data is available */}
           {apiPlanData && apiPlanData.plan && (
-          {apiPlanData && (
             <>
               <RenovationPhases phases={apiPlanData.plan.phases} />
               <TimelineGantt tasks={apiPlanData.plan.gantt_chart} />

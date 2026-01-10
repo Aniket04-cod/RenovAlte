@@ -36,25 +36,13 @@ export const CardHeader = ({
 // Card Title component
 export const CardTitle = ({
   className,
-<<<<<<< HEAD
-  children,
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) => {
-=======
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
->>>>>>> origin/feat/merging-planning-contracting
   return (
     <h4
       className={cn("text-xl font-bold leading-none", className)}
       {...props}
-<<<<<<< HEAD
-    >
-      {children}
-    </h4>
-=======
     />
->>>>>>> origin/feat/merging-planning-contracting
   );
 };
 
@@ -87,11 +75,7 @@ export const CardContent = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => {
-<<<<<<< HEAD
-  return <div className={cn("px-6 py-2", className)} {...props} />;
-=======
   return <div className={cn("px-6 py-6", className)} {...props} />;
->>>>>>> origin/feat/merging-planning-contracting
 };
 
 // Card Footer component
@@ -102,11 +86,7 @@ export const CardFooter = ({
   return (
     <div
       className={cn(
-<<<<<<< HEAD
         "flex items-center px-6 pb-6 pt-4 border-t border-gray-100",
-=======
-        "flex items-center px-6 pb-6 pt-4 mb-4 border-t border-gray-100",
->>>>>>> origin/feat/merging-planning-contracting
         className
       )}
       {...props}

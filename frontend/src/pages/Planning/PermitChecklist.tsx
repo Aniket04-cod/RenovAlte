@@ -36,14 +36,6 @@ export function PermitChecklist({ permits = [] }: PermitChecklistProps) {
             <div className="flex-1">
               <label htmlFor={permit.id} className="text-sm font-medium cursor-pointer flex items-center gap-2">
                 {permit.name}
-                <Info className="w-4 h-4 text-gray-400" />
-              </label>
-              <p className="text-xs text-gray-600 mt-1">{permit.description}</p>
-          <div key={permit.id} className="flex items-start gap-3">
-            <Checkbox id={permit.id} defaultChecked={permit.checked} className="mt-1" />
-            <div className="flex-1">
-              <label htmlFor={permit.id} className="text-sm cursor-pointer flex items-center gap-2">
-                {permit.name}
                 <HoverCard>
                   <HoverCardTrigger>
                     <Info className="w-4 h-4 text-gray-400 hover:text-gray-600" />
@@ -53,6 +45,7 @@ export function PermitChecklist({ permits = [] }: PermitChecklistProps) {
                   </HoverCardContent>
                 </HoverCard>
               </label>
+              <p className="text-xs text-gray-600 mt-1">{permit.description}</p>
             </div>
           </div>
         ))}
