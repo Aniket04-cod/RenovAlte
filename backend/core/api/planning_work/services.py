@@ -22,6 +22,7 @@ class GeminiService:
         genai.configure(api_key=api_key)
         # Using gemini-2.0-flash (same as chatbot)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-pro')
 
     def generate_next_question(self, current_answers: Dict[str, Any]) -> Dict[str, Any]:
         """

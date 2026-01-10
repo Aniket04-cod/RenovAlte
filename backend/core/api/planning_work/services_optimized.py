@@ -137,7 +137,7 @@ class OptimizedGeminiService:
         
         # Use faster, more cost-effective model with caching support
         self.model = genai.GenerativeModel(
-            'gemini-2.5-flash-lite',  # Fast model with better free tier support
+            'gemini-1.5-flash',  # Faster than pro-latest, optimized for speed
             generation_config={
                 'temperature': 0.3,  # Lower temperature = more deterministic, faster
                 'max_output_tokens': 2048,  # Limit tokens for speed

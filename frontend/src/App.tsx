@@ -9,10 +9,13 @@ import Contracting from "./pages/Contracting/Contracting";
 import Financing from "./pages/Financing/Financing";
 import LoginPage from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import GmailCallback from "./pages/GmailCallback/GmailCallback";
 import { ProjectProvider, useProject } from "./contexts/ProjectContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import LandingPage from "./pages/Landing/Landing";
+import AnalysisReportPage from "./pages/Contracting/AnalysisReportPage";
+import { Toaster } from "./pages/Landing/ui/sonner";
 
 const Layout: React.FC = () => {
   const { selectedProject } = useProject();
@@ -66,6 +69,9 @@ const AppRoutes: React.FC = () => {
             isAuthenticated ? <Navigate to="/home" replace /> : <LandingPage />
           }
         />
+        {/* Gmail OAuth Callback - public route for popup authentication */}
+        <Route path="/gmail/callback" element={<GmailCallback />} />
+        <Route path="/gmail-callback" element={<GmailCallback />} />
         {/* Protected routes with layout */}
         <Route
           element={
@@ -80,6 +86,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/contracting" element={<Contracting />} />
           <Route path="/financing" element={<Financing />} />
           <Route path="/planning" element={<Planning />} />
+          <Route 
+            path="/projects/:projectId/contractors/:contractorId/analysis/:analysisId" 
+            element={<AnalysisReportPage />} 
+          />
         </Route>
       </Routes>
     </Router>
@@ -90,6 +100,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppRoutes />
+      <Toaster />
     </AuthProvider>
   );
 };

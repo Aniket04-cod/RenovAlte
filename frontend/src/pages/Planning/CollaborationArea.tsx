@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/Card/Card';
-import { Avatar } from '../../components/Avatar/Avatar';
+import { Avatar, AvatarFallback } from '../../components/Avatar/Avatar';
 import { MessageCircle } from 'lucide-react';
 
 interface Stakeholder {
@@ -24,6 +24,16 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
+// Color mapping for consistent colors
+const colorClasses = [
+  'bg-emerald-100 text-emerald-700',
+  'bg-blue-100 text-blue-700',
+  'bg-purple-100 text-purple-700',
+  'bg-amber-100 text-amber-700',
+  'bg-rose-100 text-rose-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
 export function CollaborationArea({ stakeholders = [] }: CollaborationAreaProps) {
   if (stakeholders.length === 0) {
     return null; // Don't render if no stakeholders
@@ -38,7 +48,11 @@ export function CollaborationArea({ stakeholders = [] }: CollaborationAreaProps)
         {stakeholders.map((stakeholder, index) => (
           <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3">
-              <Avatar initials={getInitials(stakeholder.name)} />
+              <Avatar>
+                <AvatarFallback className={colorClasses[index % colorClasses.length]}>
+                  {getInitials(stakeholder.name)}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <div className="text-sm font-medium">{stakeholder.name}</div>
                 <div className="text-xs text-gray-600">{stakeholder.role}</div>

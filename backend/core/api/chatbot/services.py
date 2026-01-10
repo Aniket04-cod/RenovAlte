@@ -9,6 +9,7 @@ class ChatbotService:
 		genai.configure(api_key=settings.GEMINI_API_KEY)
 		# Using gemini-2.0-flash for compatibility
 		self.model = genai.GenerativeModel('gemini-2.0-flash')
+		self.model = genai.GenerativeModel('gemini-2.5-pro')
 	
 	def get_session_key(self, session_id):
 		"""Generate cache key for session"""

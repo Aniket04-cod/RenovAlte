@@ -45,7 +45,7 @@ export const contractorApi = {
 			params.append("state", state);
 		}
 
-		return apiRequest<Contractor[]>(`/contractors/?${params.toString()}`);
+		return apiRequest<Contractor[]>(`/contracting/contractors/?${params.toString()}`);
 	},
 };
 

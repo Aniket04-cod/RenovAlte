@@ -6,6 +6,16 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import os
+from pathlib import Path
+import os
+
+# Optionally support loading a local .env file for development (do NOT commit .env)
+try:
+	from dotenv import load_dotenv
+	_DOTENV_AVAILABLE = True
+except Exception:
+	_DOTENV_AVAILABLE = False
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +34,33 @@ if gemini_key:
 else:
 	print("ERROR: GEMINI_API_KEY NOT FOUND!")
 print(f"{'='*80}\n")
+# If python-dotenv is installed, load environment variables from backend/.env
+if _DOTENV_AVAILABLE:
+	try:
+		load_dotenv(str(BASE_DIR / ".env"))
+	except Exception:
+		# Ignore errors loading .env; environment variables may be set elsewhere
+		pass
+else:
+	# If python-dotenv isn't installed, attempt a minimal .env parser so local
+	# backend/.env files still work without adding a dependency. This will
+	# populate os.environ for the running process only.
+	env_path = BASE_DIR / ".env"
+	try:
+		if env_path.exists():
+			with env_path.open() as fh:
+				for raw_line in fh:
+					line = raw_line.strip()
+					if not line or line.startswith("#"):
+						continue
+					if "=" in line:
+						k, v = line.split("=", 1)
+						k = k.strip()
+						v = v.strip().strip('"').strip("'")
+						# Only set if not already in environment
+						os.environ.setdefault(k, v)
+	except Exception:
+		pass
 
 PDF_DIRECTORY = os.path.join(BASE_DIR, 'knowledge_base', 'pdfs')
 SECRET_KEY = "dev-secret-key"
@@ -44,6 +81,7 @@ INSTALLED_APPS = [
 	"django.contrib.staticfiles",
 	"rest_framework",
 	"corsheaders",
+	"django_q",  # django-q2 uses the same app name
 	"core",
 ]
 
@@ -146,6 +184,51 @@ REST_FRAMEWORK = {
 	"DEFAULT_PERMISSION_CLASSES": [
 		"rest_framework.permissions.IsAuthenticatedOrReadOnly",
 	],
+	"EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
+	"FORMAT_SUFFIX_KWARG": "format",
+}
+
+# Google Gemini API Configuration
+# The API key must be set via environment variable GOOGLE_API_KEY.
+# Do NOT hardcode secrets in source control. For local development you can
+# create a backend/.env file (gitignored) with GOOGLE_API_KEY=your_key_here.
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+# Gmail API Configuration for OAuth and Email Sending
+# Get these credentials from Google Cloud Console
+GMAIL_API_CLIENT_ID = os.getenv("GMAIL_API_CLIENT_ID", "")
+GMAIL_API_CLIENT_SECRET = os.getenv("GMAIL_API_CLIENT_SECRET", "")
+GMAIL_OAUTH_REDIRECT_URI = os.getenv(
+	"GMAIL_OAUTH_REDIRECT_URI",
+	"http://localhost:3000/gmail/callback"
+)
+GMAIL_OAUTH_SCOPES = ["https://www.googleapis.com/auth/gmail.send",
+                      "https://www.googleapis.com/auth/gmail.readonly",
+                      "https://www.googleapis.com/auth/userinfo.email",
+                      "openid",
+                      "https://www.googleapis.com/auth/gmail.modify"]
+
+# Media files configuration for file uploads
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Django-Q Configuration for Background Tasks
+Q_CLUSTER = {
+	'name': 'RenovAlte',
+	'workers': 1,
+	'timeout': 300,
+	'retry': 360,
+	'queue_limit': 50,
+	'save_limit': 250,
+	'orm': 'default',
+	'schedule': [
+		{
+			'func': 'core.tasks.email_monitoring.poll_contractor_emails',
+			'schedule_type': 'I',  # Interval
+			'seconds': 10,
+			'repeats': -1,  # Run indefinitely
+		}
+	]
 }
 
 

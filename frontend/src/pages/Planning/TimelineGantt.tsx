@@ -7,11 +7,55 @@ interface Task {
   duration: number;
   color: string;
 }
-
+const dummy = [
+    {
+        "id": 1,
+        "name": "Analysis & Planning",
+        "start": 0,
+        "duration": 18,
+        "color": "bg-emerald-500"
+    },
+    {
+        "id": 2,
+        "name": "Detail Planning & Tendering",
+        "start": 18,
+        "duration": 28,
+        "color": "bg-blue-500"
+    },
+    {
+        "id": 3,
+        "name": "Permitting & Financing",
+        "start": 46,
+        "duration": 42,
+        "color": "bg-amber-500"
+    },
+    {
+        "id": 4,
+        "name": "Contractor Selection",
+        "start": 88,
+        "duration": 18,
+        "color": "bg-purple-500"
+    },
+    {
+        "id": 5,
+        "name": "Implementation",
+        "start": 106,
+        "duration": 112,
+        "color": "bg-rose-500"
+    },
+    {
+        "id": 6,
+        "name": "Acceptance & Handover",
+        "start": 218,
+        "duration": 11,
+        "color": "bg-gray-500"
+    }
+]
 interface TimelineGanttProps {
   tasks?: Task[];
 }
 
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // Assuming 6 months timeline, approximately 180 days (6 * 30)
 
 
