@@ -23,6 +23,8 @@ import {
   X
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { chatbotApi, ChatSession } from "../../services/chatbot";
 import {
   RENOVATIONGOALS,
   HEATING_SYSTEM_OPTIONS,
@@ -76,8 +78,13 @@ export function ProjectSetupWizard({
 
   // Chatbot states for prompt mode
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
-  const [chatSessionId, setChatSessionId] = useState("");
+  const [chatSessionId, setChatSessionId] = useState<number | null>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [existingSessions, setExistingSessions] = useState<ChatSession[]>([]);
+  const [showSessionPicker, setShowSessionPicker] = useState(false);
+
+  // Get auth context
+  const { user, isAuthenticated } = useAuth();
 
   // Manual input states
   const [buildingType, setBuildingType] = useState("single-family");
@@ -150,7 +157,49 @@ export function ProjectSetupWizard({
   useEffect(() => {
   chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 }, [chatMessages]);
+  useEffect(() => {
+    if (inputMode === "prompt" && isAuthenticated) {
+      loadExistingSessions();
+    }
+  }, [inputMode, isAuthenticated]);
 
+  const loadExistingSessions = async () => {
+    try {
+      const sessions = await chatbotApi.getSessions(true);
+      setExistingSessions(sessions);
+      if (sessions.length > 0) {
+        setShowSessionPicker(true);
+      }
+    } catch (error) {
+      console.error("Failed to load sessions:", error);
+    }
+  };
+
+  const continueSession = async (session: ChatSession) => {
+    try {
+      const fullSession = await chatbotApi.getSession(session.id);
+      setChatSessionId(session.id);
+
+      // Load existing messages
+      if (fullSession.messages) {
+        const formattedMessages = fullSession.messages.map(msg => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content
+        }));
+        setChatMessages(formattedMessages);
+      }
+
+      setShowSessionPicker(false);
+    } catch (error) {
+      console.error("Failed to load session:", error);
+    }
+  };
+
+  const startNewSession = () => {
+    setChatSessionId(null);
+    setChatMessages([]);
+    setShowSessionPicker(false);
+  };
 
   const handleStartDynamicFlow = async () => {
     // you can re-use selectedGoals from manual as "goals" here
@@ -193,7 +242,7 @@ export function ProjectSetupWizard({
 
       console.log('response', currentContext);
       const response = await fetch(
-        "http://127.0.0.1:8000/api/renovation/next-question/",
+        "http://localhost:8000/api/renovation/next-question/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -250,50 +299,42 @@ export function ProjectSetupWizard({
   const handleSendChatMessage = async () => {
     if (!prompt.trim()) return;
 
-    // Add user message to chat
+    if (!isAuthenticated) {
+      alert("Please login to use the chatbot");
+      return;
+    }
+
+    // Add user message to chat immediately
     const userMessage = { role: 'user' as const, content: prompt };
     setChatMessages(prev => [...prev, userMessage]);
     setIsChatLoading(true);
 
+    const currentMessage = prompt;
     setPrompt("");
     setSelectedFile(null);
     setPreviewUrl(null);
+
     try {
-      const formData = new FormData();
-      formData.append('message', prompt);
-      if (chatSessionId) {
-        formData.append('session_id', chatSessionId);
-      }
-      if (selectedFile) {
-        formData.append('image', selectedFile);
-      }
+      const response = await chatbotApi.sendMessage(
+        currentMessage,
+        chatSessionId || undefined,
+        selectedFile || undefined
+      );
 
-      const response = await fetch("http://127.0.0.1:8000/api/chatbot/message/", {
-        method: "POST",
-        // headers: { "Content-Type": "application/json" },
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Store session_id
-      if (data.session_id) {
-        setChatSessionId(data.session_id);
+      // Store session_id from response
+      if (response.session_id) {
+        setChatSessionId(response.session_id);
       }
 
       // Add assistant response
-      const assistantMessage = { role: 'assistant' as const, content: data.response };
+      const assistantMessage = { role: 'assistant' as const, content: response.response };
       setChatMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = {
         role: 'assistant' as const,
-        content: "Sorry, I'm having trouble connecting. Please try again."
+        content: "Sorry, I'm having trouble connecting. Please make sure you're logged in and try again."
       };
       setChatMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -342,29 +383,32 @@ export function ProjectSetupWizard({
 
       onGeneratePlan(finalPlan);
     } else {
-      // AI Prompt mode - for now just log the prompt and use default manual data
+      // AI Prompt mode - use authenticated API
       if (!chatSessionId) {
         alert("Please have a conversation first before generating a plan.");
         return;
       }
-      
+
+      if (!isAuthenticated) {
+        alert("Please login to generate a plan.");
+        return;
+      }
+
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/chatbot/generate-from-chat/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: chatSessionId })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
+        const result = await chatbotApi.extractAndGenerate(chatSessionId);
+
         if (result.success) {
-          // Pass the generated plan to parent component
+          // Map extracted data to ProjectPlanData format
+          const extractedData = result.extracted_data || {};
+  
           onGeneratePlan({
-            ...result.extracted_data,
+            buildingType: extractedData.building_type || "Unknown",
+            budget: parseFloat(extractedData.budget) || 0,
+            startDate: extractedData.timeline || "",
+            goals: extractedData.renovation_goals || [],
+            buildingAge: extractedData.building_age || "",
+            buildingSize: parseInt(extractedData.building_size) || 0,
+            bundesland: extractedData.location || "",
             generatedPlan: result.plan
           });
         } else {
@@ -375,7 +419,6 @@ export function ProjectSetupWizard({
         console.error("Request failed:", error);
         alert("Failed to connect to server. Please try again.");
       }
-    
     }
   };
 
@@ -525,8 +568,8 @@ export function ProjectSetupWizard({
                   />
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-              </div> */}
-              {/* <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="timeline">Target Start Date</Label>
                 <div className="relative">
                   <Input
@@ -538,8 +581,8 @@ export function ProjectSetupWizard({
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-            </div> */}
-            {/* <div className="grid grid-cols-2 gap-6">
+            </div>
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="financing preference">
                   Financing Preference
@@ -549,8 +592,8 @@ export function ProjectSetupWizard({
                   options={FINANCING_PREFERENCE_OPTIONS}
                   onChange={setFinancingPreference}
                 />
-              </div> */}
-              {/* <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="incentive-intent">Incentive Intent</Label>
                 <Select
                   value={incentiveIntent}
@@ -558,9 +601,9 @@ export function ProjectSetupWizard({
                   onChange={setIncentiveIntent}
                 />
               </div>
-            </div> */}
+            </div>
 
-            {/* <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="heritage-protection">
                   Heritage Protection (Denkmalschutz)
@@ -629,9 +672,9 @@ export function ProjectSetupWizard({
                     options={HEATING_SYSTEM_OPTIONS}
                     onChange={setHeatingSystem}
                   />
-                </div> */}
-              {/* )} */}
-              {/* {selectedGoals.includes("Insulation") && (
+                </div>
+              )}
+              {selectedGoals.includes("Insulation") && (
                 <div className="space-y-2">
                   <Label htmlFor="insulation-type">
                     Current Insulation Status
@@ -838,6 +881,42 @@ export function ProjectSetupWizard({
         ) : (
           // Prompt Input - Chatbot Mode
           <div className="space-y-4">
+            {/* Session Picker */}
+            {showSessionPicker && existingSessions.length > 0 && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">Continue a previous conversation?</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {existingSessions.slice(0, 5).map((session) => (
+                    <button
+                      key={session.id}
+                      onClick={() => continueSession(session)}
+                      className="w-full text-left p-2 bg-white rounded border hover:bg-blue-50 transition-colors"
+                    >
+                      <div className="font-medium text-sm truncate">{session.title}</div>
+                      <div className="text-xs text-gray-500">
+                        {session.message_count} messages · {new Date(session.updated_at).toLocaleDateString()}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={startNewSession}
+                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  + Start new conversation
+                </button>
+              </div>
+            )}
+
+            {/* Login Warning */}
+            {!isAuthenticated && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Please login to save your conversation and generate plans.
+                </p>
+              </div>
+            )}
+
             {/* Chat Messages */}
             <div className="border border-gray-200 rounded-lg h-96 overflow-y-auto p-4 bg-gray-50 space-y-3">
               {chatMessages.length === 0 ? (

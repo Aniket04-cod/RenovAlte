@@ -30,21 +30,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 	}, []);
 
 	const checkAuth = async () => {
-		try {
-			setIsLoading(true);
-			const response = await authApi.checkAuthStatus();
-			if (response.authenticated && response.user) {
-				setUser(response.user);
-			} else {
-				setUser(null);
-			}
-		} catch (error) {
-			console.error("Failed to check auth status:", error);
-			setUser(null);
-		} finally {
-			setIsLoading(false);
-		}
-	};
+    try {
+        setIsLoading(true);
+        // First, fetch CSRF token to set the cookie
+        await fetch("http://localhost:8000/api/auth/csrf/", {
+            method: "GET",
+            credentials: "include",
+        });
+        
+        const response = await authApi.checkAuthStatus();
+        if (response.authenticated && response.user) {
+            setUser(response.user);
+        } else {
+            setUser(null);
+        }
+    } catch (error) {
+        console.error("Failed to check auth status:", error);
+        setUser(null);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
 	const login = async (username: string, password: string) => {
 		try {

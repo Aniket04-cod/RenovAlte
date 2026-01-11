@@ -15,25 +15,27 @@ import { CollaborationArea } from "./CollaborationArea";
 import { apiRequest } from "../../services/http";
 // Define the project data interface
 export interface ProjectPlanData {
-  buildingType: string;
-  budget: number;
-  startDate: string;
-  goals: string[];
-  renovationSpecification: string;
-  renovationStandard: string;
-  buildingAge: string;
-  buildingSize: number;
-  bundesland: string;
+  buildingType?: string;
+  budget?: number;
+  startDate?: string;
+  goals?: string[];
+  buildingAge?: string;
+  buildingSize?: number;
+  bundesland?: string;
+  renovationSpecification?: string;
+  renovationStandard?: string;
   heatingSystem?: string;
   insulationType?: string;
   windowsType?: string;
-  neighborImpact: string;
-  financingPreference: string;
-  incentiveIntent: string;
-  livingDuringRenovation: string;
-  energyCertificateRating: string;
-  knownMajorIssues: string;
-  surveysRequired: string;
+  neighborImpact?: string;
+  financingPreference?: string;
+  incentiveIntent?: string;
+  livingDuringRenovation?: string;
+  energyCertificateRating?: string;
+  knownMajorIssues?: string;
+  surveysRequired?: string;
+  dynamic_answers?: Record<string, any>;
+  generatedPlan?: Record<string, any>;
 }
 
 // API Response interfaces
