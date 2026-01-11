@@ -4,8 +4,6 @@ export const RENOVATIONGOALS = [
   "Windows & Doors",
   "Heating System",
   "Solar Panels",
-  "Bathroom",
-  "Kitchen",
   "Roof",
 ];
 

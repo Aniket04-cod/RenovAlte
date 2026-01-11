@@ -513,7 +513,7 @@ export function ProjectSetupWizard({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="building-age"> Building Age</Label>
                 <div className="relative">
@@ -525,8 +525,8 @@ export function ProjectSetupWizard({
                   />
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-              </div>
-              <div className="space-y-2">
+              </div> */}
+              {/* <div className="space-y-2">
                 <Label htmlFor="timeline">Target Start Date</Label>
                 <div className="relative">
                   <Input
@@ -538,8 +538,8 @@ export function ProjectSetupWizard({
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
+            </div> */}
+            {/* <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="financing preference">
                   Financing Preference
@@ -549,8 +549,8 @@ export function ProjectSetupWizard({
                   options={FINANCING_PREFERENCE_OPTIONS}
                   onChange={setFinancingPreference}
                 />
-              </div>
-              <div className="space-y-2">
+              </div> */}
+              {/* <div className="space-y-2">
                 <Label htmlFor="incentive-intent">Incentive Intent</Label>
                 <Select
                   value={incentiveIntent}
@@ -558,9 +558,9 @@ export function ProjectSetupWizard({
                   onChange={setIncentiveIntent}
                 />
               </div>
-            </div>
+            </div> */}
 
-            <div className="grid grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="heritage-protection">
                   Heritage Protection (Denkmalschutz)
@@ -629,9 +629,9 @@ export function ProjectSetupWizard({
                     options={HEATING_SYSTEM_OPTIONS}
                     onChange={setHeatingSystem}
                   />
-                </div>
-              )}
-              {selectedGoals.includes("Insulation") && (
+                </div> */}
+              {/* )} */}
+              {/* {selectedGoals.includes("Insulation") && (
                 <div className="space-y-2">
                   <Label htmlFor="insulation-type">
                     Current Insulation Status
@@ -653,7 +653,7 @@ export function ProjectSetupWizard({
                   />
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* ====== DYNAMIC FLOW ENTRY BUTTON ====== */}
             {dynamicStep === "off" && (
