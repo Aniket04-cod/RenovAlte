@@ -1,12 +1,40 @@
 from django.contrib import admin
 from .models import Project, Contractor, RenovationPlan
 from .models import Project, Contractor, ContractingPlanning, ContractingPlanningFile, Message, MessageAction, MessageAttachment, RenovationPlan
+from .models import ChatSession
+from .models import ChatMessage
+from .models import UserMemory
 
-
+@admin.register(UserMemory)
+class UserMemoryAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'memory_type', 'key', 'short_value', 'confidence', 'is_active', 'updated_at']
+    list_filter = ['memory_type', 'is_active', 'created_at']
+    search_fields = ['user__username', 'key', 'value']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def short_value(self, obj):
+        return obj.value[:40] + "..." if len(obj.value) > 40 else obj.value
+    short_value.short_description = "Value"
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
 	list_display = ("id", "name")
 
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'session', 'role', 'short_content', 'created_at']
+    list_filter = ['role', 'created_at']
+    search_fields = ['content']
+    readonly_fields = ['created_at']
+    
+    def short_content(self, obj):
+        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
+    short_content.short_description = "Content"
+@admin.register(ChatSession)
+class ChatSessionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'title', 'session_type', 'is_active', 'is_plan_generated', 'created_at']
+    list_filter = ['session_type', 'is_active', 'is_plan_generated']
+    search_fields = ['user__username', 'title']
+    readonly_fields = ['created_at', 'updated_at']
 
 @admin.register(Contractor)
 class ContractorAdmin(admin.ModelAdmin):

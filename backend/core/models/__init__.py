@@ -16,4 +16,7 @@ from .contracting_planning import (
 from .email_credential import EmailCredential
 
 from .renovation_plan import RenovationPlan, PlanStatus
+from .chat_session import ChatSession, SessionType
+from .chat_message import ChatMessage, MessageRole
+from .user_memory import UserMemory, MemoryType
 
