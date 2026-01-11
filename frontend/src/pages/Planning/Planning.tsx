@@ -610,6 +610,7 @@ export function Planning() {
             <Button 
               className="ml-auto bg-emerald-600 hover:bg-emerald-700"
               disabled={!projectPlan}
+              onClick={() => navigate("/financing")}
             >
               Continue to Financing
               <ArrowRight className="w-4 h-4 ml-2" />
