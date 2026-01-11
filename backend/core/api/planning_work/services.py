@@ -37,6 +37,7 @@ class GeminiService:
             return {
                 "question_text": "Are there any other specific details about the property you would like to add?",
                 "explanation": "We want to ensure we cover all bases.",
+                "suggestion": "Mention any specific materials or constraints you have.",
                 "input_type": "text",
                 "options": []
             }
@@ -104,8 +105,9 @@ The user is planning a renovation. Here is what we know so far:
 {json.dumps(current_answers, indent=2)}
 
 Your task: Identify the SINGLE most critical missing piece of information needed to create a precise renovation plan, timeline, or compliance check.
-Generate ONE follow-up question to ask the user.
-
+Generate:
+1. ONE follow-up question.
+2. A helpful "Rule of Thumb" or "Suggestion" to guide the user's answer (e.g., standard costs in Germany, typical dimensions, or legal requirements).
 **IMPORTANT LANGUAGE REQUIREMENT:** The "question_text", "explanation", and any "label" in options **MUST BE IN ENGLISH**. 
 Do not output German text, even though the context is Germany.
 

@@ -47,11 +47,26 @@ import { ProjectPlanData } from "./Planning";
 
 type InputMode = "manual" | "prompt";
 
+// interface ProjectSetupWizardProps {
+//   onGeneratePlan: (planData: ProjectPlanData) => void;
+//   isGenerating: boolean;
+// }
+interface SuggestionsContextData {
+  building_type?: string;
+  budget?: number;
+  location?: string;
+  goals?: string[];
+  renovation_specification?: string;
+  renovation_standard?: string;
+  current_question?: string;
+  dynamic_answers?: Record<string, any>;
+}
+
 interface ProjectSetupWizardProps {
   onGeneratePlan: (planData: ProjectPlanData) => void;
   isGenerating: boolean;
+  onContextChange?: (context: Partial<SuggestionsContextData>) => void;
 }
-
 /** DYNAMIC PART TYPES */
 interface DynamicAnswers {
   [key: string]: any;
@@ -61,6 +76,7 @@ interface AIQuestion {
   question_id: string;
   question_text: string;
   explanation?: string;
+  suggestion?: string;
   input_type: "text" | "select" | "number" | "date";
   options?: { value: string; label: string }[];
   is_complete?: boolean;
@@ -72,6 +88,8 @@ const SAFETY_MAX_LIMIT = 10;
 export function ProjectSetupWizard({
   onGeneratePlan,
   isGenerating,
+
+  onContextChange,
 }: ProjectSetupWizardProps) {
   const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [prompt, setPrompt] = useState("");
@@ -155,8 +173,32 @@ export function ProjectSetupWizard({
     setPreviewUrl(url);
   };
   useEffect(() => {
-  chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  if (chatEndRef.current) {
+    chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }, [chatMessages]);
+  useEffect(() => {
+    if (onContextChange && inputMode === "manual") {
+      onContextChange({
+        building_type: buildingType,
+        budget: budget,
+        location: bundesland,
+        goals: selectedGoals,
+        renovation_specification: renovationSpecification,
+        renovation_standard: renovationStandard,
+      });
+    }
+  }, [buildingType, budget, bundesland, selectedGoals, renovationSpecification, renovationStandard, inputMode, onContextChange]);
+
+  // Notify when dynamic question changes
+  useEffect(() => {
+    if (onContextChange && currentQuestion) {
+      onContextChange({
+        current_question: currentQuestion.question_text,
+        dynamic_answers: dynamicAnswers,
+      });
+    }
+  }, [currentQuestion, dynamicAnswers, onContextChange]);
   useEffect(() => {
     if (inputMode === "prompt" && isAuthenticated) {
       loadExistingSessions();
@@ -796,6 +838,21 @@ export function ProjectSetupWizard({
                             {currentQuestion.explanation}
                           </p>
                         )}
+                        {currentQuestion.suggestion && (
+                        <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-3">
+                          <div className="bg-yellow-100 p-1.5 rounded-full shrink-0">
+                            <Sparkles className="w-4 h-4 text-yellow-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-yellow-800 uppercase mb-0.5">
+                              AI Suggestion
+                            </p>
+                            <p className="text-sm text-yellow-900">
+                              {currentQuestion.suggestion}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       </div>
                     </div>
 
@@ -943,12 +1000,13 @@ export function ProjectSetupWizard({
                         : 'bg-white border border-gray-200 text-gray-800'
                         }`}
                     >
-                      <div ref={chatEndRef} />
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   </div>
                 ))
               )}
+
+              <div ref={chatEndRef} />
               {isChatLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white border border-gray-200 rounded-lg px-4 py-2">

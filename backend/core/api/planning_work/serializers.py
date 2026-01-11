@@ -31,6 +31,7 @@ class NextQuestionResponseSerializer(serializers.Serializer):
     is_complete = serializers.BooleanField(required=False, default=False)
     question_text = serializers.CharField(required=False, allow_blank=True)
     explanation = serializers.CharField(required=False, allow_blank=True)
+    suggestion = serializers.CharField(required=False, allow_blank=True)
     input_type = serializers.ChoiceField(choices=['text', 'select', 'number', 'date'], required=False)
     question_text = serializers.CharField()
     explanation = serializers.CharField(required=False, allow_blank=True)

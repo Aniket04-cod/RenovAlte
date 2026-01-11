@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-
+from .suggestions_views import DynamicSuggestionsView
 app_name = 'renovation'
 
 urlpatterns = [
@@ -33,5 +33,5 @@ urlpatterns = [
         views.api_health_check,
         name='health_check'
     ),
-    
+    path('suggestions/', DynamicSuggestionsView.as_view(), name='dynamic-suggestions'),
 ]
