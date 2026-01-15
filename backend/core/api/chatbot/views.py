@@ -215,7 +215,14 @@ class ExtractAndGeneratePlanView(APIView):
 
         try:
             gemini_service = GeminiService()
-            plan_result = gemini_service.generate_plan(plan_input)
+            plan_result = gemini_service.generate_renovation_plan(
+                building_type=plan_input["building_type"],
+                budget=plan_input["budget"],
+                location=plan_input["location"],
+                building_size=plan_input["building_size"],
+                renovation_goals=plan_input["goals"],
+                dynamic_context=plan_input
+            )
 
             # Mark session as plan generated
             try:
@@ -246,6 +253,7 @@ class ExtractAndGeneratePlanView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            print(f"Error during plan generation: {str(e)}")
             return Response(
                 {
                     "success": False,
