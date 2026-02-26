@@ -20,9 +20,7 @@ class GeminiService:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
-        # Using gemini-2.0-flash (same as chatbot)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
 
     def generate_next_question(self, current_answers: Dict[str, Any]) -> Dict[str, Any]:
         """

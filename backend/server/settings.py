@@ -63,12 +63,12 @@ else:
 		pass
 
 PDF_DIRECTORY = os.path.join(BASE_DIR, 'knowledge_base', 'pdfs')
-SECRET_KEY = "dev-secret-key"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
 
-QDRANT_URL = 'https://46936dac-34c2-4404-b20c-9df508c3b44a.europe-west3-0.gcp.cloud.qdrant.io'
-QDRANT_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.9qQIERr0mpAriT8M8PS86VjYgHEHY71FRbdwH73C5So'
+QDRANT_URL = os.getenv('QDRANT_URL', '')
+QDRANT_API_KEY = os.getenv('QDRANT_API_KEY', '')
 DEBUG = True
-GEMINI_API_KEY = "AIzaSyBixKKkZ7Kvk2nyQIgPSSUHp1Of5Zwm-cw"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 ALLOWED_HOSTS: list[str] = ["*"]
 
 
@@ -189,10 +189,9 @@ REST_FRAMEWORK = {
 }
 
 # Google Gemini API Configuration
-# The API key must be set via environment variable GOOGLE_API_KEY.
-# Do NOT hardcode secrets in source control. For local development you can
-# create a backend/.env file (gitignored) with GOOGLE_API_KEY=your_key_here.
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# Some services reference GOOGLE_API_KEY, others reference GEMINI_API_KEY.
+# We unify them here so both names resolve to the same key.
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or GEMINI_API_KEY
 
 # Gmail API Configuration for OAuth and Email Sending
 # Get these credentials from Google Cloud Console

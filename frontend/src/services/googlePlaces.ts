@@ -8,7 +8,7 @@
 import { Contractor } from "./contractors";
 import { apiRequest } from "./http";
 
-const GOOGLE_API_KEY = "AIzaSyBrLacBhn1dhVsLy1HF6Pc-gKCUOa7pXAA";
+const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_PLACES_API_KEY || "";
 
 /**
  * Type definitions for Google Places API responses

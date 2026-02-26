@@ -185,8 +185,8 @@ class GeminiService:
 
 	def generate_image_description(self, prompt: str, max_retries: int = 3) -> Dict[str, Any]:
 		"""
-		Generate image description using Gemini AI with gemini-2.0-flash model
-		NOTE: This method uses gemini-2.0-flash instead of gemini-2.5-flash-lite
+		Generate image description using Gemini AI with gemini-2.5-flash model
+		NOTE: This method uses gemini-2.5-flash instead of gemini-2.5-flash-lite
 
 		Args:
 			prompt (str): The formatted prompt for image description
@@ -204,9 +204,9 @@ class GeminiService:
 					print(f"\n   [RETRY {attempt}/{max_retries}] Waiting {wait_time}s before retry...")
 					time.sleep(wait_time)
 
-				print(f"   >> Attempt {attempt + 1}/{max_retries}: Calling Gemini API with gemini-2.0-flash model...")
-				# Use gemini-2.0-flash ONLY for image generation
-				response_text = self._call_gemini_api_with_model(prompt, model="gemini-2.0-flash")
+				print(f"   >> Attempt {attempt + 1}/{max_retries}: Calling Gemini API with gemini-2.5-flash model...")
+				# Use gemini-2.5-flash for image generation
+				response_text = self._call_gemini_api_with_model(prompt, model="gemini-2.5-flash")
 
 				print("   >> Raw AI response received:")
 				print("   " + "-" * 76)

@@ -77,4 +77,16 @@ vertex-ai-credentials.json
 .DS_Store
 Thumbs.db
 
+# --- Misc files not for public repo ---
+migration.sql
+db.sqlite3.bak
+show_embeddings.py
+test_rag.py
+cleanup_orphaned_files.py
+FREE_LLM_RECOMMENDATION_FOR_PROFESSOR.md
+HUGGINGFACE_INTEGRATION_GUIDE.md
+PRESENTATION_GUIDE.md
+
+# Documentation PDFs (keep knowledge_base PDFs for RAG)
+backend/*.pdf
 

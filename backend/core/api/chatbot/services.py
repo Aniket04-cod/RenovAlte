@@ -7,7 +7,7 @@ from core.models import ChatSession, ChatMessage, UserMemory, SessionType, Messa
 class ChatbotService:
     def __init__(self):
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
 
     def get_or_create_session(self, user, session_id=None, project=None):
         """

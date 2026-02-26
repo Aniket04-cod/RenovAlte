@@ -57,10 +57,10 @@ class GeminiService:
 			
 			# Preferred model names in order of preference (without 'models/' prefix)
 			preferred_models = [
+				"gemini-2.5-flash",
+				"gemini-2.5-pro",
 				"gemini-1.5-pro",
 				"gemini-1.5-flash",
-				"gemini-pro",
-				"gemini-1.0-pro",
 			]
 			
 			# Create a mapping of short names to full model objects

@@ -100,7 +100,7 @@ class ContractingService:
         
         # Call Gemini API with combined content
         response = self.client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.5-flash",
             contents=content_parts
         )
         
@@ -162,7 +162,7 @@ class ContractingService:
             
             # Call Gemini API with combined content
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp",
+                model="gemini-2.5-flash",
                 contents=content_parts
             )
             
@@ -490,7 +490,7 @@ The attachments are included in this conversation. Analyze them carefully to und
             
             # Call Gemini API
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp",
+                model="gemini-2.5-flash",
                 contents=[prompt]
             )
             
