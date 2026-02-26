@@ -4,18 +4,35 @@
 
 **An intelligent end-to-end renovation management system for the German market, powered by Google Gemini, RAG pipelines, and vector search.**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Aniket04-cod/RenovAlte/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Django](https://img.shields.io/badge/Django-4.2-092E20?logo=django&logoColor=white)](https://djangoproject.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![Gemini](https://img.shields.io/badge/Google%20Gemini-2.5-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![GitHub Stars](https://img.shields.io/github/stars/Aniket04-cod/RenovAlte?style=social)](https://github.com/Aniket04-cod/RenovAlte/stargazers)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## � Project Highlights
+
+This project demonstrates:
+
+- ✅ **Full-Stack AI Integration** — Seamless integration of Google Gemini 2.5 for intelligent conversation and planning
+- ✅ **Advanced RAG Pipeline** — Custom-built Retrieval-Augmented Generation with Qdrant vector DB and semantic search
+- ✅ **Production-Ready Architecture** — Django REST + React 19 with TypeScript, following enterprise design patterns
+- ✅ **Real API Integration** — Gmail OAuth 2.0, Google Places API, and cloud-based AI services
+- ✅ **Domain Expertise** — Deep integration with German building regulations (GEG), KfW financing, and construction standards
+- ✅ **User-Centric Design** — Multiple entry points (chatbot vs. form), adaptive questioning, and persistent memory
+
+**Tech Stack:** Python • Django • React • TypeScript • Google Gemini • RAG/Vector DB • Qdrant • OAuth 2.0 • REST APIs • Tailwind CSS
+
+---
+
+## �📋 Table of Contents
 
 - [Project Mission](#-project-mission)
 - [Key Features](#-key-features)
@@ -427,10 +444,16 @@ REACT_APP_GOOGLE_PLACES_API_KEY=your_google_places_api_key
 
 ## 👤 Author
 
-**Aniket** — [@Aniket04-cod](https://github.com/Aniket04-cod)
+**Aniket Shelke** — Full Stack Developer & AI Enthusiast
+
+- GitHub: [@Aniket04-cod](https://github.com/Aniket04-cod)
+- LinkedIn: [Connect with me](https://www.linkedin.com/in/aniket-shelke)
+- Email: aniket.shelke0410@gmail.com
+
+*Built with ❤️ for revolutionizing home renovation planning through AI*
 
 ---
 
 ## 📄 License
 
-This project is for educational and portfolio purposes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
